@@ -1,0 +1,86 @@
+transsys athgenome
+{
+  factor jasmonate
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+  factor tiptimer
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+  factor celltimer
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+  factor celllength
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  gene tiptimerticker
+  {
+    promoter
+    {
+      constitutive: 1;
+    }
+    product
+    {
+      default: tiptimer;
+    }
+  }
+
+  gene celltimerticker
+  {
+    promoter
+    {
+      constitutive: 1 - 0.5 * jasmonate;
+    }
+    product
+    {
+      default: celltimer;
+    }
+  }
+}
+
+
+lsys athroot
+{
+  diffusionrange: 3;
+
+  symbol roottipcell(athgenome);
+  symbol rootcell(athgenome);
+  axiom roottipcell(jasmonate = 0);
+
+  rule tipdivide
+  {
+    roottipcell(ttip) : ttip.tiptimer >= 10 -->
+    rootcell(transsys ttip: celltimer = 0, celllength = 1) roottipcell(transsys ttip: tiptimer = 0)
+  }
+
+  rule elongate
+  {
+    rootcell(t) : (t.celltimer > 30 ) && (t.celltimer < 70) -->
+    rootcell(transsys t: celllength = t.celllength + 0.1)
+  }
+
+  graphics
+  {
+    roottipcell
+    {
+      color(1.0, 0.2, 0.2);
+      sphere(0.4);
+    }
+    rootcell
+    {
+      move(0.3 * celllength);
+      color(jasmonate, 1.0 - jasmonate, 0);
+      cylinder(0.2, 0.5 * celllength);
+      move(0.3 * celllength);
+    }
+  }
+}
+

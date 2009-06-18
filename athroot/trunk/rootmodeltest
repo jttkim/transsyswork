@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+
+import sys
+import getopt
+
+import transsys
+
+
+class RootCell :
+
+  def __init__(self, rootProgram) :
+    self.state = transsys.TranssysInstance(rootProgram)
+
+
+  def set_concentration(self, name, value) :
+    self.objectIndex = rootProgram.find_factor_index(name)
+    if self.objectIndex == -1 :
+      raise StandardError, 'no celllength factor in transsys program'
+    self.state.factor_concentration[self.objectIndex] = value
+
+
+  def nextState(self) :
+    s = self.state.time_series(2)
+    self.state = s[-1]
+
+
+  def getLength(self, name) :
+    self.objectIndex = rootProgram.find_factor_index(name)
+    if self.objectIndex == -1 :
+      raise StandardError, 'no celllength factor in transsys program'
+    return self.state.factor_concentration[self.objectIndex]
+
+
+treatment_type = 'non_treatment'
+
+def usage() :
+  print 'usage:'
+  print 'options:'
+  print '-t: 1) non_treatment 2) treatment'
+  print '-h: print this help and exit'
+
+
+options, args = getopt.getopt(sys.argv[1:], 't:h')
+for opt, par in options :
+  if opt == '-h' :
+    usage()
+    sys.exit()
+  elif opt == '-t' :
+    treatment_type  = par
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdin
+if len(args) > 1 :
+  outfile = open(args[1], 'w')
+else :
+  outfile = sys.stdout
+
+parser = transsys.TranssysProgramParser(infile)
+rootProgram = parser.parse()
+untreatedRootCell = RootCell(rootProgram)
+untreatedRootCell.set_concentration('celllength', 5.0)
+if treatment_type == 'treatment' :
+  untreatedRootCell.set_concentration('jasmonate', 1.0)
+
+for t in xrange(45) :
+  outfile.write('untreated, %d, %1.17e\n' % (t, untreatedRootCell.getLength('celllength')))
+  untreatedRootCell.nextState()
+
+
