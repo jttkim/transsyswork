@@ -1,0 +1,60 @@
+transsys athgenome
+{
+  factor jasmonate
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+  factor tiptimer
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+  factor celltimer
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+  factor celllength
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  gene tiptimerticker
+  {
+    promoter
+    {
+      constitutive: 1;
+    }
+    product
+    {
+      default: tiptimer;
+    }
+  }
+
+  gene celltimerticker
+  {
+    promoter
+    {
+      constitutive: 1 - 0.25 * jasmonate;
+    }
+    product
+    {
+      default: celltimer;
+    }
+  }
+
+  gene elongate
+  {
+    promoter
+    {
+      constitutive: ((celltimer > 20) && (celltimer < 70)) * (celltimer - 21) * 0.45;
+    }
+    product
+    {
+      default: celllength;
+    }
+  }
+}
+
