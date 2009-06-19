@@ -6,17 +6,11 @@ import getopt
 import transsys
 
 
-class RootCell :
+class RootCell(object) :
 
-  def __init__(self, rootProgram) :
+  def __init__(self, rootProgram, initialLength) :
     self.state = transsys.TranssysInstance(rootProgram)
-
-
-  def set_concentration(self, name, value) :
-    self.objectIndex = rootProgram.find_factor_index(name)
-    if self.objectIndex == -1 :
-      raise StandardError, 'no celllength factor in transsys program'
-    self.state.factor_concentration[self.objectIndex] = value
+    self.state.set_factor_concentration('celllength', initialLength)
 
 
   def nextState(self) :
@@ -24,29 +18,37 @@ class RootCell :
     self.state = s[-1]
 
 
-  def getLength(self, name) :
-    self.objectIndex = rootProgram.find_factor_index(name)
-    if self.objectIndex == -1 :
-      raise StandardError, 'no celllength factor in transsys program'
-    return self.state.factor_concentration[self.objectIndex]
+  def getLength(self) :
+    return self.state.get_factor_concentration('celllength')
 
 
-treatment_type = 'non_treatment'
+  def applyTreatment(self, treatmentFactor, treatmentConcentration) :
+    self.state.set_factor_concentration(treatmentFactor, treatmentConcentration)
+
+
+globalTreatmentConcentration = 1.0
+treatmentFactorList = []
+initialLength = 5.0
+nCells = None
 
 def usage() :
   print 'usage:'
   print 'options:'
-  print '-t: 1) non_treatment 2) treatment'
+  print '-t <treatment list>: specify treatments (whitespace separated list)'
+  print '-n <number>: specify number of cells to generate'
+  print '-l <number>: specify initial length of juvenile root cell'
   print '-h: print this help and exit'
 
 
-options, args = getopt.getopt(sys.argv[1:], 't:h')
+options, args = getopt.getopt(sys.argv[1:], 'n:t:h')
 for opt, par in options :
   if opt == '-h' :
     usage()
     sys.exit()
   elif opt == '-t' :
-    treatment_type  = par
+    treatmentFactorList = par.split()
+  elif opt == '-n' :
+    nCells = int(par)
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 if len(args) > 0 :
@@ -57,16 +59,14 @@ if len(args) > 1 :
   outfile = open(args[1], 'w')
 else :
   outfile = sys.stdout
-
+if nCells is None :
+  raise StandardError, 'number of cells not specified'
 parser = transsys.TranssysProgramParser(infile)
 rootProgram = parser.parse()
-untreatedRootCell = RootCell(rootProgram)
-untreatedRootCell.set_concentration('celllength', 5.0)
-if treatment_type == 'treatment' :
-  untreatedRootCell.set_concentration('jasmonate', 1.0)
-
-for t in xrange(45) :
-  outfile.write('untreated, %d, %1.17e\n' % (t, untreatedRootCell.getLength('celllength')))
-  untreatedRootCell.nextState()
-
-
+rootCell = RootCell(rootProgram, initialLength)
+for treatmentFactor in treatmentFactorList :
+  rootCell.applyTreatment(treatmentFactor, globalTreatmentConcentration)
+outfile.write('cellNo cellLength\n')
+for t in xrange(nCells) :
+  outfile.write('%d, %1.17e\n' % (t, rootCell.getLength()))
+  rootCell.nextState()
