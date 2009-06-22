@@ -1,0 +1,172 @@
+#!/usr/bin/env python
+
+import sys
+import getopt
+import random
+
+import transsys
+
+import jasmonate
+
+
+def write_result(f, optResult) :
+  f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
+  f.write('%s\n' %  str(optResult.optimised_transsys_program))
+  f.flush()
+
+
+def test_JasmonateObjective(jobj, jp) :
+  outfile.write(str(jobj))
+  jobj.computeTranssysInstances(jp)
+  for m in jobj.expressionData.measurement_specification :
+    print m
+  for g in jobj.expressionData.gene_list :
+    e, s = jobj.expressionData.getCorrespondingProfiles(g)
+    print 'empirical:', e
+    print 'simulated:', s
+    print
+
+
+factor_name_list = None
+gene_name_list = None
+equilibration_length = None
+minutes_per_timestep = None
+objective_function_name = None
+num_restarts = None
+optimiserfile_name = None
+transformerfile_name = None
+seriesfile_name = None
+profilefile_name = None
+optimisation_logfile_name = None
+logratio_mode = False
+logratio_offset = 0.0
+verbose = 0
+options, args = getopt.getopt(sys.argv[1:], 'f:x:r:e:m:p:L:P:T:F:G:o:lvh')
+for opt, par in options :
+  if opt == '-h' :
+    print '-f [squaresum | correlation]: specify objective function'
+    print '-l: logratio mode'
+    print '-o <offset>: specify logratio offset'
+    print '-x <expression file>: specify file containing desired expression profiles'
+    print '-e <num>: specify number of time steps for equilibration'
+    print '-m <num>: specify number of minutes per time step'
+    print '-r <int>: specify number of random restarts'
+    print '-p <filename>: specify profile pair result file'
+    print '-L <filename>: specify optimisation log file' 
+    print '-P <optimiser specfile>: specify optimiser specification file to parse'
+    print '-T <transformer specfile>: specify transformer specification file to parse'
+    print '-F <factor list>: specify names of factors to be optimised (comma separated)'
+    print '-G <gene list>: specify names of genes to be optimised (comma separated)'
+    print '-v: verbose'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-f' :
+    objective_function_name = par
+  elif opt == '-l' :
+    logratio_mode = True
+  elif opt == '-o' :
+    logratio_offset = float(par)
+  elif opt == '-x' :
+    seriesfile_name = par
+  elif opt == '-e' :
+    equilibration_length = int(par)
+  elif opt == '-m' :
+    minutes_per_timestep = float(par)
+  elif opt == '-r' :
+    num_restarts = int(par)
+  elif opt == '-L' :
+    optimisation_logfile_name = par
+  elif opt == '-P' :
+    optimiserfile_name = par
+  elif opt == '-T' :
+    transformerfile_name = par
+  elif opt == '-p' :
+    profilefile_name = par
+  elif opt == '-F' :
+    factor_name_list = map(lambda x: x.strip(), par.split(','))
+  elif opt == '-G' :
+    gene_name_list = map(lambda x: x.strip(), par.split(','))
+  elif opt == '-v' :
+    verbose = 1
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+# generate_JasmonateTranssysPrograms()
+if equilibration_length is None :
+  raise StandardError, 'no equilibration length specified'
+if minutes_per_timestep is None :
+  raise StandardError, 'minutes per time step not specified'
+if objective_function_name is None :
+  raise StandardError, 'no objective function specified'
+if seriesfile_name is None :
+  raise StandardError, 'no series file specified'
+if optimiserfile_name is None :
+  raise StandardError, 'no optimiser specification file given'
+f = open(optimiserfile_name, 'r')
+optimiser = transsys.optim.parse_optimiser(f)
+f.close()
+optimiser.verbose = verbose
+if transformerfile_name is not None :
+  f = open(transformerfile_name, 'r')
+  optimiser.transformer = transsys.optim.parse_parameter_transformer(f)
+  f.close()
+f = open(seriesfile_name, 'r')
+if logratio_mode :
+  objective = jasmonate.JasmonateLogratioObjective(f, logratio_offset)
+else :
+  objective = jasmonate.JasmonateObjective(f)
+if objective_function_name == 'squaresum' :
+  objective.profileScoreFunction = jasmonate.squaresumProfileScore
+elif objective_function_name == 'correlation' :
+  objective.profileScoreFunction = jasmonate.correlationProfileScore
+else :
+  raise StandardError, 'unknown objective function "%s"' % objective_function_name
+f.close()
+objective.equilibration_length = equilibration_length
+objective.minutes_per_timestep = minutes_per_timestep
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdin
+if len(args) > 1 :
+  outfile = open(args[1], 'w')
+else :
+  outfile = sys.stdout
+if optimisation_logfile_name is None :
+  logfile = None
+else :
+  logfile = open(optimisation_logfile_name, 'w')
+if profilefile_name is None :
+  profilefile = None
+else :
+  profilefile = open(profilefile_name, 'w')
+# print str(objective)
+p = transsys.TranssysProgramParser(infile)
+# print objective(transsys_program)
+transsys_program = p.parse()
+tp_index = 0
+while transsys_program is not None :
+  jasmonate_tp = jasmonate.JasmonateTranssysProgram(transsys_program)
+  if num_restarts is None :
+    optResult = optimiser.optimise(jasmonate_tp, objective, factor_name_list, gene_name_list)
+    sys.stderr.write('%s\n' % str(objective(optResult.optimised_transsys_program)))
+    write_result(outfile, optResult)
+    if logfile is not None :
+      optResult.write_log(logfile, '%d' % tp_index, tp_index == 0, 'tp_index')
+      logfile.flush()
+    if profilefile is not None :
+      optResult.objectiveOptimum.writeProfileTable(profilefile, '%d' % tp_index, tp_index == 0, 'tp_index')
+      profilefile.flush()
+  else :
+    optimiser.randomInitRange = 1.0
+    for restart_index in xrange(num_restarts) :
+      optResult = optimiser.optimise(jasmonate_tp, objective, factor_name_list, gene_name_list)
+      sys.stderr.write('%s\n' % str(objective(optResult.optimised_transsys_program)))
+      write_result(outfile, optResult)
+      if logfile is not None :
+        optResult.write_log(logfile, '%d %d' % (tp_index, restart_index), tp_index == 0 and restart_index == 0, 'tp_index restart_index')
+        logfile.flush()
+      if profilefile is not None :
+        optResult.objectiveOptimum.writeProfileTable(profilefile, '%d %d' % (tp_index, restart_index), tp_index == 0 and restart_index == 0, 'tp_index restart_index')
+        profilefile.flush()
+  transsys_program = p.parse()
+  tp_index = tp_index + 1
