@@ -7,23 +7,78 @@ import transsys
 
 
 class RootCell(object) :
+  """Represent a generic root cell.
+"""
 
-  def __init__(self, rootProgram, initialLength) :
+  def __init__(self, rootProgram, cellLengthFactor, initialLength) :
+    # FIXME: check rootProgram for suitability
     self.state = transsys.TranssysInstance(rootProgram)
-    self.state.set_factor_concentration('celllength', initialLength)
+    self.cellLengthFactor = cellLengthFactor
+    self.state.set_factor_concentration(self.cellLengthFactor, initialLength)
 
 
-  def nextState(self) :
+  def getLength(self) :
+    return self.state.get_factor_concentration(self.cellLengthFactor)
+
+
+  def update(self) :
     s = self.state.time_series(2)
     self.state = s[-1]
 
 
-  def getLength(self) :
-    return self.state.get_factor_concentration('celllength')
+  def applyTreatment(self, treatmentFactor, treatmentConcentration) :
+    self.state.set_factor_concentration(treatmentFactor, treatmentConcentration)
+
+
+class RootEpidermisCell(RootCell) :
+  """Represent a root epidermis cell.
+"""
+
+
+  def __init__(self, rootProgram, cellLengthFactor, initialLength) :
+    super(RootEpidermisCell).__init__(rootProgram, cellLengthFactor, initialLength)
+
+
+class RootEpidermisColumn(object) :
+  """Represent a column of root epidermis cells.
+
+@ivar rootProgram the transsys program
+@ivar cellLengthFactor the factor in the transsys program that represents length
+@ivar initialLength the initial length of epidermis cells, as they are emitted from the meristem
+@ivar growthTrigger the factor in the transsys program that triggers emission of cells from the meristem
+@ivar growthThreshold the concentration of the growthTrigger factor at which a new cell is emitted
+"""
+
+  def __init__(self, rootProgram, cellLengthFactor, initialLength, growthTrigger, growthThreshold) :
+    self.rootProgram = rootProgram
+    self.initialLength = initialLength
+    self.growthTrigger = growthTrigger
+    self.growthThreshold = growthThreshold
+    self.cellList = []
+    self.meristem = transsys.TransysInstance(self.rootProgram)
+
+
+  def update(self) :
+    for rootCell in self.cellList :
+      rootCell.update()
 
 
   def applyTreatment(self, treatmentFactor, treatmentConcentration) :
-    self.state.set_factor_concentration(treatmentFactor, treatmentConcentration)
+    for rootCell in self.cellList :
+      rootCell.applyTreatment(treatmentFactor, treatmentConcentration)
+    
+
+  def addCell(self) :
+    """Add a cell to the tip of the column,
+simulating the meristem emitting a new epidermis cell for this column.
+"""
+    self.cellList = [RootEpidermisCell(self.rootProgram, self.cellLengthFactor, self.initialLength)] + self.cellList
+
+
+  def grow(self) :
+    if self.meristem.getFactorConcentration(self.growthTrigger) >= self.growthThreshold :
+      self.addCell()
+      # FIXME: possibly set the concentration of growth_trigger to some lower value
 
 
 globalTreatmentConcentration = 1.0
