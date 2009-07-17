@@ -37,7 +37,7 @@ transsys athgenome
   {
     promoter
     {
-      constitutive: 1 - 0.25 * jasmonate;
+      constitutive: 1 - 0.29 * jasmonate;
     }
     product
     {
@@ -49,7 +49,7 @@ transsys athgenome
   {
     promoter
     {
-      constitutive: ((celltimer > 20) && (celltimer < 70)) * (celltimer - 21) * 0.45;
+      constitutive: ((celltimer > 24) && (celltimer < 55)) * (celltimer - 24) * 0.35;
     }
     product
     {
@@ -57,4 +57,3 @@ transsys athgenome
     }
   }
 }
-

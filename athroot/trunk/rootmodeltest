@@ -2,6 +2,7 @@
 
 import sys
 import getopt
+import copy
 
 import transsys
 
@@ -11,14 +12,16 @@ class RootCell(object) :
 """
 
   def __init__(self, rootProgram, cellLengthFactor, initialLength) :
-    # FIXME: check rootProgram for suitability
-    self.state = transsys.TranssysInstance(rootProgram)
+    try :
+      self.state = transsys.TranssysInstance(rootProgram)
+    except :
+      print 'Error no transsys program provided'
     self.cellLengthFactor = cellLengthFactor
     self.state.set_factor_concentration(self.cellLengthFactor, initialLength)
 
 
-  def getLength(self) :
-    return self.state.get_factor_concentration(self.cellLengthFactor)
+  def getLength(self, factorName) :
+    return self.state.get_factor_concentration(factorName)
 
 
   def update(self) :
@@ -36,7 +39,7 @@ class RootEpidermisCell(RootCell) :
 
 
   def __init__(self, rootProgram, cellLengthFactor, initialLength) :
-    super(RootEpidermisCell).__init__(rootProgram, cellLengthFactor, initialLength)
+    super(RootEpidermisCell, self).__init__(rootProgram, cellLengthFactor, initialLength)
 
 
 class RootEpidermisColumn(object) :
@@ -52,10 +55,10 @@ class RootEpidermisColumn(object) :
   def __init__(self, rootProgram, cellLengthFactor, initialLength, growthTrigger, growthThreshold) :
     self.rootProgram = rootProgram
     self.initialLength = initialLength
+    self.cellLengthFactor = cellLengthFactor
     self.growthTrigger = growthTrigger
     self.growthThreshold = growthThreshold
     self.cellList = []
-    self.meristem = transsys.TransysInstance(self.rootProgram)
 
 
   def update(self) :
@@ -64,27 +67,51 @@ class RootEpidermisColumn(object) :
 
 
   def applyTreatment(self, treatmentFactor, treatmentConcentration) :
-    for rootCell in self.cellList :
-      rootCell.applyTreatment(treatmentFactor, treatmentConcentration)
-    
+    """ Apply treatment to cell column
+@param treatmentFactor: name of treatment
+@type treatmentFactor: C{String}
+@param treatmentConcentration: concentration
+@type treatmentConcentration: C{Int}
+"""
+    self.cellList.reverse()
+    cellMeristem = self.cellList[0]
+    cellMeristem.applyTreatment(treatmentFactor, treatmentConcentration) 
+    c = cellMeristem.state.time_series(len(self.cellList))
+
+    for i, rootCell in zip(c, self.cellList) :
+      rootCell.state = i
+    self.cellList.reverse()
+
 
   def addCell(self) :
     """Add a cell to the tip of the column,
 simulating the meristem emitting a new epidermis cell for this column.
 """
-    self.cellList = [RootEpidermisCell(self.rootProgram, self.cellLengthFactor, self.initialLength)] + self.cellList
+    self.cellList = self.cellList + [RootEpidermisCell(self.rootProgram, self.cellLengthFactor, self.initialLength)]
+    self.update()
 
 
   def grow(self) :
-    if self.meristem.getFactorConcentration(self.growthTrigger) >= self.growthThreshold :
+    """Simulating cell growth.
+Cell will grow until a concentration reaches a threshold
+"""
+
+    self.addCell()
+    cf = self.cellList[0]
+    while cf.state.get_factor_concentration(self.growthTrigger) <= self.growthThreshold :
       self.addCell()
-      # FIXME: possibly set the concentration of growth_trigger to some lower value
+      cf = self.cellList[0]
 
 
 globalTreatmentConcentration = 1.0
 treatmentFactorList = []
 initialLength = 5.0
-nCells = None
+celllLengthFactor = None
+growthTrigger = None
+growthThreshold = 0.0
+nCells = 50
+typeAnalysis = 'single'
+
 
 def usage() :
   print 'usage:'
@@ -92,10 +119,14 @@ def usage() :
   print '-t <treatment list>: specify treatments (whitespace separated list)'
   print '-n <number>: specify number of cells to generate'
   print '-l <number>: specify initial length of juvenile root cell'
+  print '-f <factor>: specify initial length factor of juvenile root cell'
+  print '-x <factor>: specify growth trigger factor'
+  print '-m <number>: specify growth threshold'
+  print '-i <number>: type 1) multiple, 2) single'
   print '-h: print this help and exit'
 
 
-options, args = getopt.getopt(sys.argv[1:], 'n:t:h')
+options, args = getopt.getopt(sys.argv[1:], 'n:t:l:f:x:m:i:h')
 for opt, par in options :
   if opt == '-h' :
     usage()
@@ -104,6 +135,16 @@ for opt, par in options :
     treatmentFactorList = par.split()
   elif opt == '-n' :
     nCells = int(par)
+  elif opt == '-l' :
+    initialLength = int(par)
+  elif opt == '-f' :
+    cellLengthFactor = par
+  elif opt == '-x' :
+    growthTrigger = par
+  elif opt == '-m' :
+    growthThreshold = int(par)
+  elif opt == '-i' :
+    typeAnalysis = par
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 if len(args) > 0 :
@@ -116,12 +157,27 @@ else :
   outfile = sys.stdout
 if nCells is None :
   raise StandardError, 'number of cells not specified'
-parser = transsys.TranssysProgramParser(infile)
-rootProgram = parser.parse()
-rootCell = RootCell(rootProgram, initialLength)
-for treatmentFactor in treatmentFactorList :
-  rootCell.applyTreatment(treatmentFactor, globalTreatmentConcentration)
-outfile.write('cellNo cellLength\n')
-for t in xrange(nCells) :
-  outfile.write('%d, %1.17e\n' % (t, rootCell.getLength()))
-  rootCell.nextState()
+rootProgram = transsys.TranssysProgramParser(infile).parse()
+
+
+if typeAnalysis == 'single' :
+  rootCell = RootCell(rootProgram, cellLengthFactor, initialLength)
+  if len(treatmentFactorList) > 0 :
+    for treatmentFactor in treatmentFactorList :
+      rootCell.applyTreatment(treatmentFactor, globalTreatmentConcentration)
+  outfile.write('cellNo cellLength\n')
+  for t in xrange(nCells) :
+    outfile.write('%d, %1.17e\n' % (t, rootCell.getLength(cellLengthFactor)))
+    rootCell.update()
+
+else :
+  rootCell = RootEpidermisColumn(rootProgram, cellLengthFactor, initialLength, growthTrigger, growthThreshold)
+  rootCell.grow()
+  if len(treatmentFactorList) > 0 :
+    for treatmentFactor in treatmentFactorList :
+      rootCell.applyTreatment(treatmentFactor, globalTreatmentConcentration)
+
+  outfile.write('cellNo cellLength\n')
+  for t, v in enumerate(reversed(rootCell.cellList)) :
+    outfile.write('%d, %1.17e\n' % (t, v.getLength(cellLengthFactor)))
+
