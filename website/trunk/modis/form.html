@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Dynamic Order Form</title>
+<script language="JavaScript" type="text/javascript">
+
+
+function Show(a) {
+  obj=document.getElementById("shipto");
+  if (a) obj.style.display="block";
+    else obj.style.display="none";
+}
+
+
+function Showtp(a) {
+  obj=document.getElementById("etype");
+  if (a) obj.style.display="block";
+    else obj.style.display="none";
+}
+
+
+function validatename() {
+  if (guided.t_name.value.length < 1 ) {
+    alert("Please enter transsys name.");
+    return false;
+  }
+  return true;
+}
+
+
+function validate() {
+  var t = expert.elements["t_experiment"];
+  var s;
+  for(var i = 0; i < t.length; i++) {
+    if(t[i].checked) 
+      s = t[i].value;
+  }
+  if (s == 'm_fitting') {
+    if (document.expert.experiment_list.value.length < 1 ) {
+      alert("Please enter list of experiments.");
+      return false;
+    }
+    else if (document.expert.tp1.value.length < 1 ) {
+      alert("Please enter your first transsys model.");
+      return false;
+    }
+    else if (document.expert.tp2.value.length < 1 ) {
+      alert("Please enter your second transsys model.");
+      return false;
+    }
+    else
+      return true;
+  }
+  else if (s == 'demo') {
+    if (document.expert.tp1.value.length < 1 ) {
+      alert("Please enter your transsys model.");
+      return false;
+    }
+    else 
+      return true;
+  }
+  else
+    alert("no experiment type has been selected")
+}
+
+
+</script>
+</head>
+<body>
+<h1 align='center'>GRN simulation using transsys program</h1><br><br>
+<h2>Guided transsys program entry</h2><p>
+<form ENCTYPE='multipart/form-data' name="guided" action='guided.html' method='get' onsubmit='return validatename()'  target = '_blank' >
+<b>transsys program name:</b> <input type='text' name='t_name' size='20'><br><br>
+<input type='submit' value='Submit'></form><hr>
+<h2>Direct entry of transsys program code (expert mode)</h2><p>
+<h3>transsys program code</h3><p>
+<form ENCTYPE='multipart/form-data' name='expert' action='/cgi-bin/entry.cgi' method='post' onsubmit='return validate();' >
+<textarea name='tp1' cols='70' rows=20></textarea><br><br>
+<INPUT TYPE = hidden NAME = 'action1' VALUE ='display1'>
+<h3>Experiment type:</h3><p>
+<input type='radio' name='t_experiment' value='demo' checked onClick='Showtp(0);'> 
+<b>Demo (default)</b>
+<input type='radio' name='t_experiment' value='m_fitting' onClick='Showtp(1);'> 
+<b>Model fitting</b><p>
+<div ID='etype' style='display:none;'>
+<br>
+<table>
+<tr><td><h3>Alternative transsys program code</h3></td>
+<td><h3>List of experiments</h3></td></tr>
+<tr><td><textarea name='tp2' cols='70' rows=20></textarea></td>
+<td><textarea name='experiment_list' cols='30' rows=20></textarea></td></tr></table>
+</div>
+<input type='submit' value='Submit'><hr>
+</form>
+</body>
+</html>
+
