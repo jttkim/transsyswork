@@ -1,0 +1,163 @@
+#!/usr/bin/python
+
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+from math import sqrt
+import trsysmodis
+
+
+def prepare_box(f, Box) :
+  l = len(Box)
+  w = len(Box[0])
+  for i in range(0,l) :
+      f.write('Restart%s '%i)
+  f.write('\n')
+  for i in range(0,w) :
+    for j in range(0,l) :
+      f.write('%s '%Box[j][i])
+    f.write('\n')
+     
+
+def write_result(f, optResult) :
+ f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
+ f.write('%s\n' %  str(optResult.optimised_transsys_program))
+ f.flush()
+
+
+def statistic_mean(x) :
+  print x
+  ave_vec = 0
+  if len(x)==1 :
+   ave_vec == x[0]
+  else :
+    for i in x :
+      ave_vec = ave_vec + i
+    ave_vec = ave_vec / len(x)
+  return ave_vec
+
+
+def statistic_median(x) :
+  median_vec = 0
+  if len(x)==1 :
+    median_vec = x[0]
+  else :
+    m = len(x) / 2
+    x.sort() 
+    median_vec = x[m]
+  return median_vec 
+
+
+def statistic_variance(x) :
+  var_vec = 0
+  if len(x)==1 :
+    var_vec = x[0]
+  else :
+    var_vec = 0
+    for i in x :
+      var_vec = var_vec + ((i - statistic_mean(x)))**2
+    var_vec = var_vec / (len(x)-1)
+  return var_vec 
+
+
+
+num_restarts = None
+equilibration_length = None
+network_name = None
+expr_data = None
+pheno_data = None
+feature_data = None
+gradient = None
+f_distance = None
+verbose = 0
+
+optlist, args = getopt.getopt(sys.argv[1:], 'r:e:n:t:b:x:p:f:g:u:v:lvh')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-r  <int>: specify number of random restarts'
+    print '-e  <int>: specify time steps for equilibration'
+    print '-n  <int>: specify number of networks'
+    print '-t  <int>: specify name of the network'
+    print '-b  <int>: specify vertices'
+    print '-x  <str>: specify gene expression profile file name'
+    print '-p  <str>: specify pheno data file name'
+    print '-f  <str>: specify feature data file name'
+    print '-g  <str>: specify gradient file name'
+    print '-u  <str>: 1: sum_squares, 2: correlation, 3: euclidean'
+    print '-v  <int>: Verbose'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-r' :
+    num_restarts = int(par)
+  elif opt == '-e' :
+    equilibration_length = int(par)
+  elif opt == '-n' :
+    number_network = int(par)
+  elif opt == '-t' :
+    name_network = par
+  elif opt == '-b' :
+    vertice = int(par)
+  elif opt == '-x' :
+    expr_data = par
+  elif opt == '-p' :
+    pheno_data = par
+  elif opt == '-f' :
+    feature_data = par
+  elif opt == '-g' :
+    gradient = par
+  elif opt == '-u' :
+    f_distance = par
+  elif opt == '-v' :
+    verbose = int(par)
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+
+if len(args) > 0 :   
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdout
+if len(args) > 1 :   
+  outfile = open(args[1], 'w')
+else :
+  outfile = sys.stdout
+basename = args[2]
+
+logfile = file("logfile.txt",'w')
+g = open(gradient, 'r')
+x = open(expr_data, 'r')
+p = open(pheno_data, 'r')
+f = open(feature_data, 'r')
+
+optimiser = transsys.optim.parse_optimiser(g)
+optimiser.verbose = verbose
+
+expression_set = trsysmodis.ExpressionSet()
+expression_set.read(x, p, f)
+
+objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length)
+if f_distance == 'sum_squares' :
+  objective_function.distance_function = trsysmodis.distance_sum_squares
+elif f_distance == 'correlation' :
+  objective_function.distance_function = trsysmodis.distance_correl
+elif f_distance == 'euclidean' :
+  objective_function.distance_function = trsysmodis.distance_euclidean
+else :
+  raise StandardError, 'unknown distance %d' % f_distance
+  
+optimiser.randomInitRange = 1.0
+transsys_program = transsys.TranssysProgramParser(infile).parse()
+for restart_index in xrange(num_restarts) :
+  opt_result = optimiser.optimise(transsys_program, objective_function)
+  sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
+  opt_result.write_log(logfile, '%d' %restart_index)
+  logfile.flush()
+  transsys_program = opt_result.optimised_transsys_program
+  write_result(outfile, opt_result)
+
+x = open(args[1], 'r')
+transsys_program = transsys.TranssysProgramParser(x).parse()
+objective_function.write_simulated_set(transsys_program, basename)

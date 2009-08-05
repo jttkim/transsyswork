@@ -1,0 +1,51 @@
+#!/usr/bin/python
+
+import copy
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+
+#./createTranssysProgram.py -t transsys_program.tra -m 10 -p para.dat
+transsys_program = None
+parameters = None
+model = None
+gremove = None
+
+optlist, args = getopt.getopt(sys.argv[1:], 't:m:g:p:lvh')
+num_operation=10
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-t <Transsys program name>: Transsys program name'
+    print '-m:<num>: specify how many transsys program models are to be created'
+    print '-g:<num>: gene to remove \'gdummy\' '
+    print '-p:<Transsys program parameters>: Transsys program parameters'
+    print '-h: print this help and exit'
+    sys.exit()
+  if opt == '-t' :
+    transsys_program = par
+  elif opt == '-m' :
+    model = int(par)
+  elif opt == '-g' :
+    gremove = par
+  elif opt == '-p' :
+    parameters = par
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+# Validate input
+p = open(parameters, 'r')
+
+ran = transsys.RandomTranssysParameters()
+ran.parse(p)
+for i in range(1,model+1) :
+  model = file('%s%02d.tra'%(transsys_program,i),'w')
+  transsys_program = ran.generate_transsys('Transsys_Model%s'%i)
+  if gremove is not None :
+    i = transsys_program.find_gene_index(gremove)
+    del transsys_program.gene_list[i]
+  model.write('%s'%transsys_program)
+
+
+

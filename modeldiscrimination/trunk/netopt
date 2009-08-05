@@ -1,0 +1,170 @@
+#!/usr/bin/python
+
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+from math import sqrt
+import trsysmodis
+
+
+def write_result(f, optResult) :
+ f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
+ f.write('%s\n' %  str(optResult.optimised_transsys_program))
+ f.flush()
+
+
+def rw_operation() :
+  sequence = [0]
+  for i in range(0,20) :
+    n = int(round(1.2**i))
+    if n not in sequence:
+      sequence.append(n)
+  return sequence
+
+
+logratio_mode = False
+logratio_offset = 0.01
+num_restarts = None
+equilibration_length = None
+network_name = None
+target_expr_data = None
+target_pheno_data = None
+target_feature_data = None
+gradient = None
+f_distance = None
+verbose = 0
+transformerfile = None
+logfile = None
+finalparam = None
+
+
+optlist, args = getopt.getopt(sys.argv[1:], 'l:o:r:e:n:s:t:N:E:b:x:p:f:g:T:u:v:lvh')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-l: logratio mode'
+    print '-o <offset>: specify logratio offset'
+    print '-r  <int>: specify number of random restarts'
+    print '-e  <int>: specify time steps for equilibration'
+    print '-n  <int>: specify number of networks'
+    print '-s  <int>: specify number of reshuffles'
+    print '-t  <int>: specify name of the network'
+    print '-N  <int>: specify number of nodes'
+    print '-E  <int>: specify number of edges'
+    print '-x  <str>: specify gene expression profile file name'
+    print '-p  <str>: specify pheno data file name'
+    print '-f  <str>: specify feature data file name'
+    print '-g  <str>: specify gradient file name'
+    print '-T  <transformer specfile>: specify transformer specification file to parse'
+    print '-u  <str>: 1: sum_squares, 2: correlation, 3: euclidean'
+    print '-V  <int>: Verbose'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-l' :
+    logratio_mode = True
+  elif opt == '-o' :
+    logratio_offset = float(par)
+  elif opt == '-r' :
+    num_restarts = int(par)
+  elif opt == '-e' :
+    equilibration_length = int(par)
+  elif opt == '-n' :
+    rw_repeticion = int(par)
+  elif opt == '-s' :
+    reshuffles = int(par)
+  elif opt == '-t' :
+    name_network = par
+  elif opt == '-N' :
+    node = int(par)
+  elif opt == '-E' :
+    edge = int(par)
+  elif opt == '-x' :
+    target_expr_data = par
+  elif opt == '-p' :
+    target_pheno_data = par
+  elif opt == '-f' :
+    target_feature_data = par
+  elif opt == '-g' :
+    gradient = par
+  elif opt == '-T' :
+    transformerfile = par
+  elif opt == '-u' :
+    f_distance = par
+  elif opt == '-v' :
+    verbose = int(par)
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+
+if len(args) > 0 :   
+  logfile = open(args[0], 'w')
+if len(args) > 1 :   
+  finalparam = open(args[1], 'w')
+
+logo = file('%slogo.txt'%name_network,'w')
+
+g = open(gradient, 'r')
+optimiser = transsys.optim.parse_optimiser(g)
+g.close
+
+if transformerfile is not None :
+  g = open(transformerfile, 'r')
+  optimiser.transformer = transsys.optim.parse_parameter_transformer(g)
+g.close()
+
+optimiser.verbose = verbose
+
+logo.write('rw_operation\trw_repetition\tfitness\n')
+index = 0
+
+x = open('%s'%target_expr_data, 'r')
+p = open('%s'%target_pheno_data, 'r')
+f = open('%s'%target_feature_data, 'r')
+expression_set = trsysmodis.ExpressionSet()
+expression_set.read(x, p, f)
+objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length)
+
+if f_distance == 'sum_squares' :
+  objective_function.distance_function = trsysmodis.distance_sum_squares
+elif f_distance == 'correlation' :
+  objective_function.distance_function = trsysmodis.distance_correl
+elif f_distance == 'euclidean' :
+  objective_function.distance_function = trsysmodis.distance_euclidean
+else :
+  raise StandardError, 'unknown distance %d' % f_distance
+
+if logratio_mode :
+  objective_function.distance_measu = expression_set.logratio_divergence
+  expression_set.expression_data.logratio_offset = logratio_offset
+else : 
+  objective_function.distance_measu = expression_set.divergence
+
+
+for i in rw_operation() :
+  j = 1
+  while j <= rw_repeticion :
+    optimiser.randomInitRange = 1.0
+    if i == 0 :
+      print 'Using %s.tra'%name_network
+      model = open('%s.tra'%name_network,'r')
+    else : 
+      print 'Using %s%02d%02d.tra'%(name_network,i,j) 
+      model = open('%s%02d%02d.tra'%(name_network,i,j),'r')
+
+    transsys_program = transsys.TranssysProgramParser(model).parse()
+
+    for restart_index in xrange(num_restarts) :
+      opt_result = optimiser.optimise(transsys_program, objective_function)
+      logo.write('%d\t%d\t%f\n' %(i,j,opt_result.objectiveOptimum.fitness))
+      sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
+      if finalparam is not None :
+        write_result(finalparam, opt_result)
+      if logfile is not None :
+        opt_result.write_log(logfile, 'tp_index')
+    if i == 0 :
+      j = rw_repeticion + 1
+    else :
+      j = j + 1
+

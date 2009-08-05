@@ -1,0 +1,100 @@
+#!/usr/bin/python
+
+###########
+# MapData
+###########
+
+import getopt
+import sys
+import os
+
+
+# Subversion keywords.
+# $Rev::               $:  Revision of last commit
+# $Author::            $:  Author of last commit
+# $Date$:  Date of last commit
+
+"""General description here.
+Mapping of Affymetrix IDs to Locus name
+@author: Anyela Camargo
+@email: a.camargo-rodriguez@cmp.uea.ac.uk
+@organisation: University of East Anglia
+@since: <<DATE>>
+@license: GNU General Public Lisence 2 or newer.
+@contact: U{XXXXX<mailto:xxxx@cmp.uea.ac.uk>}
+@version: $Id$"""
+
+
+# Version Information.
+__version__ = "$Id$"
+
+# Name.
+__name__ = sys.argv[0]
+
+def usage() :
+  print """Usage:"""
+  print __name__, """[options] ARGUMENTS
+Options:
+  -h, --help : Print this screen and exit.
+  -v, --version : Print the program revision information.
+ARGUMENTS"""
+
+optlist, args = getopt.getopt(sys.argv[1:], 'g:lvh')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-g  <Int> number of genes'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-g' :
+    genes = int(par)
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+if len(args) > 0 :
+  e = open(args[0], 'w')
+else :
+  e = sys.stdout
+if len(args) > 1 :
+  p = open(args[1], 'w')
+else :
+  p = sys.stdout
+if len(args) > 2 :
+  f = open(args[2], 'w')
+else :
+  f = sys.stdout
+
+
+#create expression data
+
+#e.write('row.names\twt')
+for i in range(0,genes) :
+   e.write('\ta%02d'%i)
+e.write('\n')
+for gene in range(0,genes) :
+  e.write('f%04d'%gene)
+  for array in range(0,genes+1) :
+    e.write('\t%d.2'%0.00)
+  e.write('\n')
+    
+#create pheno data
+
+p.write('mutant\tgene\ttreatment')
+p.write('\n')
+p.write('wt\twildtype\tnone\tnone')
+p.write('\n')
+for gene in range(0,genes) :
+  p.write('a%02d\tknockout\tg%04d\tnone'%(gene,gene))
+  p.write('\n')
+
+#create feature data
+
+#f.write('row.names')
+f.write('\n')
+for factor in factor_list :
+  f.write('%s'%factor.list)
+  f.write('\n')
+
+
+
+
