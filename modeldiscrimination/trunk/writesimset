@@ -1,0 +1,75 @@
+#!/usr/bin/python
+
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+from math import sqrt
+import trsysmodis
+import random
+
+
+#./modelopt -r 2 -e 1000 -n 2 -m 'model_transsys' exp_data.txt pheno_data.txt grad.txt outfile.txt
+
+
+num_restarts = None
+equilibration_length = None
+nu_m = None
+model_ame = None
+target_expr_data = None
+target_pheno_data = None
+target_feature_data = None
+f_distance = None
+rndseed = None
+
+optlist, args = getopt.getopt(sys.argv[1:], 'r:x:p:f:e:lvh')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-r <int>: specify random seed'
+    print '-x <str>: specify gene expression profile file name'
+    print '-p <str>: specify pheno data file name'
+    print '-f <str>: specify feature data file name'
+    print '-e <int>: Equilibration length'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-r' :
+    rndseed = int(par)
+  elif opt == '-e' :
+    equilibration_length = int(par)
+  elif opt == '-x' :
+    target_expr_data = par
+  elif opt == '-p' :
+    target_pheno_data = par
+  elif opt == '-f' :
+    target_feature_data = par
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+rng = random.Random(rndseed)
+x = open(target_expr_data, 'r')
+p = open(target_pheno_data, 'r')
+f = open(target_feature_data, 'r')
+
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdin
+outfile_basename = args[1]
+
+
+expression_set = trsysmodis.ExpressionSet()
+expression_set.read(x, p, f)
+objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length)
+
+if f_distance == 1 :
+  objective_function.distance_function = trsysmodis.distance_sum_squares
+elif f_distance == 2 :
+  objective_function.distance_function = trsysmodis.distance_correl
+else :
+  objective_function.distance_function = trsysmodis.distance_euclidean
+
+transsys_program = transsys.TranssysProgramParser(infile).parse()
+objective_function.write_simulated_set(transsys_program, outfile_basename)
+# objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng)

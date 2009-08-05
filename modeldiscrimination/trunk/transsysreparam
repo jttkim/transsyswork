@@ -1,0 +1,64 @@
+#!/usr/bin/python
+
+import copy
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+import random
+import pdb
+
+
+transsys_program = None
+parameters = None
+model = None
+rndseed = 1
+random_change = None
+transformerfile = None
+
+optlist, args = getopt.getopt(sys.argv[1:], 't:n:c:r:T:lvh')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-t: <Transsys program name>: Transsys program name'
+    print '-n: <Network number>: Network number'
+    print '-c: <Random changes>: Random changes'
+    print '-r: <Random seed>: Specify random seed number'
+    print '-T: <Parameter transformer>: Specify parameter transformer file'
+    print '-h: print this help and exit'
+    sys.exit()
+  if opt == '-t' :
+    transsys_name = par
+  elif opt == '-n' :
+    network_number = int(par)
+  elif opt == '-c' :
+    random_change = int(par)
+  elif opt == '-r' :
+    rndseed = int(par)
+  elif opt == '-T' :
+    transformerfile = par
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdout
+
+rng = random.Random(rndseed)
+tp = transsys.TranssysProgramParser(infile).parse()
+factor_list = tp.factor_names()
+gene_list = tp.gene_names()
+randomInitRange = 1.0
+
+if transformerfile is not None :
+  g = open(transformerfile, 'r')
+  transformer = transsys.optim.parse_parameter_transformer(g)
+g.close()
+opt = transsys.optim.AbstractOptimiser(rng, transformer, randomInitRange, verbose = 0)
+
+for i in range (1,random_change+1) :
+  opt.initialiseParameterTransformer(tp, factor_list, gene_list)
+  model = file('%s%02d.tra'%(transsys_name,i),'w')
+  model.write('%s'%tp)
