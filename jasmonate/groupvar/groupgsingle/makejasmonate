@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+import sys
+import getopt
+import random
+
+import transsys
+import jasmonate
+
+
+def usage() :
+  print 'usage: [prg|blank|rnd|mut] [<outfile>]'
+  print 'options:'
+  print '-d: add dummy genes "encoding" jasmonate and wounding'
+  print '-n <genelist>: specify comma-separated list of target genes'
+  print '-m <number>: specify number of mutations'
+  print '-s <seed>: specify random seed'
+  print '-h: print this help and exit'
+
+
+targetNameList = None
+rndseed = None
+numMutations = None
+dummyGenes = False
+options, args = getopt.getopt(sys.argv[1:], 'n:s:m:dh')
+for opt, par in options :
+  if opt == '-h' :
+    usage()
+    sys.exit()
+  elif opt == '-d' :
+    dummyGenes = True
+  elif opt == '-n' :
+    targetNameList = map(lambda n: n.strip(), par.split(','))
+  elif opt == '-s' :
+    rndseed = int(par)
+  elif opt == '-m' :
+    numMutations = int(par)
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+if len(args) < 1 :
+  usage()
+  raise StandardError, 'program type not specified'
+if len(args) > 1 :
+  outfile = open(args[1], 'w')
+else :
+  outfile = sys.stdout
+prgtype = args[0]
+g = jasmonate.JasmonateTranssysProgramFactory()
+if prgtype == 'prg' :
+  outfile.write(str(g.getJasmonateTranssysProgram(dummyGenes, targetNameList)))
+elif prgtype == 'blank' :
+  outfile.write(str(g.getConstitutiveOnlyJasmonateTranssysProgram(dummyGenes, targetNameList)))
+elif prgtype == 'rnd' :
+  if rndseed is None :
+    raise StandardError, 'random seed not specified'
+  outfile.write(str(g.getRandomRewiredJasmonateTranssysProgram(random.Random(rndseed), dummyGenes, targetNameList)))
+elif prgtype == 'mut' :
+  if rndseed is None :
+    raise StandardError, 'random seed not specified'
+  if numMutations is None :
+    raise StandardError, 'number fo mutations not specified'
+  outfile.write(str(g.getMutatedJasmonateTranssysProgram(numMutations, random.Random(rndseed), dummyGenes, targetNameList)))
+else :
+  usage()
+  raise StandardError, 'unknown program type "%s"' % prgtype
