@@ -89,8 +89,8 @@ class JasmonateTranssysProgramFactory(object) :
   geneGroupDict = {
     'a': ['At1g18710', 'At1g23080', 'At1g74020', 'At2g34810', 'At4g11290', 'At4g22880', 'At4g23600', 'At5g13930', 'At5g19890', 'At5g57090'],
     'f': ['At1g49570', 'At4g11320'],
-    'c': ['At3g23050', 'At4g35770'],
-    'g': ['At4g17880', 'At5g62470'],
+    'c': ['At3g23050', 'At4g35770', 'At5g62470'],
+    'g': ['At4g17880'],
     'b': ['At1g17740', 'At2g21130', 'At2g28900', 'At2g42530', 'At4g24360', 'At5g63790'],
     'e': ['At1g20440', 'At2g26690', 'At2g40900', 'At3g61890', 'At4g34000', 'At4g37760', 'At5g06760'],
     'd': ['At2g23320', 'At2g29500', 'At2g38470', 'At4g11280']
