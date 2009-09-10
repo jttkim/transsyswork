@@ -66,30 +66,30 @@ optimisationPlotEpsPolishedRandomRewired <- function(baseFormat, ylab)
 
 
 jdata <- readJData("coi1_affy_mod_final.csv");
-jGeneGroupOriginal <- list(
-                           a = c("At1g18710", "At1g23080", "At1g74020", "At2g34810", "At4g11290", "At4g22880", "At4g23600", "At5g13930", "At5g19890", "At5g57090"),
-                           b = c("At1g17740", "At2g21130", "At2g28900", "At2g42530", "At4g24360", "At5g63790", "At4g35770"),
-                           c = c("At3g23050", "At4g35770"),
-                           d = c("At2g23320", "At2g29500", "At2g38470", "At4g11280"),
-                           e = c("At1g20440", "At2g26690", "At2g40900", "At3g61890", "At4g34000", "At4g37760", "At5g06760"),
-                           f = c("At1g49570", "At4g11320"),
-                           g = c("At4g17880", "At5g62470")
-                           );
-jGeneGroupBc <- list(
-                     a = c("At1g18710", "At1g23080", "At1g74020", "At2g34810", "At4g11290", "At4g22880", "At4g23600", "At5g13930", "At5g19890", "At5g57090"),
-                     b = c("At1g17740", "At2g21130", "At2g28900", "At2g42530", "At4g24360", "At5g63790"),
-                     bc = "At4g35770",
-                     c = "At3g23050",
-                     d = c("At2g23320", "At2g29500", "At2g38470", "At4g11280"),
-                     e = c("At1g20440", "At2g26690", "At2g40900", "At3g61890", "At4g34000", "At4g37760", "At5g06760"),
-                     f = c("At1g49570", "At4g11320"),
-                     g = c("At4g17880", "At5g62470")
-                     );
+## jGeneGroupOriginal <- list(
+##                            a = c("At1g18710", "At1g23080", "At1g74020", "At2g34810", "At4g11290", "At4g22880", "At4g23600", "At5g13930", "At5g19890", "At5g57090"),
+##                            b = c("At1g17740", "At2g21130", "At2g28900", "At2g42530", "At4g24360", "At5g63790", "At4g35770"),
+##                            c = c("At3g23050", "At4g35770"),
+##                            d = c("At2g23320", "At2g29500", "At2g38470", "At4g11280"),
+##                            e = c("At1g20440", "At2g26690", "At2g40900", "At3g61890", "At4g34000", "At4g37760", "At5g06760"),
+##                            f = c("At1g49570", "At4g11320"),
+##                            g = c("At4g17880", "At5g62470")
+##                            );
+## jGeneGroupBc <- list(
+##                      a = c("At1g18710", "At1g23080", "At1g74020", "At2g34810", "At4g11290", "At4g22880", "At4g23600", "At5g13930", "At5g19890", "At5g57090"),
+##                      b = c("At1g17740", "At2g21130", "At2g28900", "At2g42530", "At4g24360", "At5g63790"),
+##                      bc = "At4g35770",
+##                      c = "At3g23050",
+##                      d = c("At2g23320", "At2g29500", "At2g38470", "At4g11280"),
+##                      e = c("At1g20440", "At2g26690", "At2g40900", "At3g61890", "At4g34000", "At4g37760", "At5g06760"),
+##                      f = c("At1g49570", "At4g11320"),
+##                      g = c("At4g17880", "At5g62470")
+##                      );
 jGeneGroup <- list(
                    a = c("At1g18710", "At1g23080", "At1g74020", "At2g34810", "At4g11290", "At4g22880", "At4g23600", "At5g13930", "At5g19890", "At5g57090"),
                    f = c("At1g49570", "At4g11320"),
-                   c = c("At3g23050", "At4g35770"),
-                   g = c("At4g17880", "At5g62470"),
+                   c = c("At3g23050", "At4g35770", "At5g62470"),
+                   g = c("At4g17880"),
                    b = c("At1g17740", "At2g21130", "At2g28900", "At2g42530", "At4g24360", "At5g63790"),
                    e = c("At1g20440", "At2g26690", "At2g40900", "At3g61890", "At4g34000", "At4g37760", "At5g06760"),
                    d = c("At2g23320", "At2g29500", "At2g38470", "At4g11280")
@@ -113,13 +113,13 @@ jdata.aggr.log.gmeans <- groupMeans(jdata.aggr.log, jGeneGroup);
 jdata.gmeans <- groupMeans(jdata, jGeneGroup);
 jdata.mnorm.gmeans <- groupMeans(jdata.mnorm, jGeneGroup);
 
-integratedPanelsEps(jdata.aggr, jGeneGroupOriginal, "jdata_aggr_%s_panel.eps");
-integratedPanelsEps(jdata.aggr.mnorm, jGeneGroupOriginal, "jdata_aggr_mnorm_%s_panel.eps");
-integratedPanelsEps(jdata.aggr.log, jGeneGroupOriginal, "jdata_aggr_log_%s_panel.eps");
-integratedPanelsEps(jdata, jGeneGroupOriginal, "jdata_%s_panel.eps");
+integratedPanelsEps(jdata.aggr, jGeneGroup, "jdata_aggr_%s_panel.eps");
+integratedPanelsEps(jdata.aggr.mnorm, jGeneGroup, "jdata_aggr_mnorm_%s_panel.eps");
+integratedPanelsEps(jdata.aggr.log, jGeneGroup, "jdata_aggr_log_%s_panel.eps");
+integratedPanelsEps(jdata, jGeneGroup, "jdata_%s_panel.eps");
 ## epsdevice("jdata_raw_groupdegree.eps");
 ## par(cex.axis = 0.7);
-## groupDegreeBoxplot(jdata, jGeneGroupOriginal);
+## groupDegreeBoxplot(jdata, jGeneGroup);
 ## dev.off();
 ## r <- unlist(getMostRepresentative(jdata, jGeneGroup));
 ## cat(file = "mostrepresentative.txt", sprintf("%s: %s", names(r), r), sep = "\n");
