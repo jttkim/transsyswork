@@ -113,13 +113,13 @@ jdata.aggr.log.gmeans <- groupMeans(jdata.aggr.log, jGeneGroup);
 jdata.gmeans <- groupMeans(jdata, jGeneGroup);
 jdata.mnorm.gmeans <- groupMeans(jdata.mnorm, jGeneGroup);
 
-integratedPanelsEps(jdata.aggr, jGeneGroupOriginal, "jdata_aggr_%s_panel.eps");
-integratedPanelsEps(jdata.aggr.mnorm, jGeneGroupOriginal, "jdata_aggr_mnorm_%s_panel.eps");
-integratedPanelsEps(jdata.aggr.log, jGeneGroupOriginal, "jdata_aggr_log_%s_panel.eps");
-integratedPanelsEps(jdata, jGeneGroupOriginal, "jdata_%s_panel.eps");
+integratedPanelsEps(jdata.aggr, jGeneGroup, "jdata_aggr_%s_panel.eps");
+integratedPanelsEps(jdata.aggr.mnorm, jGeneGroup, "jdata_aggr_mnorm_%s_panel.eps");
+integratedPanelsEps(jdata.aggr.log, jGeneGroup, "jdata_aggr_log_%s_panel.eps");
+integratedPanelsEps(jdata, jGeneGroup, "jdata_%s_panel.eps");
 ## epsdevice("jdata_raw_groupdegree.eps");
 ## par(cex.axis = 0.7);
-## groupDegreeBoxplot(jdata, jGeneGroupOriginal);
+## groupDegreeBoxplot(jdata, jGeneGroup);
 ## dev.off();
 ## r <- unlist(getMostRepresentative(jdata, jGeneGroup));
 ## cat(file = "mostrepresentative.txt", sprintf("%s: %s", names(r), r), sep = "\n");
