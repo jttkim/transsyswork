@@ -4,7 +4,7 @@
 # dreamhost
 import sys
 
-sys.path = ['/home/jtkim/lib/python'] + sys.path
+sys.path = ['/home/bkx08wju/'] + sys.path
 
 # Import the CGI module
 import cgi, cgitb
@@ -13,6 +13,9 @@ import trsysmodis
 import StringIO
 import trsysweb
 import os
+if os.environ.get('MPLCONFIGDIR') is None :
+  f = StringIO.StringIO()	
+  os.environ['MPLCONFIGDIR'] = '/var/www/'
 cgitb.enable()
 import Gnuplot
 import random
@@ -35,7 +38,7 @@ def exper_displaydata(tp1, tp2, form):
   print "<BODY BGCOLOR = white>\n"
   print "<H2 align='center'> Transsys program assemblage </H1><br>"
   print "<form ENCTYPE='multipart/form-data' action='/cgi-bin/entry.cgi' method='post'>"
-  print "<hr><h4>Pheno data</h4>"
+  print "<hr><h3>Pheno data</h3>"
   print "<table border='1'>"
   print "<td>Experiment</td><td>Type</td><td>Gene</td></tr>"
   for j in range(len(experiment_list)) :
@@ -72,17 +75,37 @@ def exper_displaydata(tp1, tp2, form):
   print "<textarea name='tp2' style='display:none'>%s"%tp2
   print "</textarea>"
 
-  print "<h4>Expression data</h4>"
+  print "<h3>Expression data</h3>"
   print "<hr><table border='1'><tr><td><textarea name='expr' cols='50' rows='10'>"
   print "wt nkg1"
   print "somefactor 0.5 0.0"
   print "</textarea></td></tr></table><hr>"
   print "<table border='1'><tr><td>"
   print "Equilibration length: <input type='text' name='equilibration' value='1000'><p>"
-  print "<p>Number of restarts: <input type='text' name='num_restarts' value=5><p>"
+  print "<p>Number of restarts: <input type='text' name='num_restarts' size=10><p>"
   print "Distance measurement: <p>"
   print "<input type='radio' name='f_distance' value='euclidean' /> Euclidean"
   print "<p><input type='radio' name='F_distance' value='correlation' /> Correlation</td></tr></table>"
+
+  print "<br><h3>Network parameters:</h3>"
+  print "<h4>Select function</h4>"
+  print "<input type='radio' name='tfunction' value='ArctanFunction' /> ArctanFunction"
+  print "<input type='radio' name='tfunction' value='TransformationFunction' /> TransformationFunction"
+  print "<input type='radio' name='tfunction' value='ExponentialFunction' /> ExponentialFunction"
+  print "<input type='radio' name='tfunction' value='SigmoidFunction' /> SigmoidFunction"
+  print "<input type='radio' name='tfunction' value='LowerBoundFunction' /> LowerBandFunction"
+
+  print "<h4>Input parameters</h4>"
+  print "<table><tr><td></td><td><div align='center'>min</div></td><td><div align='center'>mx</div></td></tr>"
+  print "<tr><td>decay</td><td><input type='text' name='decaymin' size=10></td><td><input type='text' name='decaymx' size=10></td></tr>"
+  print "<tr><td>diffusibility</td><td><input type='text' name='diffusibilitymin' size=10></td><td><input type='text' name='diffusibilitymx' size=10></td></tr>"
+  print "<tr><td>constitutive</td><td><input type='text' name='constitutivemin' size=10></td><td><input type='text' name='constitutivemx' size=10></td></tr>"
+  print "<tr><td>aspec</td><td><input type='text' name='aspecmin' size=10></td><td><input type='text' name='aspecmx' size=10></td></tr>"
+  print "<tr><td>amax</td><td><input type='text' name='amaxmin' size=10></td><td><input type='text' name='amaxmx' size=10></td></tr>"
+  print "<tr><td>rspec</td><td><input type='text' name='rspecmin' size=10></td><td><input type='text' name='rspecmx' size=10></td></tr>"
+  print "<tr><td>rmax</td><td><input type='text' name='rmaxmin' size=10></td><td><input type='text' name='rmaxmx' size=10></td></tr>"
+  print "</table>" 
+
   print "<INPUT TYPE = hidden NAME = 'action1' VALUE = 'dis'>"
   print "<p><br><input type='submit' value='Submit' />"
   print "</form><hr>"
@@ -99,19 +122,18 @@ def write_result(f, optResult) :
 
 
 def readprogram(form) :
-    
   g = open('optspec.dat', 'r')
   optimiser = transsys.optim.parse_optimiser(g)
   g.close
   
-  g = open('transformerfile.dat', 'r')
-  optimiser.transformer = transsys.optim.parse_parameter_transformer(g)
-  g.close() 
- 
   wm = trsysweb.webtool(form)
   x = wm.get_expr_data()
   p = wm.get_pheno_data()
   f = wm.get_feature_data()
+  t = wm.get_transformer_data()
+  optimiser.transformer = transsys.optim.parse_parameter_transformer(t)
+
+
   equilibration_length = wm.get_equilibration_length()
   f_distance = wm.get_f_distance()
   num_restarts = wm.get_num_restarts()
@@ -178,7 +200,6 @@ def validate_model(tp1, tp2) :
 
 
 def plotImage(transsys_program) :
-
   a = []
   ti = transsys.TranssysInstance(transsys_program)
   ts = ti.time_series(500)
@@ -186,17 +207,18 @@ def plotImage(transsys_program) :
     a.append(value.factor_concentration)
 
   fig = matplotlib.pyplot.figure()
+  matplotlib.pyplot.ioff()
   matplotlib.pyplot.plot(a)
-  matplotlib.pyplot.ylabel("Expression level")
-  matplotlib.pyplot.xlabel("Time step")
-  matplotlib.pyplot.title("Simulated gene expression")
+  matplotlib.pyplot.ylabel("fitness")
+  matplotlib.pyplot.xlabel("Time course")
+  matplotlib.pyplot.title("Optimiser output")
 
   f = sys.stdout
 
   f.write('Content-Type: image/png\r\n')
   f.write('\r\n')
   fig.savefig(f, format = 'png')
-
+ 
 
 def main():
   form = cgi.FieldStorage()
@@ -226,8 +248,10 @@ def main():
           print "<br>Please check your models, the are grammatically incorrect<br>"
           print "Return with '<-' <br>"
   elif (form['action1'].value == 'dis') :
+    print "Content-Type: text/html\n\n"
     readprogram(form)
   else :
     print "No action"
 
 main()
+
