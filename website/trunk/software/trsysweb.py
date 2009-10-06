@@ -160,11 +160,11 @@ class webtool(object) :
       else :      
         max = 1.0
       trans_dict[fname] = [min, max]
-    trans = self.write_transformer_data(trans_dict, trans_field)
+    trans = self.write_transformer(trans_dict, trans_field)
     return trans
 
 
-  def write_transformer_data(self, trans, lfname) :
+  def write_transformer(self, trans, lfname) :
     """ Write network parameters into stream
 @param trans: dictionary 
 @type trans: dict{}
@@ -179,6 +179,44 @@ class webtool(object) :
     for fname in lfname :
       Tfname = fname + "Transformation"
       p.write('%s\n%s\nminValue: %s\nmaxValue: %s\n'%(Tfname, ftype, trans[fname][0], trans[fname][1]))
+    p.seek(0)
+    return p
+
+
+  def get_optimiser_data(self) :
+    """ Get optimiser parameters
+@return: optimiser
+@rtype: dict{}
+""" 
+    optimiser_dict = {}
+    optimiser_field = ["initial_stepsize", "delta", "stepsize_shrink", "termination_stepsize", "termination_objective", "termination_iteration","termination_numEvaluations", "termination_improvement", "termination_relative_improvement", "stepsize_max", "eliminateFlatComponents"]
+    for fname in optimiser_field :
+      if fname is not 'eliminateFlatComponents':
+        optimiser_dict[fname] = self.validate_value(self.form.getvalue(fname))
+      else :
+        optimiser_dict[fname] = self.form.getvalue(fname)
+    optimiser = self.write_optimiser(optimiser_dict, optimiser_field)
+    return optimiser
+
+
+  def write_optimiser(self, optimiser_dict, optimiser_field) :
+    """ Write optimiser parameters
+@param optimiser_dict: dictionary 
+@type optimiser_dict: dict{}
+@param optimiser_field: array 
+@type optimiser_field: array
+@return: p
+@rtype: C{String}
+"""
+    p = StringIO.StringIO()
+    p.write('GradientOptimiser-0.1.1\n')
+    for fname in optimiser_field :
+      if fname is not 'eliminateFlatComponents' :
+        p.write('%s: %s\n'%(fname, optimiser_dict[fname]))
+        #print('%s: %s\n'%(fname, optimiser_dict[fname]))
+      else :
+        p.write('%s: %s\n'%(fname,optimiser_dict[fname]))
+    p.write('ParameterTransformer')
     p.seek(0)
     return p
 
@@ -244,4 +282,11 @@ class webtool(object) :
     transsys_program = transsys.TranssysProgramParser(p).parse()
     return transsys_program 
 
-
+  
+  def validate_value(self, value) :
+    """ Validate value
+"""
+    if value is "":
+      return(None)
+    else :
+      return(value)  
