@@ -76,27 +76,15 @@ def exper_displaydata(tp1, tp2, form):
   print "</textarea>"
 
   print "<h3>Expression data</h3>"
-  print "<hr><table border='1'><tr><td><textarea name='expr' cols='50' rows='10'>"
+  print "<table border='1'><tr><td><textarea name='expr' cols='50' rows='10'>"
   print "wt nkg1"
   print "somefactor 0.5 0.0"
-  print "</textarea></td></tr></table><hr>"
-  print "<table border='1'><tr><td>"
-  print "Equilibration length: <input type='text' name='equilibration' value='1000'><p>"
-  print "<p>Number of restarts: <input type='text' name='num_restarts' size=10><p>"
-  print "Distance measurement: <p>"
-  print "<input type='radio' name='f_distance' value='euclidean' /> Euclidean"
-  print "<p><input type='radio' name='F_distance' value='correlation' /> Correlation</td></tr></table>"
+  print "</textarea></td></tr></table>"
 
-  print "<br><h3>Network parameters:</h3>"
-  print "<h4>Select function</h4>"
-  print "<input type='radio' name='tfunction' value='ArctanFunction' /> ArctanFunction"
-  print "<input type='radio' name='tfunction' value='TransformationFunction' /> TransformationFunction"
-  print "<input type='radio' name='tfunction' value='ExponentialFunction' /> ExponentialFunction"
-  print "<input type='radio' name='tfunction' value='SigmoidFunction' /> SigmoidFunction"
-  print "<input type='radio' name='tfunction' value='LowerBoundFunction' /> LowerBandFunction"
+  print "<br><h3>Network parameters</h3>"
 
-  print "<h4>Input parameters</h4>"
-  print "<table><tr><td></td><td><div align='center'>min</div></td><td><div align='center'>mx</div></td></tr>"
+  print "<table><tr><td>Function</td><td><SELECT size='1' name='tfunction'><OPTION select value='ArctanFunction'>ArctanFunction</OPTION></SELECT></td></tr>"
+  print "<tr><td></td><td><div align='center'>min</div></td><td><div align='center'>mx</div></td></tr>"
   print "<tr><td>decay</td><td><input type='text' name='decaymin' size=10></td><td><input type='text' name='decaymx' size=10></td></tr>"
   print "<tr><td>diffusibility</td><td><input type='text' name='diffusibilitymin' size=10></td><td><input type='text' name='diffusibilitymx' size=10></td></tr>"
   print "<tr><td>constitutive</td><td><input type='text' name='constitutivemin' size=10></td><td><input type='text' name='constitutivemx' size=10></td></tr>"
@@ -106,6 +94,24 @@ def exper_displaydata(tp1, tp2, form):
   print "<tr><td>rmax</td><td><input type='text' name='rmaxmin' size=10></td><td><input type='text' name='rmaxmx' size=10></td></tr>"
   print "</table>" 
 
+  print "<br><h3>Optimiser parameters</h3>"
+  print "<table><tr><td></td><td><div align='center'>value</div></td></tr>"
+  print "<tr><td>Initial stepsize* </td><td><input type='text' name='initial_stepsize' size=10 value='1.0'></td></tr>"
+  print "<tr><td>delta*</td><td><input type='text' name='delta' size=10 value='1.0e-1'></td></tr>"
+  print "<tr><td>stepsize shrink*</td><td><input type='text' name='stepsize_shrink' size=10 value='0.5'></td></tr>"
+  print "<tr><td>termination stepsize</td><td><input type='text' name='termination_stepsize' size=10 value='None'></td></tr>"
+  print "<tr><td>termination objective:</td><td><input type='text' name='termination_objective' size=10 value='1.0e-300'></td></tr>"
+  print "<tr><td>termination iteration:</td><td><input type='text' name='termination_iteration' size=10 value='None'></td></tr>"
+  print "<tr><td>termination numEvaluations:</td><td><input type='text' name='termination_numEvaluations' size=10 value='None'></td></tr>"
+  print "<tr><td>termination improvement:</td><td><input type='text' name='termination_improvement' size=10 value='None'></td></tr>"
+  print "<tr><td>termination relative_improvement:</td><td><input type='text' name='termination_relative_improvement' size=10 value='0.7'></td></tr>"
+  print "<tr><td>stepsize max*</td><td><input type='text' name='stepsize_max' size=10 value='1.0e1'></td></tr>"
+  print "<tr><td>eliminate flat components</td><td><SELECT size='1' name='eliminateFlatComponents'><OPTION select value='False'>False</OPTION><OPTION>True</OPTION></SELECT></td></tr>"
+  print "<tr><td>Equilibration length</td><td><input type='text' name='equilibration' size=10 value='1000'></td></tr>"
+  print "<tr><td>Number of restarts</td><td><input type='text' name='num_restarts' size=10 value='5'></td></tr>"
+  print "<tr><td>Distance measurement</td><td><SELECT size='1' name='F_distance'><OPTION select value='correlation'>correlation</OPTION><OPTION>euclidean</OPTION></SELECT></td></tr>"
+  print "</table>" 
+  print "<br><font color='red'>*required </font>"
   print "<INPUT TYPE = hidden NAME = 'action1' VALUE = 'dis'>"
   print "<p><br><input type='submit' value='Submit' />"
   print "</form><hr>"
@@ -122,15 +128,14 @@ def write_result(f, optResult) :
 
 
 def readprogram(form) :
-  g = open('optspec.dat', 'r')
-  optimiser = transsys.optim.parse_optimiser(g)
-  g.close
   
   wm = trsysweb.webtool(form)
   x = wm.get_expr_data()
   p = wm.get_pheno_data()
   f = wm.get_feature_data()
   t = wm.get_transformer_data()
+  o = wm.get_optimiser_data()
+  optimiser = transsys.optim.parse_optimiser(o)
   optimiser.transformer = transsys.optim.parse_parameter_transformer(t)
 
 
