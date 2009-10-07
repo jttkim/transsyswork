@@ -43,8 +43,8 @@ class webtool(object) :
        print "Root element : %s" % collection.getAttribute("optimisation")
 
     fitness = collection.getElementsByTagName("fitness")
-    print "<html>"
-    print "<head>"
+    print "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>"
+    print "<html>\n<head>"
     print "<title>Transsys optimisation</title>"
     print "</head>"
     print "<body><p>"
@@ -54,8 +54,8 @@ class webtool(object) :
       print "<table><td><b>Restart No.</b></td><td><b>Fitness<b></td></tr>"
       for i, type in enumerate(opt.getElementsByTagName('valuef')):
         print "<tr><td>%d</td><td>%s</td></tr>" %(i+1,type.childNodes[0].data)
-    #print "<p><a href='http://localhost/example.html'>Click to start</a>"
-    print "</table></body><p>"
+    print "</table>"
+    print "</html></body>"
 
 
   def get_equilibration_length(self):
@@ -283,10 +283,14 @@ class webtool(object) :
     return transsys_program 
 
   
-  def validate_value(self, value) :
-    """ Validate value
+  def validate_value(self, ivalue) :
+    """ Validate optimiser inputs
+@param ivalue: input value
+@type ivalue: int
+@return: ivalue
+@rtype: int
 """
     if value is "":
       return(None)
     else :
-      return(value)  
+      return(ivalue)  
