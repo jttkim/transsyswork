@@ -19,20 +19,9 @@ import matplotlib
 import matplotlib.pyplot
 
 
-def print_http_headers() :
-  """Print HTTP headers.
-This function just prints a C{Content-Type: text/html} header
-and the terminating empty line, with the appropriate CRLF
-line terminators.
-"""
-  sys.stdout.write('Content-Type: text/html\r\n')
-  sys.stdout.write('\r\n')
-
-
 def exper_displaydata(tp1, tp2, form):
-  print_http_headers()
-  print "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'><html><head>"
-  print "<meta Content-Type: text/html\n\n>"
+  print "Content-Type: text/html\n\n"
+  print "<html><head>"
   factor_list = tp1.factor_names()
   gene_list = tp1.gene_names()
   experiment_list = form.getvalue("experiment_list")
@@ -89,35 +78,25 @@ def exper_displaydata(tp1, tp2, form):
 
   print "<br><h3>Network parameters</h3>"
 
-  print "<table><tr><td>Function</td><td><SELECT size='1' name='tfunction'><OPTION select value='ArctanFunction'>ArctanFunction</OPTION></SELECT></td></tr>"
+  print "<table>"
   print "<tr><td></td><td><div align='center'>min</div></td><td><div align='center'>mx</div></td></tr>"
-  print "<tr><td>decay</td><td><input type='text' name='decaymin' size=10></td><td><input type='text' name='decaymx' size=10></td></tr>"
-  print "<tr><td>diffusibility</td><td><input type='text' name='diffusibilitymin' size=10></td><td><input type='text' name='diffusibilitymx' size=10></td></tr>"
-  print "<tr><td>constitutive</td><td><input type='text' name='constitutivemin' size=10></td><td><input type='text' name='constitutivemx' size=10></td></tr>"
-  print "<tr><td>aspec</td><td><input type='text' name='aspecmin' size=10></td><td><input type='text' name='aspecmx' size=10></td></tr>"
-  print "<tr><td>amax</td><td><input type='text' name='amaxmin' size=10></td><td><input type='text' name='amaxmx' size=10></td></tr>"
-  print "<tr><td>rspec</td><td><input type='text' name='rspecmin' size=10></td><td><input type='text' name='rspecmx' size=10></td></tr>"
-  print "<tr><td>rmax</td><td><input type='text' name='rmaxmin' size=10></td><td><input type='text' name='rmaxmx' size=10></td></tr>"
+  print "<tr><td>decay</td><td><input type='text' name='decaymin' size=10 value=0.0></td><td><input type='text' name='decaymx' size=10 value=1.0></td></tr>"
+  print "<tr><td>diffusibility</td><td><input type='text' name='diffusibilitymin' size=10 value=0.0></td><td><input type='text' name='diffusibilitymx' size=10 value=1.0></td></tr>"
+  print "<tr><td>constitutive</td><td><input type='text' name='constitutivemin' size=10 value=0.0></td><td><input type='text' name='constitutivemx' size=10 value=1.0></td></tr>"
+  print "<tr><td>aspec</td><td><input type='text' name='aspecmin' size=10 value=0.0></td><td><input type='text' name='aspecmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>amax</td><td><input type='text' name='amaxmin' size=10 value=0.0></td><td><input type='text' name='amaxmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>rspec</td><td><input type='text' name='rspecmin' size=10 value=0.0></td><td><input type='text' name='rspecmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>rmax</td><td><input type='text' name='rmaxmin' size=10 value=0.0></td><td><input type='text' name='rmaxmx' size=10 value=1.0></td></tr>"
   print "</table>" 
+  print "<h5><font color='red'>*Note: min=0.0, max=1.0 are set automatically if no inputs are provided</font></h5>"  
 
   print "<br><h3>Optimiser parameters</h3>"
   print "<table><tr><td></td><td><div align='center'>value</div></td></tr>"
-  print "<tr><td>Initial stepsize* </td><td><input type='text' name='initial_stepsize' size=10 value='1.0'></td></tr>"
-  print "<tr><td>delta*</td><td><input type='text' name='delta' size=10 value='1.0e-1'></td></tr>"
-  print "<tr><td>stepsize shrink*</td><td><input type='text' name='stepsize_shrink' size=10 value='0.5'></td></tr>"
-  print "<tr><td>termination stepsize</td><td><input type='text' name='termination_stepsize' size=10 value='None'></td></tr>"
-  print "<tr><td>termination objective:</td><td><input type='text' name='termination_objective' size=10 value='1.0e-300'></td></tr>"
-  print "<tr><td>termination iteration:</td><td><input type='text' name='termination_iteration' size=10 value='None'></td></tr>"
-  print "<tr><td>termination numEvaluations:</td><td><input type='text' name='termination_numEvaluations' size=10 value='None'></td></tr>"
-  print "<tr><td>termination improvement:</td><td><input type='text' name='termination_improvement' size=10 value='None'></td></tr>"
-  print "<tr><td>termination relative_improvement:</td><td><input type='text' name='termination_relative_improvement' size=10 value='0.7'></td></tr>"
-  print "<tr><td>stepsize max*</td><td><input type='text' name='stepsize_max' size=10 value='1.0e1'></td></tr>"
-  print "<tr><td>eliminate flat components</td><td><SELECT size='1' name='eliminateFlatComponents'><OPTION select value='False'>False</OPTION><OPTION>True</OPTION></SELECT></td></tr>"
-  print "<tr><td>Equilibration length</td><td><input type='text' name='equilibration' size=10 value='1000'></td></tr>"
+  print "<tr><td>Equilibration length</td><td><input type='text' name='equilibration' size=10 value='100'></td></tr>"
   print "<tr><td>Number of restarts</td><td><input type='text' name='num_restarts' size=10 value='5'></td></tr>"
   print "<tr><td>Distance measurement</td><td><SELECT size='1' name='F_distance'><OPTION select value='correlation'>correlation</OPTION><OPTION>euclidean</OPTION></SELECT></td></tr>"
   print "</table>" 
-  print "<br><font color='red'>*required </font>"
+  print "<h5><font color='red'>*Note: Equilibration length=100, Number of restarts=5 are set automatically if no inputs are provided</font></h5>"  
   print "<INPUT TYPE = hidden NAME = 'action1' VALUE = 'dis'>"
   print "<p><br><input type='submit' value='Submit' />"
   print "</form><hr>"
@@ -140,10 +119,8 @@ def readprogram(form) :
   p = wm.get_pheno_data()
   f = wm.get_feature_data()
   t = wm.get_transformer_data()
-  o = wm.get_optimiser_data()
-  optimiser = transsys.optim.parse_optimiser(o)
+  optimiser = transsys.optim.GradientOptimiser()
   optimiser.transformer = transsys.optim.parse_parameter_transformer(t)
-
 
   equilibration_length = wm.get_equilibration_length()
   f_distance = wm.get_f_distance()
@@ -232,7 +209,6 @@ def plotImage(transsys_program) :
  
 
 def print_html() :
-  print_http_headers()
   print "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>"
   print "<html>\n<head>"
   print "<meta Content-Type: text/html>"

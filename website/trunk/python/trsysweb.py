@@ -65,7 +65,11 @@ class webtool(object) :
 """
     equilibration_length = 100
     if self.form.getvalue('equilibration'):
-       equilibration_length = int(self.form.getvalue('equilibration'))
+       try :
+         equilibration_length = int(self.form.getvalue('equilibration'))
+       except ValueError :
+         print "OOPS this type input \'%s\' is not allowed for this field"% self.form.getvalue('equilibration')
+         sys.exit()
     return equilibration_length
 
 
@@ -76,7 +80,11 @@ class webtool(object) :
 """
     num_restarts = 5
     if self.form.getvalue('num_restarts'):
-       num_restarts = int(self.form.getvalue('num_restarts'))
+       try :
+         num_restarts = int(self.form.getvalue('num_restarts'))
+       except ValueError :
+         print "OOPS this type input \'%s\' is not allowed for this field"% self.form.getvalue('num_restarts')
+         sys.exit()
     return num_restarts
 
 
@@ -141,7 +149,7 @@ class webtool(object) :
 """
     trans_dict = {}
     trans_field = ["decay", "diffusibility", "constitutive", "aspec", "amax", "rspec", "rmax"]
-    trans_dict["function"] = self.form.getvalue("tfunction")
+    trans_dict["function"] = 'ArctanFunction'
     for fname in trans_field :
       if self.form.getvalue((fname+"min")) :
         try :
@@ -150,7 +158,7 @@ class webtool(object) :
           print "!OOPS your min %s value is incorrect" %fname
           sys.exit()
       else :      
-        min = 0.1
+        min = 0.0
       if self.form.getvalue((fname+"mx")) :
         try :
           max = float(self.form.getvalue((fname+"mx")))
@@ -290,7 +298,7 @@ class webtool(object) :
 @return: ivalue
 @rtype: int
 """
-    if value is "":
+    if ivalue is "":
       return(None)
     else :
       return(ivalue)  
