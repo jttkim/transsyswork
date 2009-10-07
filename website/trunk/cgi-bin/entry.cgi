@@ -4,7 +4,7 @@
 # dreamhost
 import sys
 
-sys.path = ['/home/bkx08wju/'] + sys.path
+sys.path = ['/home/trsysweb/lib/python'] + sys.path
 
 # Import the CGI module
 import cgi, cgitb
@@ -13,10 +13,6 @@ import trsysmodis
 import StringIO
 import trsysweb
 import os
-if os.environ.get('MPLCONFIGDIR') is None :
-  f = StringIO.StringIO()	
-  os.environ['MPLCONFIGDIR'] = '/var/www/'
-cgitb.enable()
 import Gnuplot
 import random
 import matplotlib
@@ -24,18 +20,17 @@ import matplotlib.pyplot
 
 
 def exper_displaydata(tp1, tp2, form):
-  print "Content-Type: text/html\n\n"
+  print "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'><html><head>"
+  print "<meta Content-Type: text/html\n\n>"
   factor_list = tp1.factor_names()
   gene_list = tp1.gene_names()
   experiment_list = form.getvalue("experiment_list")
   experiment_list = experiment_list.split('\n')
   e = 'none'
   type_list = ["wildtype","knockout"]
-  print "<HTML>\n"
-  print "<HEAD>\n"
-  print "\t<TITLE>Info Form</TITLE>\n"
-  print "</HEAD>\n"
-  print "<BODY BGCOLOR = white>\n"
+  print "\t<title>Info Form</title>\n"
+  print "</head>\n"
+  print "<body bgcolor = white>\n"
   print "<H2 align='center'> Transsys program assemblage </H1><br>"
   print "<form ENCTYPE='multipart/form-data' action='/cgi-bin/entry.cgi' method='post'>"
   print "<hr><h3>Pheno data</h3>"
@@ -115,8 +110,8 @@ def exper_displaydata(tp1, tp2, form):
   print "<INPUT TYPE = hidden NAME = 'action1' VALUE = 'dis'>"
   print "<p><br><input type='submit' value='Submit' />"
   print "</form><hr>"
-  print "</BODY>\n"
-  print "</HTML>\n"
+  print "</body>\n"
+  print "</html>\n"
 
 
 def write_result(f, optResult) :
@@ -225,38 +220,50 @@ def plotImage(transsys_program) :
   fig.savefig(f, format = 'png')
  
 
+def print_html() :
+  print "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>"
+  print "<html>\n<head>"
+  print "<meta Content-Type: text/html>"
+  print "<title>Info Form</title>"
+  print "</head>"
+  print "<body bgcolor = white>\nNo form provided"
+  print "</body>\n</html>"
+
+
 def main():
   form = cgi.FieldStorage()
-  if (form['action1'].value == 'display1') :
-    if (form.getvalue('t_experiment') == 'demo') :
-      tp1 = validate_tp(form.getvalue('tp1'))
-      if tp1 != 0 :
-        w = trsysweb.webtool(form)
-        tp = w.get_transsysprogram('tp1')
-	plotImage(tp)
-      else :
-        print "Content-Type: text/html\n\n"
-        print "no tp program"
-    elif (form.getvalue('t_experiment') == 'm_fitting') :
-      tp1 = validate_tp(form.getvalue('tp1'))
-      tp2 = validate_tp(form.getvalue('tp2'))
-      if ((tp1 != 0 and tp2 != 0)) :
-        v = validate_model(tp1, tp2)
-        if ( v == 1) :
-          exper_displaydata(tp1, tp2, form)
+  if form :
+    if (form['action1'].value == 'display1') :
+      if (form.getvalue('t_experiment') == 'demo') :
+        tp1 = validate_tp(form.getvalue('tp1'))
+        if tp1 != 0 :
+          w = trsysweb.webtool(form)
+          tp = w.get_transsysprogram('tp1')
+      	  plotImage(tp)
         else :
           print "Content-Type: text/html\n\n"
-          print "<br>Please check your models, they are not similar<br>"
-          print "Return with '<-' <br>"
-      else :
-          print "Content-Type: text/html\n\n"
-          print "<br>Please check your models, the are grammatically incorrect<br>"
-          print "Return with '<-' <br>"
-  elif (form['action1'].value == 'dis') :
-    print "Content-Type: text/html\n\n"
-    readprogram(form)
-  else :
-    print "No action"
-
+          print "no tp program"
+      elif (form.getvalue('t_experiment') == 'm_fitting') :
+        tp1 = validate_tp(form.getvalue('tp1'))
+        tp2 = validate_tp(form.getvalue('tp2'))
+        if ((tp1 != 0 and tp2 != 0)) :
+          v = validate_model(tp1, tp2)
+          if ( v == 1) :
+            exper_displaydata(tp1, tp2, form)
+          else :
+            print "Content-Type: text/html\n\n"
+            print "<br>Please check your models, they are not similar<br>"
+            print "Return with '<-' <br>"
+        else :
+            print "Content-Type: text/html\n\n"
+            print "<br>Please check your models, the are grammatically incorrect<br>"
+            print "Return with '<-' <br>"
+    elif (form['action1'].value == 'dis') :
+      print "Content-Type: text/html\n\n"
+      readprogram(form)
+    else :
+      print "No action"
+  else:
+    print_html()
 main()
 
