@@ -19,7 +19,18 @@ import matplotlib
 import matplotlib.pyplot
 
 
+def print_http_headers() :
+  """Print HTTP headers.
+This function just prints a C{Content-Type: text/html} header
+and the terminating empty line, with the appropriate CRLF
+line terminators.
+"""
+  sys.stdout.write('Content-Type: text/html\r\n')
+  sys.stdout.write('\r\n')
+
+
 def exper_displaydata(tp1, tp2, form):
+  print_http_headers()
   print "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'><html><head>"
   print "<meta Content-Type: text/html\n\n>"
   factor_list = tp1.factor_names()
@@ -221,6 +232,7 @@ def plotImage(transsys_program) :
  
 
 def print_html() :
+  print_http_headers()
   print "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>"
   print "<html>\n<head>"
   print "<meta Content-Type: text/html>"
