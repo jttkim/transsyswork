@@ -99,6 +99,17 @@ class webtool(object) :
     return f_distance
 
 
+  def get_measure_type(self):
+    """ Get over what type of values a measure of distance is to be calculated
+@return: m_type
+@rtype: C{String}
+"""
+    m_type = 'logratio_divergence'
+    if self.form.getvalue('mtype'):
+       m_type = self.form.getvalue('mtype')
+    return m_type
+
+
   def get_expr_data(self):
     """ Get expression data
 @return: expr
@@ -148,7 +159,7 @@ class webtool(object) :
 @rtype: dict{}
 """
     trans_dict = {}
-    trans_field = ["decay", "diffusibility", "constitutive", "aspec", "amax", "rspec", "rmax"]
+    trans_field = ["decayTransformation", "diffusibilityTransformation", "constitutiveTransformation", "aspecTransformation", "amaxTransformation", "rspecTransformation", "rmaxTransformation"]
     trans_dict["function"] = 'ArctanFunction'
     for fname in trans_field :
       if self.form.getvalue((fname+"min")) :
@@ -168,8 +179,7 @@ class webtool(object) :
       else :      
         max = 1.0
       trans_dict[fname] = [min, max]
-    trans = self.write_transformer(trans_dict, trans_field)
-    return trans
+    return trans_dict
 
 
   def write_transformer(self, trans, lfname) :
@@ -185,10 +195,28 @@ class webtool(object) :
     p.write('TranssysTypedParameterTransformer\n')
     ftype = trans['function']
     for fname in lfname :
-      Tfname = fname + "Transformation"
-      p.write('%s\n%s\nminValue: %s\nmaxValue: %s\n'%(Tfname, ftype, trans[fname][0], trans[fname][1]))
+      p.write('%s\n%s\nminValue: %s\nmaxValue: %s\n'%(fname, ftype, trans[fname][0], trans[fname][1]))
     p.seek(0)
     return p
+
+  
+  def makeTransformer(self, trans) :
+    """ Make transformer class
+@param trans: dictionary 
+@type trans: dict{}
+@return: transformer
+@rtype: C{Object}
+"""
+    trans_field = ["decayTransformation", "diffusibilityTransformation", "constitutiveTransformation", "aspecTransformation", "amaxTransformation", "rspecTransformation", "rmaxTransformation"]
+    transformer = transsys.optim.TranssysTypedParameterTransformer()
+    transformer.decayTransformation = transsys.optim.ArctanFunction(trans['decayTransformation'][0],trans['diffusibilityTransformation'][1])
+    transformer.constitutiveTransformation = transsys.optim.ArctanFunction(trans['constitutiveTransformation'][0],trans['constitutiveTransformation'][1])
+    transformer.diffusibilityTransformation = transsys.optim.ArctanFunction(trans['diffusibilityTransformation'][0],trans['diffusibilityTransformation'][1])
+    transformer.aspecTransformation = transsys.optim.ArctanFunction(trans['aspecTransformation'][0],trans['aspecTransformation'][1])
+    transformer.amaxTransformation = transsys.optim.ArctanFunction(trans['amaxTransformation'][0],trans['amaxTransformation'][1])
+    transformer.rspecTransformation = transsys.optim.ArctanFunction(trans['rspecTransformation'][0],trans['rspecTransformation'][1])
+    transformer.rmaxTransformation = transsys.optim.ArctanFunction(trans['rmaxTransformation'][0],trans['rmaxTransformation'][1])
+    return transformer 
 
 
   def get_optimiser_data(self) :

@@ -71,7 +71,7 @@ def exper_displaydata(tp1, tp2, form):
   print "</textarea>"
 
   print "<h3>Expression data</h3>"
-  print "<table border='1'><tr><td><textarea name='expr' cols='50' rows='10'>"
+  print "<table><tr><td><textarea name='expr' cols='50' rows='10'>"
   print "wt nkg1"
   print "somefactor 0.5 0.0"
   print "</textarea></td></tr></table>"
@@ -80,23 +80,24 @@ def exper_displaydata(tp1, tp2, form):
 
   print "<table>"
   print "<tr><td></td><td><div align='center'>min</div></td><td><div align='center'>mx</div></td></tr>"
-  print "<tr><td>decay</td><td><input type='text' name='decaymin' size=10 value=0.0></td><td><input type='text' name='decaymx' size=10 value=1.0></td></tr>"
-  print "<tr><td>diffusibility</td><td><input type='text' name='diffusibilitymin' size=10 value=0.0></td><td><input type='text' name='diffusibilitymx' size=10 value=1.0></td></tr>"
-  print "<tr><td>constitutive</td><td><input type='text' name='constitutivemin' size=10 value=0.0></td><td><input type='text' name='constitutivemx' size=10 value=1.0></td></tr>"
-  print "<tr><td>aspec</td><td><input type='text' name='aspecmin' size=10 value=0.0></td><td><input type='text' name='aspecmx' size=10 value=1.0></td></tr>"
-  print "<tr><td>amax</td><td><input type='text' name='amaxmin' size=10 value=0.0></td><td><input type='text' name='amaxmx' size=10 value=1.0></td></tr>"
-  print "<tr><td>rspec</td><td><input type='text' name='rspecmin' size=10 value=0.0></td><td><input type='text' name='rspecmx' size=10 value=1.0></td></tr>"
-  print "<tr><td>rmax</td><td><input type='text' name='rmaxmin' size=10 value=0.0></td><td><input type='text' name='rmaxmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>decay</td><td><input type='text' name='decayTransformationmin' size=10 value=0.0></td><td><input type='text' name='decayTransformationmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>diffusibility</td><td><input type='text' name='diffusibilityTransformationmin' size=10 value=0.0></td><td><input type='text' name='diffusibilityTransformationmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>constitutive</td><td><input type='text' name='constitutiveTransformationmin' size=10 value=0.0></td><td><input type='text' name='constitutiveTransformationmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>aspec</td><td><input type='text' name='aspecTransformationmin' size=10 value=0.0></td><td><input type='text' name='aspecTransformationmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>amax</td><td><input type='text' name='amaxTransformationmin' size=10 value=0.0></td><td><input type='text' name='amaxTransformationmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>rspec</td><td><input type='text' name='rspecTransformationmin' size=10 value=0.0></td><td><input type='text' name='rspecTransformationmx' size=10 value=1.0></td></tr>"
+  print "<tr><td>rmax</td><td><input type='text' name='rmaxTransformationmin' size=10 value=0.0></td><td><input type='text' name='rmaxTransformationmx' size=10 value=1.0></td></tr>"
   print "</table>" 
   print "<h5><font color='red'>*Note: min=0.0, max=1.0 are set automatically if no inputs are provided</font></h5>"  
 
-  print "<br><h3>Optimiser parameters</h3>"
+  print "<h3>Optimiser parameters</h3>"
   print "<table><tr><td></td><td><div align='center'>value</div></td></tr>"
   print "<tr><td>Equilibration length</td><td><input type='text' name='equilibration' size=10 value='100'></td></tr>"
   print "<tr><td>Number of restarts</td><td><input type='text' name='num_restarts' size=10 value='5'></td></tr>"
   print "<tr><td>Distance measurement</td><td><SELECT size='1' name='F_distance'><OPTION select value='correlation'>correlation</OPTION><OPTION>euclidean</OPTION></SELECT></td></tr>"
+  print "<tr><td>Calculated on</td><td><SELECT size='1' name='mtype'><OPTION select value='logratio'>logratios</OPTION><OPTION>absolute</OPTION></SELECT></td></tr>"
   print "</table>" 
-  print "<h5><font color='red'>*Note: Equilibration length=100, Number of restarts=5 are set automatically if no inputs are provided</font></h5>"  
+  print "<h5><font color='red'>*Note: Equilibration length=100, Number of restarts=5, distance measurement=correlation and Measurements=logratio are set automatically if no inputs are provided</font></h5>"  
   print "<INPUT TYPE = hidden NAME = 'action1' VALUE = 'dis'>"
   print "<p><br><input type='submit' value='Submit' />"
   print "</form><hr>"
@@ -120,11 +121,12 @@ def readprogram(form) :
   f = wm.get_feature_data()
   t = wm.get_transformer_data()
   optimiser = transsys.optim.GradientOptimiser()
-  optimiser.transformer = transsys.optim.parse_parameter_transformer(t)
-
+  optimiser.termination_relative_improvement = 0.7
+  optimiser.transformer = wm.makeTransformer(t)
   equilibration_length = wm.get_equilibration_length()
   f_distance = wm.get_f_distance()
   num_restarts = wm.get_num_restarts()
+  m_type = wm.get_measure_type()
   expression_set = trsysmodis.ExpressionSet()
   try :
     expression_set.read(x, p, f) 
@@ -141,8 +143,10 @@ def readprogram(form) :
     objective_function.distance_function = trsysmodis.distance_euclidean
   else :
     objective_function.distance_function = trsysmodis.distance_euclidean
-  
-  objective_function.distance_measu = expression_set.logratio_divergence
+  if m_type == 'logratio' : 
+    objective_function.distance_measu = expression_set.logratio_divergence
+  else :
+    objective_function.distance_measu = expression_set.divergence
   expression_set.expression_data.logratio_offset = 1
   
   optimiser.randomInitRange = 1.0
