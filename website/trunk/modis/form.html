@@ -74,7 +74,7 @@ function validate() {
 <b>transsys program name:</b> <input type='text' name='t_name' size='20'><br><br>
 <input type='submit' value='Submit'></form><hr>
 <h2>Direct entry of transsys program code (expert mode)</h2><p>
-<h3>transsys program code</h3><p>
+<h3>transsys program</h3><p>
 <form ENCTYPE='multipart/form-data' name='expert' action='/cgi-bin/entry.cgi' method='post' onsubmit='return validate();' >
 <textarea name='tp1' cols='70' rows=20></textarea><br><br>
 <INPUT TYPE = hidden NAME = 'action1' VALUE ='display1'>
@@ -86,11 +86,13 @@ function validate() {
 <div ID='etype' style='display:none;'>
 <br>
 <table>
-<tr><td><h3>Alternative transsys program code</h3></td>
-<td><h3>List of experiments</h3></td></tr>
-<tr><td><textarea name='tp2' cols='70' rows=20></textarea></td>
-<td><textarea name='experiment_list' cols='30' rows=20></textarea></td></tr></table>
+<tr><td><h4>Input an alternative transsys program</h4></td></tr>
+<tr><td><textarea name='tp2' cols='70' rows=20></textarea></td></tr>
+<tr><td></td></tr>
+<td><h4>Input your list of experiments, use enter to separate them</h4></td></tr>
+<td><textarea name='experiment_list' cols='20' rows=5></textarea></td></tr></table>
 </div>
+<br>
 <input type='submit' value='Submit'><hr>
 </form>
 </body>
