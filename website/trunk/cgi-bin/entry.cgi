@@ -17,6 +17,7 @@ import Gnuplot
 import random
 import matplotlib
 import matplotlib.pyplot
+import urllib
 
 
 def print_http_headers() :
@@ -116,7 +117,9 @@ def exper_displaydata(tp1, tp2, form):
   print "</html>\n"
 
 
-def write_result(f, optResult) :
+def write_result(f, optResult, a) :
+ print "<h3 align='left'>Fitness plot</h3><p><img src='%s' align='center'>"% plotImage(a)
+ print "<p>"
  f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
  f.write('%s\n' %  str(optResult.optimised_transsys_program))
  f.seek(0)
@@ -162,6 +165,7 @@ def readprogram(form) :
   
   optimiser.randomInitRange = 1.0
   for i in (1,2) :
+    a = []
     log = StringIO.StringIO()
     finalparam = StringIO.StringIO()
     log.write('<?xml version="1.0" encoding="ISO-8859-1"?>\n')
@@ -171,11 +175,12 @@ def readprogram(form) :
     for restart_index in xrange(num_restarts) :
       opt_result = optimiser.optimise(transsys_program, objective_function)
       log.write('   <valuef>%e</valuef>\n' %(opt_result.objectiveOptimum.fitness))
+      a.append(opt_result.objectiveOptimum.fitness) 
     log.write('</fitness>\n')
     log.write('</optimisation>')
     log.seek(0)
     wm.printfitness(log)
-    write_result(finalparam, opt_result)
+    write_result(finalparam, opt_result, a)
 
 
 def validate_tp(exp) :
@@ -202,35 +207,27 @@ def validate_model(tp1, tp2) :
   return factor
 
 
-def plotImage(transsys_program) :
+def timeSeries(transsys_program) :
+  print_http_headers()
   a = []
   ti = transsys.TranssysInstance(transsys_program)
   ts = ti.time_series(500)
   for i,value in enumerate(ts) :
     a.append(value.factor_concentration)
+  print "<h2 align='center'><font face='arial'>Time series plot</font></h2><p><img src='%s' align='center'>"% plotImage(a)
+  print "<p><a href='http://localhost/guided.html'>Go to guided form</p>"
 
-  fig = matplotlib.pyplot.figure()
+
+def plotImage(a) :
+  fig = matplotlib.pyplot.figure(num=None, figsize=(5, 4), dpi=80, facecolor='w', edgecolor='k')
   matplotlib.pyplot.ioff()
   matplotlib.pyplot.plot(a)
-  matplotlib.pyplot.ylabel("fitness")
-  matplotlib.pyplot.xlabel("Time course")
-  matplotlib.pyplot.title("Optimiser output")
+  matplotlib.pyplot.ylabel("Expression value", fontsize=9)
+  matplotlib.pyplot.xlabel("Time course", fontsize=9)
 
-  f = sys.stdout
-
-  f.write('Content-Type: image/png\r\n')
-  f.write('\r\n')
+  f = StringIO.StringIO()
   fig.savefig(f, format = 'png')
- 
-
-def print_html() :
-  print "<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'>"
-  print "<html>\n<head>"
-  print "<meta Content-Type: text/html>"
-  print "<title>Info Form</title>"
-  print "</head>"
-  print "<body bgcolor = white>\nNo form provided"
-  print "</body>\n</html>"
+  return 'data:image/png,' + urllib.quote(f.getvalue())
 
 
 def main():
@@ -239,12 +236,12 @@ def main():
     if (form['action1'].value == 'display1') :
       if (form.getvalue('t_experiment') == 'demo') :
         tp1 = validate_tp(form.getvalue('tp1'))
-        if tp1 != 0 :
+        if tp1 is not None :
           w = trsysweb.webtool(form)
           tp = w.get_transsysprogram('tp1')
-      	  plotImage(tp)
+          timeSeries(tp)
         else :
-          print "Content-Type: text/html\n\n"
+          print_http_headers()
           print "no tp program"
       elif (form.getvalue('t_experiment') == 'm_fitting') :
         tp1 = validate_tp(form.getvalue('tp1'))
@@ -254,19 +251,19 @@ def main():
           if ( v == 1) :
             exper_displaydata(tp1, tp2, form)
           else :
-            print "Content-Type: text/html\n\n"
+            print_http_headers()
             print "<br>Please check your models, they are not similar<br>"
             print "Return with '<-' <br>"
         else :
-            print "Content-Type: text/html\n\n"
+            print_http_headers()
             print "<br>Please check your models, the are grammatically incorrect<br>"
             print "Return with '<-' <br>"
     elif (form['action1'].value == 'dis') :
-      print "Content-Type: text/html\n\n"
+      print_http_headers()
       readprogram(form)
     else :
       print "No action"
   else:
-    print_html()
+    print_http_headers()
+    print "No form provided"
 main()
-
