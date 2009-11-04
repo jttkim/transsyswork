@@ -19,8 +19,10 @@ function superFactory()
   this.gene = new Array();
   this.product = new Array();
   this.insertFactor = insertFactor;
+  this.removeFactor = removeFactor;
   this.insertGene = insertGene;
-  
+  this.removeGene = removeGene;
+  this.tBody = ""; 
 
   function receive() 
   {
@@ -46,7 +48,7 @@ function superFactory()
 
   function transsysBody()
   {
-    this.transsysBody = "transsys "+this.tname+"<br>{<br>}";
+    this.tBody = "transsys "+this.tname+"<br>{<br>}";
   } 
 
 
@@ -57,6 +59,18 @@ function superFactory()
       alert("factor name already exist, try another name ");
     else
       this.farray[this.farray.length] = val;
+  }
+
+
+  function removeFactor(val)
+  {
+    
+    var farray2str = this.farray.toString();
+    f = this.farray.indexOf(val);
+    if (f == -1)
+      alert("factor does not exist, try another name ");
+    else
+      this.farray.splice(f,1);
   }
 
 
@@ -94,7 +108,18 @@ function superFactory()
       this.gene.push(a + r);
     }
   }
+  
+
+  function removeGene()
+  {
+    f = this.garray.indexOf(document.guided1.gene.value);
+    if (f == -1)
+      alert("gene does not exist, try another name ");
+    else
+      this.garray.splice(f,1);
+  }
 }
+
 
 
 function showTranssys(op) 
@@ -113,9 +138,9 @@ function showTranssys(op)
       "<div style='text-indent: 20px;'>"+"}<\/div>";
       stringF = stringF + factor;
     }
-    if(t.farray.length > 0) 
+    if(t.farray.length != "none") 
     {
-      stringF = t.transsysBody.substr(0,((t.transsysBody.length)-1)) + stringF;
+      stringF = t.tBody.substr(0,((t.tBody.length)-1)) + stringF;
       Box2(t.farray);
     }
     st = stringF;
@@ -134,9 +159,9 @@ function showTranssys(op)
       "<div style='text-indent: 20px;'>"+"}"+"<\/div>";
       stringG = stringG + gene;
     }
-    if(t.farray.length > 0) 
+    if(t.farray.length != "none") 
     {
-      string = stringF + stringG + t.transsysBody[t.transsysBody.length-1];
+      string = stringF + stringG + t.tBody[t.tBody.length-1];
       document.getElementById('myDiv1').innerHTML = string;
       show(1);
     }
@@ -156,6 +181,8 @@ function Box2(array)
 {
   var f = document.guided1;
   f.activate.options.length = null;
+  f.repress.options.length = null;
+  f.product.options.length = null;
   for(i=0; i<array.length; i++) 
   {
     f.activate.options[i] = new Option(array[i], i); 
@@ -169,9 +196,9 @@ function execute()
 {
   t.parse();
   t.transsysBody();
-  stringB = t.transsysBody;
+  stringB = t.tBody;
   document.getElementById('myDiv1').innerHTML = stringB;
-  ShowF(1);
+  show(1);
 }
 
 window.onload=execute;
@@ -195,7 +222,8 @@ window.onload=execute;
 </table><table>
 <tr><td><h3>factor</h3></td></tr>
 <tr><td>enter factor name:</td><td><INPUT type="text" name="name"></td></tr>
-<tr><td><INPUT type="button" value="add factor" onclick="t.insertFactor(this.form.name.value),showTranssys(1);"></td></tr>
+<tr><td><INPUT type="button" value="add factor" onclick="t.insertFactor(this.form.name.value),showTranssys(1);"></td>
+<td><INPUT type="button" value="remove factor" onclick="t.removeFactor(this.form.name.value),showTranssys(1);"></td></tr>
 </table>
 </form>
 <form ENCTYPE="multipart/form-data" name="guided1" action="/cgi-bin/entry.cgi" method="post">
@@ -205,7 +233,8 @@ window.onload=execute;
 <tr><td>gene product</td><td><select name="product"></select></td></tr>
 <tr><td>activators:</td><td><select multiple size="2" name="activate"></select></td></tr>
 <tr><td>repressors:</td><td><select multiple size="2" name="repress"></select></td></tr>
-<tr><td><INPUT type="button" value="add gene" onclick="t.insertGene(),showTranssys(1);"></td></tr>
+<tr><td><INPUT type="button" value="add gene" onclick="t.insertGene(),showTranssys(1);"></td>
+<td><INPUT type="button" value="remove gene" onclick="t.removeGene(),showTranssys(1);"></td></tr>
 </table>
 <hr>
 <h3>Once you have finished ...</h3>
