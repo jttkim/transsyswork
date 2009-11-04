@@ -118,7 +118,7 @@ def exper_displaydata(tp1, tp2, form):
 
 
 def write_result(f, optResult, a) :
- print "<h3 align='left'>Fitness plot</h3><p><img src='%s' align='center'>"% plotImage(a)
+ print "<h3 align='left'>Fitness plot</h3><p><img src='%s' align='center'>"% plotImage(a, "Time steps", "Fitness")
  print "<p>"
  f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
  f.write('%s\n' %  str(optResult.optimised_transsys_program))
@@ -214,16 +214,16 @@ def timeSeries(transsys_program) :
   ts = ti.time_series(500)
   for i,value in enumerate(ts) :
     a.append(value.factor_concentration)
-  print "<h2 align='center'><font face='arial'>Time series plot</font></h2><p><img src='%s' align='center'>"% plotImage(a)
+  print "<h2 align='center'><font face='arial'>Time series plot</font></h2><p><img src='%s' align='center'>"% plotImage(a, "Time steps", "Expression value")
   print "<p><a href='http://localhost/guided.html'>Go to guided form</p>"
 
 
-def plotImage(a) :
+def plotImage(a, xlabel,ylabel) :
   fig = matplotlib.pyplot.figure(num=None, figsize=(5, 4), dpi=80, facecolor='w', edgecolor='k')
   matplotlib.pyplot.ioff()
   matplotlib.pyplot.plot(a)
-  matplotlib.pyplot.ylabel("Expression value", fontsize=9)
-  matplotlib.pyplot.xlabel("Time course", fontsize=9)
+  matplotlib.pyplot.ylabel(ylabel, fontsize=9)
+  matplotlib.pyplot.xlabel(xlabel, fontsize=9)
 
   f = StringIO.StringIO()
   fig.savefig(f, format = 'png')

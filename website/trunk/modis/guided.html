@@ -4,149 +4,174 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Guided transsys program entry</title>
 <script language="JavaScript" type="text/javascript">
-var farray = new Array();
-var garray = new Array(); 
-var prarray;
-var t = new Array();
-var st;
-var t_name;
-var product = new Array();
+
+var t = new superFactory();
+
+// Class
+function superFactory() 
+{
+  this.tname = "";
+  this.receive = receive;
+  this.parse = parse;
+  this.transsysBody = transsysBody;
+  this.farray = new Array();
+  this.garray = new Array();
+  this.gene = new Array();
+  this.product = new Array();
+  this.insertFactor = insertFactor;
+  this.insertGene = insertGene;
+  
+
+  function receive() 
+  {
+    var parameters = location.search;
+  }
 
 
-function insertfactor(val){
-   var farray2str = farray.toString();
-   if (farray2str.search(val) == 0)
-     alert("factor name already exist, try another name ");
-   else
-     farray[farray.length]=val;
-}
+  function parse() 
+  {
+    var parameters = location.search.substring(1).split("&");
+    var data = "";
+    for (x in parameters) 
+    {
+      var temp = parameters[x].split("=");
+      thevar = unescape(temp[0]);
+      thevalue = unescape(temp[1]);
+      this.tname = thevalue;
+      thevalue1 = thevalue.replace("+", " ");
+      data += thevar + "=" + thevalue1 + "<br>";
+    }
+  }
 
 
-function insertgene(){
-  var oList;
-  var a="";
-  var r="";
-  var index;
-  var val;
-  var garray2str;
-  val = document.guided1.gene.value;
-  garray2str = garray.toString();
-  if (garray2str.search(val) == 0)
-    alert("gene name already exist, try another name ");
-  else {
-    garray[garray.length] = document.guided1.gene.value;
-    index = guided1.elements["product"].selectedIndex;
-    product[product.length] = guided1.elements["product"].options[index].text;
-    oList = guided1.elements["activate"];
-    for(var i = 0; i < oList.options.length; i++) {
-      if(oList.options[i].selected == true) {
-        a = a + "<div style='text-indent: 40px'>" + oList.options[i].text + ": activate(0.1, 1.0);" + "<\/div>";
+  function transsysBody()
+  {
+    this.transsysBody = "transsys "+this.tname+"<br>{<br>}";
+  } 
+
+
+  function insertFactor(val)
+  {
+    var farray2str = this.farray.toString();
+    if (farray2str.search(val) != -1)
+      alert("factor name already exist, try another name ");
+    else
+      this.farray[this.farray.length] = val;
+  }
+
+
+  function insertGene()
+  {
+    var oList;
+    var a = "";
+    var r = "";
+    var index;
+    var garray2str;
+    garray2str = this.garray.toString();
+    if (garray2str.search(document.guided1.gene.value) != -1)
+      alert("gene name already exist, try another name ");
+    else 
+    {
+      this.garray[this.garray.length] = document.guided1.gene.value;
+      index = guided1.elements["product"].selectedIndex;
+      this.product[this.product.length] = guided1.elements["product"].options[index].text;
+      oList = guided1.elements["activate"];
+      for(var i = 0; i < oList.options.length; i++) 
+      {
+        if(oList.options[i].selected == true) 
+        {
+          a = a + "<div style='text-indent: 40px'>" + oList.options[i].text + ": activate(0.1, 1.0);" + "<\/div>";
+        }
       }
-     }
-    oList = guided1.elements["repress"];
-    for(var i = 0; i < oList.options.length; i++) {
-      if(oList.options[i].selected == true) {
-        r = r + "<div style='text-indent: 40px'>"+oList.options[i].text+": repress(0.1, 1.0);"+"<\/div>";
+      oList = guided1.elements["repress"];
+      for(var i = 0; i < oList.options.length; i++) 
+      {
+        if(oList.options[i].selected == true) 
+        {
+          r = r + "<div style='text-indent: 40px'>"+oList.options[i].text+": repress(0.1, 1.0);"+"<\/div>";
+        }
       }
-     }
-     t.push(a + r);
+      this.gene.push(a + r);
+    }
   }
 }
 
 
-function show(op) {
-  var factor = "";
-  var fac = new Array();
-  var string="transsys "+t_name+"<br>{<br>";
-  if (op) {
-    for(i = 0; i < farray.length; i++) {
-      factor = "<div style='text-indent: 20px;'>"+"factor "+farray[i]+"<z/div>"+
+function showTranssys(op) 
+{
+  var stringF = "";
+  var stringG = "";
+
+  if (op) 
+  {
+    for(i = 0; i < t.farray.length; i++) 
+    {
+      factor = "<div style='text-indent: 20px;'>"+"factor "+t.farray[i]+"<\/div>"+
       "<div style='text-indent: 20px;'>"+"{<\/div>" +
       "<div style='text-indent: 30px;'>"+"decay: 0.5;"+"<\/div>" +
       "<div style='text-indent: 30px;'>"+"diffusibility: 0.0;"+"<\/div>" +
       "<div style='text-indent: 20px;'>"+"}<\/div>";
-      string = string+factor;
+      stringF = stringF + factor;
     }
-    if(farray.length > 0) {
-      document.getElementById('myDiv').innerHTML = string;
-      Show(1);
-      Box2(farray);
+    if(t.farray.length > 0) 
+    {
+      stringF = t.transsysBody.substr(0,((t.transsysBody.length)-1)) + stringF;
+      Box2(t.farray);
     }
-  st = string;
-  }
-  else {
-    var string="";
-    var string_e="}";
-    for(i = 0; i < garray.length; i++) {
-      gene = "<div style='text-indent: 20px;'>"+"gene "+garray[i]+"<\/div>"+
+    st = stringF;
+    for(i = 0; i < t.garray.length; i++) 
+    {
+      gene = "<div style='text-indent: 20px;'>"+"gene "+t.garray[i]+"<\/div>"+
       "<div style='text-indent: 20px;'>"+"{<\/div>" +
       "<div style='text-indent: 30px;'>"+"promoter"+"<\/div>" +
       "<div style='text-indent: 30px;'>"+"{"+"<\/div>" +
-      "<div style='text-indent: 40px;'>"+"constitutive: 0.1;"+"<\/div>" + t[i] +
+      "<div style='text-indent: 40px;'>"+"constitutive: 0.1;"+"<\/div>" + t.gene[i] +
       "<div style='text-indent: 30px;'>"+"}"+"<\/div>" +
       "<div style='text-indent: 30px;'>"+"product"+"<\/div>" +
       "<div style='text-indent: 30px;'>"+"{"+"<\/div>" +
-      "<div style='text-indent: 40px;'>"+"default: " + product[i] + ";"+"<\/div>" +
+      "<div style='text-indent: 40px;'>"+"default: " + t.product[i] + ";"+"<\/div>" +
       "<div style='text-indent: 30px;'>"+"}"+"<\/div>" +
       "<div style='text-indent: 20px;'>"+"}"+"<\/div>";
-      string = string+gene;
+      stringG = stringG + gene;
     }
-    if(farray.length > 0)
-      string = string + string_e;
+    if(t.farray.length > 0) 
+    {
+      string = stringF + stringG + t.transsysBody[t.transsysBody.length-1];
       document.getElementById('myDiv1').innerHTML = string;
-      Shows(1);
+      show(1);
+    }
   }
 }
 
 
-function Show(a) {
-  obj=document.getElementById("myDiv1");
-  if (a) obj.style.display="block";
-    else obj.style.display="none";
+function show(a) 
+{
+  obj = document.getElementById("myDiv1");
+  if (a) obj.style.display = "block";
+    else obj.style.display = "none";
 }
 
 
-function Shows(a) {
-  obj=document.getElementById("myDiv1");
-  //if (a) obj.style.display="block";
-  obj.style.display="block";
-}
-
-
-function Box2(array) {
-  var f=document.guided1;
-  f.activate.options.length=null;
-  for(i=0; i<array.length; i++) {
-    f.activate.options[i]=new Option(array[i], i); 
-    f.product.options[i]=new Option(array[i], i); 
-    f.repress.options[i]=new Option(array[i], i); 
+function Box2(array) 
+{
+  var f = document.guided1;
+  f.activate.options.length = null;
+  for(i=0; i<array.length; i++) 
+  {
+    f.activate.options[i] = new Option(array[i], i); 
+    f.product.options[i] = new Option(array[i], i); 
+    f.repress.options[i] = new Option(array[i], i); 
   }   
 }
 
 
-
-function receive() {
-  var parameters = location.search;
-  //document.getElementById("string").innerHTML = parameters;
-}
-
-function parse() {
-  var parameters = location.search.substring(1).split("&");
-  var data = "";
-  for (x in parameters) {
-    var temp = parameters[x].split("=");
-    thevar = unescape(temp[0]);
-    thevalue = unescape(temp[1]);
-    t_name = thevalue;
-    thevalue1 = thevalue.replace("+", " ");
-    data += thevar + "=" + thevalue1 + "<br>";
-  }
-  //document.getElementById("data").innerHTML = data;
-}
-
-function execute() {
-  receive();
-  parse();
+function execute() 
+{
+  t.parse();
+  t.transsysBody();
+  stringB = t.transsysBody;
+  document.getElementById('myDiv1').innerHTML = stringB;
+  ShowF(1);
 }
 
 window.onload=execute;
@@ -170,7 +195,7 @@ window.onload=execute;
 </table><table>
 <tr><td><h3>factor</h3></td></tr>
 <tr><td>enter factor name:</td><td><INPUT type="text" name="name"></td></tr>
-<tr><td><INPUT type="button" value="add factor" onclick="insertfactor(this.form.name.value),show(1);"></td></tr>
+<tr><td><INPUT type="button" value="add factor" onclick="t.insertFactor(this.form.name.value),showTranssys(1);"></td></tr>
 </table>
 </form>
 <form ENCTYPE="multipart/form-data" name="guided1" action="/cgi-bin/entry.cgi" method="post">
@@ -180,7 +205,7 @@ window.onload=execute;
 <tr><td>gene product</td><td><select name="product"></select></td></tr>
 <tr><td>activators:</td><td><select multiple size="2" name="activate"></select></td></tr>
 <tr><td>repressors:</td><td><select multiple size="2" name="repress"></select></td></tr>
-<tr><td><INPUT type="button" value="add gene" onclick="insertgene(),show(0);"></td></tr>
+<tr><td><INPUT type="button" value="add gene" onclick="t.insertGene(),showTranssys(1);"></td></tr>
 </table>
 <hr>
 <h3>Once you have finished ...</h3>
