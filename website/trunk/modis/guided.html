@@ -117,6 +117,8 @@ function superFactory()
       alert("gene does not exist, try another name ");
     else
       this.garray.splice(f,1);
+      this.gene.splice(f,1);
+      this.product.splice(f,1);
   }
 }
 
@@ -231,8 +233,8 @@ window.onload=execute;
 <tr><td><h3>gene</h3></td></tr>
 <tr><td>enter gene name:</td><td><INPUT type="text" name="gene"></td></tr>
 <tr><td>gene product</td><td><select name="product"></select></td></tr>
-<tr><td>activators:</td><td><select multiple size="2" name="activate"></select></td></tr>
-<tr><td>repressors:</td><td><select multiple size="2" name="repress"></select></td></tr>
+<tr><td>activators:</td><td><select multiple size="2" name="activate" width="200" STYLE="width: 200px"></select></td></tr>
+<tr><td>repressors:</td><td><select multiple size="2" name="repress" width="200" STYLE="width: 200px"></select></td></tr>
 <tr><td><INPUT type="button" value="add gene" onclick="t.insertGene(),showTranssys(1);"></td>
 <td><INPUT type="button" value="remove gene" onclick="t.removeGene(),showTranssys(1);"></td></tr>
 </table>

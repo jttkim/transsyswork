@@ -4,20 +4,22 @@
 # dreamhost
 import sys
 
-sys.path = ['/home/trsysweb/lib/python'] + sys.path
+sys.path = ['/home/trsysweb/lib', '/home/trsysweb/lib/python/python_igraph-0.5.2-py2.4-linux-x86_64.egg'] + sys.path
 
-# Import the CGI module
+from igraph import *
 import cgi, cgitb
 import transsys
 import trsysmodis
 import StringIO
 import trsysweb
 import os
+cgitb.enable()
 import Gnuplot
 import random
-import matplotlib
+import matplotlib.pyplot as plt
 import matplotlib.pyplot
 import urllib
+import networkx as nx
 
 
 def print_http_headers() :
@@ -28,6 +30,52 @@ line terminators.
 """
   sys.stdout.write('Content-Type: text/html\r\n')
   sys.stdout.write('\r\n')
+
+
+def get_interactions_arrayIG(tp) :
+  """Create graph object from (tp) transsys program
+@param tp: transsys program
+@type tp: C{dictionary}
+@return: graph object
+@rtype: object
+"""
+  g = Graph(tp.num_factors())
+  g.vs['name'] = tp.factor_names()
+  for gene in tp.gene_names() :
+    index = tp.find_gene_index(gene)
+    for promoter in tp.gene_list[index].promoter[1:] :
+      for factor in promoter.getIdentifierNodes():
+        g.add_edges((index,tp.find_factor_index(factor.factor.name)))
+  return (g)
+
+
+def get_interactions_array(tp) :
+  """Create graph from (tp) transsys program
+@param tp: transsys program
+@type tp: C{dictionary}
+@return: graph object
+@rtype: object
+"""
+  g = nx.Graph()
+  geneD = {}
+  for i in tp.factor_names() :
+    for j in tp.encoding_gene_list(i) :
+      geneD[i] = j.name
+  if tp.num_genes() < 2 :
+    g.add_node(tp.num_genes())
+  else :
+    g.add_node(tp.num_genes() - 1 )
+  for gene in tp.gene_names() :
+    index = tp.find_gene_index(gene)
+    for promoter in tp.gene_list[index].promoter[:] :
+      for factor in promoter.getIdentifierNodes():
+        if factor.factor.name in geneD.keys() : 
+          g.add_edge(index, tp.find_gene_index(geneD[factor.factor.name]))
+	else :
+	  print "Error, gene encoding \'%s\' factor has not been provided"%factor.factor.name 
+	  print "\nClick on <- to ammend your transsys prograim"
+	  sys.exit()
+  return (g)
 
 
 def exper_displaydata(tp1, tp2, form):
@@ -117,8 +165,8 @@ def exper_displaydata(tp1, tp2, form):
   print "</html>\n"
 
 
-def write_result(f, optResult, a) :
- print "<h3 align='left'>Fitness plot</h3><p><img src='%s' align='center'>"% plotImage(a, "Time steps", "Fitness")
+def write_result(f, optResult, a, names) :
+ print "<h3 align='left'>Fitness plot</h3><p><img src='%s' align='center'>"% plotImage(a, "Time steps", "Fitness", names)
  print "<p>"
  f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
  f.write('%s\n' %  str(optResult.optimised_transsys_program))
@@ -128,7 +176,6 @@ def write_result(f, optResult, a) :
 
 
 def readprogram(form) :
-  
   wm = trsysweb.webtool(form)
   x = wm.get_expr_data()
   p = wm.get_pheno_data()
@@ -180,7 +227,7 @@ def readprogram(form) :
     log.write('</optimisation>')
     log.seek(0)
     wm.printfitness(log)
-    write_result(finalparam, opt_result, a)
+    write_result(finalparam, opt_result, a, transsys_program.gene_names())
 
 
 def validate_tp(exp) :
@@ -208,20 +255,60 @@ def validate_model(tp1, tp2) :
 
 
 def timeSeries(transsys_program) :
+  """Output graph and plot
+@param transsys_program: transsys_program
+@type transsys_program: object
+"""
   print_http_headers()
+  g = get_interactions_array(transsys_program)
+  nodeName = {}
+  for i, name in enumerate(transsys_program.gene_names()) :
+    nodeName[i] = name
   a = []
   ti = transsys.TranssysInstance(transsys_program)
   ts = ti.time_series(500)
+  p = transsys_program.gene_names()
   for i,value in enumerate(ts) :
     a.append(value.factor_concentration)
-  print "<h2 align='center'><font face='arial'>Time series plot</font></h2><p><img src='%s' align='center'>"% plotImage(a, "Time steps", "Expression value")
-  print "<p><a href='http://localhost/guided.html'>Go to guided form</p>"
+  print "<h2 align='center'><font face='arial'>Network graph</font></h2><p><img src='%s' align='center'>"% plotGraph(g, nodeName)
+  print "<h2 align='center'><font face='arial'>Time series plot</font></h2><p><img src='%s' align='center'>"% plotImage(a, "Time steps", "Expression value", transsys_program.gene_names())
+  print "<p><a href='http://www.transsys.net/modis/guided.html'>Go to guided form</p>"
 
 
-def plotImage(a, xlabel,ylabel) :
-  fig = matplotlib.pyplot.figure(num=None, figsize=(5, 4), dpi=80, facecolor='w', edgecolor='k')
+def plotGraph(g, nodeName) :
+  """Plot graph
+@param g: graph object
+@type g: object
+@param nodeName: node labels
+@type nodeName: c(dictionary}
+@return: html object
+@type: object
+"""  
+  f = StringIO.StringIO()
+  pos = nx.spring_layout(g)
+  nx.draw(g, pos, labels = nodeName)
+  plt.savefig(f, format = 'png')
+  return 'data:image/png,' + urllib.quote(f.getvalue())
+
+
+def plotImage(a, xlabel, ylabel, names) :
+  """Plot Image
+@param a: Time series
+@type a: array
+@param xlabel: labels x axis
+@type xlabel: array
+@param ylabel: labels y axis
+@type ylabel: array
+@param names: legend
+@type names: array
+@return: html object
+@type: object
+"""
+  d = matplotlib.font_manager.FontProperties(family='sans-serif', size=8,fname=None, _init=None)
+  fig = matplotlib.pyplot.figure(num=None, figsize=(6, 5), dpi=80, facecolor='w', edgecolor='k')
   matplotlib.pyplot.ioff()
   matplotlib.pyplot.plot(a)
+  matplotlib.pyplot.legend(names, prop=d)
   matplotlib.pyplot.ylabel(ylabel, fontsize=9)
   matplotlib.pyplot.xlabel(xlabel, fontsize=9)
 
