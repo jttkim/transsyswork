@@ -626,21 +626,25 @@ a specified value.
 @ivar factor_concentration: the concentration to set this factor to
 """
 
-  def __init__(self, attribute_name = 'MeJA', factor_name = 'jasmonate', factor_concentration = 1.0) :
-    self.attribute_name = attribute_name
+  def __init__(self, treatment_name = 'MeJA', factor_name = 'jasmonate', factor_concentration = 1.0, time_step = 1.0) :
+    self.treatment_name = treatment_name
     self.factor_name = factor_name
     self.factor_concentration = float(factor_concentration)
+    self.time_step = float(time_step)
   
   
-  def get_variable(self, r) :
+  def get_variable(self, r, label) :
     """ Load rules according
 @param r: array containing rules
 @type r: C[]
-"""
-    if self.verify_rule(r) :
-      self.attribute_name = r[0]
-      self.factor_name = r[1]
-      self.factor_concentration = float(r[2])
+""" 
+    if label == r[0] :
+      self.treatment_name = self.verifyString(r[1])
+      self.factor_name = self.verifyString(r[2])
+      self.factor_concentration = self.verifyFloat(r[3])
+      self.time_step = self.verifyArray(r[4])
+    else :
+      raise StandardError, "%s is an incorrect identifier"%r[0]
   
 
   def verify_rule(self, s) :
@@ -650,7 +654,46 @@ a specified value.
 @return: flag
 @rtype: bool
 """ 
-    return (isinstance(s[0], StringType) and isinstance(s[1], StringType) and isinstance(float(s[2]), FloatType))
+    return (isinstance(s[1], StringType) and isinstance(s[2], StringType) and isinstance(float(s[3]), FloatType) and isinstance(float(s[4]), FloatType))
+
+
+  def verifyString(self, s) :
+    """ Verify rule
+@param s: string containing rule
+@type s: C{String}
+@return: String
+@rtype: String
+""" 
+    if (isinstance(s, StringType)) :
+      return(s)
+    else :
+      raise StandardError, "%s is an incorrect assignment"%s
+
+
+  def verifyFloat(self, s) :
+    """ Verify rule
+@param s: string containing rule
+@type s: C{String}
+@return: String
+@rtype: String
+""" 
+    if (isinstance(float(s), FloatType)) :
+      return(float(s))
+    else :
+      raise StandardError, "%s is an incorrect assignment"%s
+
+
+  def verifyArray(self, s) :
+    """ Verify rule
+@param s: string containing rule
+@type s: C{String}
+@return: array
+@rtype: array
+"""
+    t = []
+    for i in s.split(";") :
+      t.append(self.verifyFloat(i))
+    return(t)
 
 
   def match(self, pheno) :
@@ -668,7 +711,7 @@ a specified value.
 @param pheno: pheno data
 @type pheno: C{String}
 @param transsys_instance: transsys instance
-@type transsys_instance: Instace
+@type transsys_instance: Instance
 @raise StandardError: If factor does not exist
 """ 
     if self.match(pheno) :
@@ -682,24 +725,24 @@ def parse_rule(f) :
   """ Parse rules
 @param f: file containing rules
 @type f: C{file}
-@raise StandardError: If file does not have 'treament' heading
+@raise StandardError: If file does not have 'treatment' heading
 """
-  heading_word = 'treatment'
+  magic = 'TranssysTreatmentObjectiveFunction'
 
   arrayrule = []  
   l = f.readline()
   if l == '' :
      return None
-  if l.strip() == heading_word :
+  if l.strip() == magic :
     l = f.readline() 
     while l:
-      l = l.strip().split() 
+      l = l.strip().split()
       r = InterventionSimulationRule()
-      r.get_variable(l)
+      r.get_variable(l, "treatmentDesc")
       arrayrule.append(r)
       l = f.readline() 
-  return arrayrule 
-  raise StandardError, 'unknown file'
+    return arrayrule 
+  raise StandardError, 'bad magic %s '%l
 
 
 class KnockoutObjective(EmpiricalObjective) : 
@@ -833,7 +876,6 @@ series is the simulation of the gene expression levels for that genotype.
     e = copy.deepcopy(self.expression_set)
     e.expression_data.array_name = []
     
-    #for array in self.expression_set.pheno_data.pheno_data :
     for array in self.expression_set.expression_data.array_name :
       e.add_array(array)
       if 'wildtype' in self.expression_set.pheno_data.pheno_data[array] :
