@@ -12,6 +12,7 @@ import transsys
 import transsys.optim
 import re
 import transsys.utils
+import xml.sax.handler
 from types import IntType
 from types import LongType
 from types import FloatType
@@ -1000,3 +1001,204 @@ class ModelFitnessResult(transsys.optim.FitnessResult) :
 
   def __init__(self, fitness) :
     super(ModelFitnessResult, self).__init__(fitness)
+
+
+class parseObjectiveSpec(object) :
+  """ Object specification """
+
+  magic = "ObjectiveSpecification-0.1" 
+  
+  def __init__(self, f) :
+    """  Comment """
+    self.infile = f
+    self.keywords = ['mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
+    self.identifier_name = ""
+
+
+  def check_savefile_magic(self, l) :
+    """ Check consistency of Specification file heading """
+    return(l == self.magic)
+
+
+  def validate_end(self, k) :
+    """ Check lexicon
+  @param l: expected newline
+  @type l: character{}
+  @return: l
+  @rtype: character{}
+  """
+    l = self.infile.readline()
+    if l != k :
+      raise StandardError, 'an empty newline should have been left after spec file header, instead this was found:\'%s\''%l
+    return l
+
+ 
+  def get_keyword(self) :
+    """Identifies block keyword"""
+    l = self.infile.readline()
+    wordK = l.strip().split()
+    if re.match('endspec', l) :
+      return wordK
+    if len(wordK) != 2 :
+      raise StandardError, 'A header should contain two words, instead this was found %s' %wordK
+    if wordK[0] in self.keywords : 
+      self.identifier_name =  wordK[1] 
+      return wordK[0]
+    else :
+      raise StandarError, '% is not a correct identifier' %wordK[0]
+ 
+  
+  def get_mappingsen(self, l) :
+    """Check mapping lexicon
+  @param l: sentence
+  @type l: String{}
+  @return: dictionary
+  @rtype: dictionary{}
+  """
+    dictionary = {}
+    word = l.split()
+    if len(word) != 3 :
+      raise StandardError, '%s is not a correct mapping structure'%word
+    if word[1] != '=' :
+      raise StandardError, '%s is not a correct assignment symbol' %word[1]
+    dictionary[word[0]] = word[2]
+    return dictionary
+
+
+  def validate_treatment(self, l):
+    """ Comment 
+  @param l: String
+  @type l: String
+  @return: rule
+  @rtype: array
+  """
+    p = l.split() 
+    if len(p) != 4 :
+      raise StandardError, '%s is not the correct structure of a treatment procedure'%l
+    if p[2] != '=' :
+      raise StandardError, '%s is not a correct assignment symbol'%p[2]
+    if (isinstance(float(p[3]), FloatType) and isinstance(p[1], StringType)) :
+      return(p[0].split(":")[0], '%s %s %s'%(p[1],p[2],p[3]))
+
+
+  def validate_generalp(self, l) :
+    """ Comment """
+    p = l.split()
+    if len(p) != 2 :
+      raise StandardError, '%s is not the correct structure of a treatment procedure'%l
+    if (p[0].split(":")[0] == "knockout" and isinstance(p[1], StringType)) :
+      return(p[0].split(":")[0], p[1])
+    elif (p[0].split(":")[0] == "runtimesteps" and isinstance(float(p[1]), FloatType)) :
+      return(p[0].split(":")[0], p[1])
+    else :
+      raise StandardError, '%s is not the correct structure of a procedure'%l
+
+
+  def get_proceduresen(self, l) :
+    """Check procedure lexicon
+  @param l: sentence
+  @type l: String{}
+  @return: array
+  @rtype: array[]
+  """
+    procedure_array = []
+    if l.find(':') == -1 :
+      raise StandardError, '%s is not the correct structure of a procedure'%l
+    if re.match("treatment:", l) :
+      procedure_array.append(self.validate_treatment(l))
+    elif re.match("knockout:", l) :
+      procedure_array.append(self.validate_generalp(l))
+    elif re.match("runtimesteps:", l) :
+      procedure_array.append(self.validate_generalp(l))
+    else :
+      raise StandardError, '%s is not a correct sentence'%l
+
+
+  def get_arraysen(self, l) :
+    """Check array lexicon
+  @param l: sentence
+  @type l: String{}
+  @return: array
+  @rtype: array[]
+  """
+    procedure_name = l.split()
+    if len(procedure_name) != 1 :
+      raise StandardError, '%s is not a single sentence to call a procedure'%l 
+    return(procedure_name)
+
+
+  def parse_mapping(self) :
+    """ Parse factor mapping block
+  @return: map_dict
+  @rtype: dictionary{}
+  """
+    map_dict = {}
+    mapping_id = self.identifier_name
+    l = self.infile.readline()
+    while l.find('endmapping') == -1 :
+      map_dict.update(self.get_mappingsen(l))
+      l = self.infile.readline()
+    self.validate_end('\n')
+    return(mapping_id, map_dict)
+
+
+  def parse_procedure(self) :
+    """ Parse procedure blocks"""
+    procedure_array = []
+    procedure_id = self.identifier_name
+    l = self.infile.readline()
+    while l.find('endprocedure') == -1 :
+      procedure_array.append(self.get_proceduresen(l))
+      l = self.infile.readline()
+    self.validate_end('\n')
+    return(procedure_id, procedure_array)
+
+
+  def parse_array(self) :
+    """ Parse array blocks"""
+    array_array = []
+    array_id = self.identifier_name
+    l = self.infile.readline()
+    while l.find('endarray') == -1 :
+      array_array.append(self.get_arraysen(l))
+      l = self.infile.readline()
+    self.validate_end('\n')
+    return(array_id, array_array)
+
+
+  def parse_block(self) :
+    """Parse specification blocks"""
+    mapping = []
+    procedures = []
+    arrays = []
+    kw = self.get_keyword()
+    while kw == 'mapping' or kw == 'procedure' or kw == 'array' :
+      if kw == 'mapping' :
+        mapping.append(self.parse_mapping())
+      elif kw == 'procedure' :
+        procedures.append(self.parse_procedure())
+      elif kw == 'array' :
+        arrays.append(self.parse_array())
+      kw = self.get_keyword()
+    return (mapping, procedures, arrays)
+        
+
+  def parse_spec(self) :
+    """ Parse specification file 
+  @return: specifications
+  @rtype: object
+  """
+    self.validate_end('\n')
+    mapping, procedures, array = self.parse_block() 
+
+
+  def parse(self) :
+    """ Comment """
+    l = self.infile.readline()
+    if l == '' :
+      return None
+    l = l.strip()
+    if self.check_savefile_magic(l) :
+       self.parse_spec()
+    else :
+      raise StandardError, '%s is a wrong header for a specification file' % l
