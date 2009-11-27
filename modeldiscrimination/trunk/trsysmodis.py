@@ -1003,14 +1003,133 @@ class ModelFitnessResult(transsys.optim.FitnessResult) :
     super(ModelFitnessResult, self).__init__(fitness)
 
 
+class procedureSpec(object) :
+  """  Comment """
+
+  def __init__(self) :
+    """  Comment """
+
+    self.procedure_array = []
+    self.procedure_id = ""
+
+
+  def parse_procedure(self, infile, identifier) :
+    """ Parse procedure blocks
+  @param infile: spec file
+  @type infile: file
+  @param identifier: procedure identifier
+  @type identifier: String
+  """
+
+    self.procedure_id = identifier
+    l = infile.readline()
+    while l.find('endprocedure') == -1 :
+      self.procedure_array.append(self.get_proceduresen(l))
+      l = infile.readline()
+    validate_end(infile.readline())
+
+
+  def get_proceduresen(self, l) :
+    """Check procedure lexicon
+  @param l: sentence
+  @type l: String{}
+  @return: array
+  @rtype: array[]
+  """
+    procedure_array = []
+    if l.find(':') == -1 :
+      raise StandardError, '%s is not the correct structure of a procedure'%l
+    if re.match("treatment:", l) :
+      return(self.validate_treatment(l))
+    elif re.match("knockout:", l) :
+      return(self.validate_generalp(l))
+    elif re.match("runtimesteps:", l) :
+      return(self.validate_generalp(l))
+    else :
+      raise StandardError, '%s is not a correct sentence'%l
+
+
+  def validate_treatment(self, l):
+    """ Comment 
+  @param l: String
+  @type l: String
+  @return: rule
+  @rtype: array
+  """
+    p = l.split() 
+    if len(p) != 4 :
+      raise StandardError, '%s is not the correct structure of a treatment procedure'%l
+    if p[2] != '=' :
+      raise StandardError, '%s is not a correct assignment symbol'%p[2]
+    if (isinstance(float(p[3]), FloatType) and isinstance(p[1], StringType)) :
+      return(p[0].split(":")[0], '%s %s %s'%(p[1],p[2],p[3]))
+
+
+  def validate_generalp(self, l) :
+    """ Comment """
+    p = l.split()
+    if len(p) != 2 :
+      raise StandardError, '%s is not the correct structure of a treatment procedure'%l
+    if (p[0].split(":")[0] == "knockout" and isinstance(p[1], StringType)) :
+      return(p[0].split(":")[0], p[1])
+    elif (p[0].split(":")[0] == "runtimesteps" and isinstance(float(p[1]), FloatType)) :
+      return(p[0].split(":")[0], p[1])
+    else :
+      raise StandardError, '%s is not the correct structure of a procedure'%l
+
+
+class arraySpec(object) :
+  """  Comment """
+
+
+  def __init__(self) :
+    """  Comment """
+  
+    self.array_id = ""
+    self.array_array = []
+
+
+  def parse_array(self, infile, identifier, p_name) :
+    """ Parse array blocks
+  @param infile: spec file
+  @type infile: file
+  @param identifier: procedure identifier
+  @type identifier: String
+  """
+
+    self.array_id = identifier
+    l = infile.readline()
+    while l.find('endarray') == -1 :
+      self.array_array.append(self.get_arraysen(l, p_name))
+      l = infile.readline()
+    validate_end(infile.readline())
+
+
+  def get_arraysen(self, l, p_name) :
+    """Check array lexicon
+  @param l: sentence
+  @type l: String{}
+  @param p_name: procedure name list
+  @type p_name: list[]
+  @return: array
+  @rtype: array[]
+  """
+    procedure_name = l.split()
+    if len(procedure_name) != 1 :
+      raise StandardError, '%s is not a single sentence to call a procedure'%l 
+    if procedure_name not in p_name :
+      raise StandardError, '%s procedure does not exist'%procedure_name
+    return(procedure_name)
+
+
 class parseObjectiveSpec(object) :
   """ Object specification """
 
   magic = "ObjectiveSpecification-0.1" 
   
-  def __init__(self, f) :
+  def __init__(self) :
     """  Comment """
-    self.infile = f
+    self.infile = "" 
     self.keywords = ['mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
     self.identifier_name = ""
 
@@ -1018,19 +1137,6 @@ class parseObjectiveSpec(object) :
   def check_savefile_magic(self, l) :
     """ Check consistency of Specification file heading """
     return(l == self.magic)
-
-
-  def validate_end(self, k) :
-    """ Check lexicon
-  @param l: expected newline
-  @type l: character{}
-  @return: l
-  @rtype: character{}
-  """
-    l = self.infile.readline()
-    if l != k :
-      raise StandardError, 'an empty newline should have been left after spec file header, instead this was found:\'%s\''%l
-    return l
 
  
   def get_keyword(self) :
@@ -1065,68 +1171,6 @@ class parseObjectiveSpec(object) :
     return dictionary
 
 
-  def validate_treatment(self, l):
-    """ Comment 
-  @param l: String
-  @type l: String
-  @return: rule
-  @rtype: array
-  """
-    p = l.split() 
-    if len(p) != 4 :
-      raise StandardError, '%s is not the correct structure of a treatment procedure'%l
-    if p[2] != '=' :
-      raise StandardError, '%s is not a correct assignment symbol'%p[2]
-    if (isinstance(float(p[3]), FloatType) and isinstance(p[1], StringType)) :
-      return(p[0].split(":")[0], '%s %s %s'%(p[1],p[2],p[3]))
-
-
-  def validate_generalp(self, l) :
-    """ Comment """
-    p = l.split()
-    if len(p) != 2 :
-      raise StandardError, '%s is not the correct structure of a treatment procedure'%l
-    if (p[0].split(":")[0] == "knockout" and isinstance(p[1], StringType)) :
-      return(p[0].split(":")[0], p[1])
-    elif (p[0].split(":")[0] == "runtimesteps" and isinstance(float(p[1]), FloatType)) :
-      return(p[0].split(":")[0], p[1])
-    else :
-      raise StandardError, '%s is not the correct structure of a procedure'%l
-
-
-  def get_proceduresen(self, l) :
-    """Check procedure lexicon
-  @param l: sentence
-  @type l: String{}
-  @return: array
-  @rtype: array[]
-  """
-    procedure_array = []
-    if l.find(':') == -1 :
-      raise StandardError, '%s is not the correct structure of a procedure'%l
-    if re.match("treatment:", l) :
-      procedure_array.append(self.validate_treatment(l))
-    elif re.match("knockout:", l) :
-      procedure_array.append(self.validate_generalp(l))
-    elif re.match("runtimesteps:", l) :
-      procedure_array.append(self.validate_generalp(l))
-    else :
-      raise StandardError, '%s is not a correct sentence'%l
-
-
-  def get_arraysen(self, l) :
-    """Check array lexicon
-  @param l: sentence
-  @type l: String{}
-  @return: array
-  @rtype: array[]
-  """
-    procedure_name = l.split()
-    if len(procedure_name) != 1 :
-      raise StandardError, '%s is not a single sentence to call a procedure'%l 
-    return(procedure_name)
-
-
   def parse_mapping(self) :
     """ Parse factor mapping block
   @return: map_dict
@@ -1138,36 +1182,15 @@ class parseObjectiveSpec(object) :
     while l.find('endmapping') == -1 :
       map_dict.update(self.get_mappingsen(l))
       l = self.infile.readline()
-    self.validate_end('\n')
+    validate_end(self.infile.readline())
     return(mapping_id, map_dict)
 
 
-  def parse_procedure(self) :
-    """ Parse procedure blocks"""
-    procedure_array = []
-    procedure_id = self.identifier_name
-    l = self.infile.readline()
-    while l.find('endprocedure') == -1 :
-      procedure_array.append(self.get_proceduresen(l))
-      l = self.infile.readline()
-    self.validate_end('\n')
-    return(procedure_id, procedure_array)
-
-
-  def parse_array(self) :
-    """ Parse array blocks"""
-    array_array = []
-    array_id = self.identifier_name
-    l = self.infile.readline()
-    while l.find('endarray') == -1 :
-      array_array.append(self.get_arraysen(l))
-      l = self.infile.readline()
-    self.validate_end('\n')
-    return(array_id, array_array)
-
-
   def parse_block(self) :
-    """Parse specification blocks"""
+    """Parse specification blocks
+  @return: mapping, procedures, arrays
+  @rtype: array
+  """
     mapping = []
     procedures = []
     arrays = []
@@ -1176,29 +1199,60 @@ class parseObjectiveSpec(object) :
       if kw == 'mapping' :
         mapping.append(self.parse_mapping())
       elif kw == 'procedure' :
-        procedures.append(self.parse_procedure())
+        o = procedureSpec()
+	o.parse_procedure(self.infile, self.identifier_name)
+        procedures.append(o)
       elif kw == 'array' :
-        arrays.append(self.parse_array())
+	p_name = self.procedure_name(procedures)
+        o = arraySpec()
+	o.parse_array(self.infile, self.identifier_name, p_name)
+        arrays.append(o)
       kw = self.get_keyword()
     return (mapping, procedures, arrays)
         
+   
+  def procedure_name(self, procedures) :
+    """  Comment """
+    proc = []
+    for p in procedures :
+      proc.append([p.procedure_id])
+    return(proc)
 
-  def parse_spec(self) :
+
+  def parse_spec(self, f) :
     """ Parse specification file 
   @return: specifications
   @rtype: object
   """
-    self.validate_end('\n')
-    mapping, procedures, array = self.parse_block() 
+    self.infile = f
+    validate_end(self.infile.readline())
+    p = self.parse_block()
+    return (p)
+
+    
+def validate_end(l) :
+  """ Check lexicon
+@param l: expected newline
+@type l: character{}
+"""
+
+  if l != '\n' and l != 'endspec' :
+    raise StandardError, 'an empty newline should have been left after spec file header, instead this was found:\'%s\''%l
 
 
-  def parse(self) :
-    """ Comment """
-    l = self.infile.readline()
-    if l == '' :
-      return None
-    l = l.strip()
-    if self.check_savefile_magic(l) :
-       self.parse_spec()
-    else :
-      raise StandardError, '%s is a wrong header for a specification file' % l
+def parse(f) :
+  """ Comment 
+@param f: Spec file
+@type f: file
+@return: object Spec
+@rtype: object
+"""
+  l = f.readline()
+  if l == '' :
+    return None
+  l = l.strip()
+  o = parseObjectiveSpec()
+  if o.check_savefile_magic(l) :
+     return o.parse_spec(f)
+  else :
+    raise StandardError, '%s is a wrong header for a specification file' % l
