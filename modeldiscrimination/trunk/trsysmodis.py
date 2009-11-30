@@ -17,7 +17,7 @@ from types import IntType
 from types import LongType
 from types import FloatType
 from types import StringType
-
+import string
 
 
 class ExpressionData(object) :
@@ -1122,23 +1122,132 @@ class arraySpec(object) :
     return(procedure_name)
 
 
+class SpecScanner(object) :
+  """ Comment """
+
+  def __init__(self, f) :
+    """ Comment """
+    self.infile = f
+    self.buffer = ''
+    self.lineno = 0
+    self.keywords = ['mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
+    self.identifier_re = re.compile('([A-Za-z_][A-Za-z0-9_]*)|([\\[\\]])')
+    self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
+    self.header = self.lookheader()
+    self.next_token = self.get_token()
+
+
+  def lookheader(self) :
+    return(self.infile.readline())
+
+  def lookahead(self) :
+    return self.next_token[0]
+
+
+  def token(self) :
+    """ Comment """
+    return_token = self.next_token
+    self.next_token = self.get_token()
+    return return_token
+
+
+  def isdelimiter(self, c) :
+    """Comment"""
+    if len(c) != 1 :
+      raise StandardError, 'attempt to classify multicharacter string as delimiter'
+    if c.isspace() :
+      return False
+    if c in '_' :
+      return False
+    return True
+
+
+  def get_token(self) :
+    """ Comment """
+    if len(self.buffer) > 0 :
+      if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
+              self.buffer = ''
+    while self.buffer == '' :
+      self.buffer = self.infile.readline()
+      self.lineno = self.lineno + 1
+    if self.buffer == '' :
+      return None, None
+      self.buffer = string.strip(self.buffer)
+    if len(self.buffer) > 0 :
+      if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
+        self.buffer = ''
+    for kw in self.keywords :
+      if self.buffer[:len(kw)] == kw :
+	if re.match('%s($|[^A-Za-z0-9_])' % kw, self.buffer) is not None :
+	  self.buffer = string.strip(self.buffer[len(kw):])
+	  return kw, None
+    m = self.identifier_re.match(self.buffer)
+    if m :
+      s = m.group()
+      self.buffer = string.strip(self.buffer[len(s):])
+      return ('identifier', s)
+    m = self.realvalue_re.match(self.buffer)
+    if m :
+      s = m.group()
+      v = float(s)
+      self.buffer = string.strip(self.buffer[len(s):])
+      return ('realvalue', v)
+    c = self.buffer[0]
+    self.buffer = string.strip(self.buffer[1:])
+    return c, None
+    raise StandardError, 'line %d: scanner stalled at "%s"' % (self.lineno, self.buffer)
+
+
+  def get_lines(self) :
+    """Comment"""
+    if self.next_token[0] == 'identifier' :
+      l = self.next_token[1]
+    elif self.next_token[0] == 'realvalue' :
+      l = str(self.next_token[1])
+    elif self.next_token[0] is None :
+      l = ''
+    else :
+      l = self.next_token[0] + ' '
+      l = l + self.buffer
+      lines = []
+    if l :
+      lines.append(l)
+    l = self.infile.readline()
+    while l :
+      lines.append(l[:-1])
+      l = self.infile.readline()
+    return lines
+
+
+  def check_magic(self, l) :
+    """ Check consistency of Specification file heading """
+    
+    if l not in self.header.split() :
+      raise StandardError, '% is not a correct file header' %self.header
+    return("true")
+
+
 class EmpiricalObjectiveFunctionParser(object) :
   """ Object specification """
 
   magic = "ObjectiveSpecification-0.1" 
   
-  def __init__(self) :
+  def __init__(self, f) :
     """  Comment """
-    self.infile = "" 
+    ##self.infile = "" 
     self.keywords = ['mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
     self.identifier_name = ""
+    self.scanner = SpecScanner(f)
 
 
-  def check_savefile_magic(self, l) :
-    """ Check consistency of Specification file heading """
-    return(l == self.magic)
+  def expect_token(self, expected_token) :
+    """Comment"""
+    t, v = self.scanner.token()
+    if t != expected_token :
+      raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
+    return v
 
- 
+
   def get_keyword(self) :
     """Identifies block keyword"""
     l = self.infile.readline()
@@ -1176,6 +1285,8 @@ class EmpiricalObjectiveFunctionParser(object) :
   @return: map_dict
   @rtype: dictionary{}
   """
+    print(self.scanner.next_token[0])
+    sys.exit()
     map_dict = {}
     mapping_id = self.identifier_name
     l = self.infile.readline()
@@ -1238,49 +1349,24 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_procedure_defs(self, f) :
     procedure_defs = []
-    while next_token == 'procedure' :
-      procedure_defs.append(self.parse_procedure_def(...))
+    while self.scanner.next_token[0] == 'procedure' :
+      procedure_defs.append(self.parse_procedure_def(f))
     return procedure_defs
   
 
-  def parse_spec(self, f) :
+  def parse_spec(self) :
     """ Parse specification file 
   @return: specifications
   @rtype: object
   """
-    self.infile = f
-    mapping = parse_mapping(f)
-    procedure_defs = parse_procedure_defs(f)
-    array_defs = parse_array_defs(f)
+    mapping = self.parse_mapping()
+    procedure_defs = self.parse_procedure_defs()
+    array_defs = self.parse_array_defs()
     return KnockoutTreatmentObjective(mapping, procedure_defs, array_defs)
-    validate_end(self.infile.readline())
-    p = self.parse_block()
-    return (p)
-
-    
-def validate_end(l) :
-  """ Check lexicon
-@param l: expected newline
-@type l: character{}
-"""
-
-  if l != '\n' and l != 'endspec' :
-    raise StandardError, 'an empty newline should have been left after spec file header, instead this was found:\'%s\''%l
 
 
-def parse(f) :
-  """ Comment 
-@param f: Spec file
-@type f: file
-@return: object Spec
-@rtype: object
-"""
-  l = f.readline()
-  if l == '' :
-    return None
-  l = l.strip()
-  o = KnockoutTreatmentObjectiveFunctionParser()
-  if o.check_savefile_magic(l) :
-     return o.parse_spec(f)
-  else :
-    raise StandardError, '%s is a wrong header for a specification file' % l
+  def parse(self) :
+    if (self.scanner.check_magic(self.magic)):
+      self.expect_token('\n')
+      return self.parse_spec()
+
