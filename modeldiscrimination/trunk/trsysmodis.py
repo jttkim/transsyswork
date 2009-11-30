@@ -1122,7 +1122,7 @@ class arraySpec(object) :
     return(procedure_name)
 
 
-class parseObjectiveSpec(object) :
+class EmpiricalObjectiveFunctionParser(object) :
   """ Object specification """
 
   magic = "ObjectiveSpecification-0.1" 
@@ -1219,12 +1219,40 @@ class parseObjectiveSpec(object) :
     return(proc)
 
 
+  def parse_procedure_header(self, f) :
+    # assuming parsing "on the fly" using regexps etc.
+    procedure_header_re = re.compile('procedure ([a-zA-z_][a-zA-Z0-9_]*)')
+    m = procedure_header_re.match(f.readline())
+    if m is None :
+      raise StandardError, '...'
+    procedure_name = m.group(1)
+    return procedure_name
+
+
+  def parse_procedure_def(self, f) :
+    procedure_name = parse_procedure_header(self, f)
+    instruction_list = parse_procedure_body(self, f)
+    parse_procedure_footer(self, f)
+    return Procedure(procedure_name, instruction_list)
+
+
+  def parse_procedure_defs(self, f) :
+    procedure_defs = []
+    while next_token == 'procedure' :
+      procedure_defs.append(self.parse_procedure_def(...))
+    return procedure_defs
+  
+
   def parse_spec(self, f) :
     """ Parse specification file 
   @return: specifications
   @rtype: object
   """
     self.infile = f
+    mapping = parse_mapping(f)
+    procedure_defs = parse_procedure_defs(f)
+    array_defs = parse_array_defs(f)
+    return KnockoutTreatmentObjective(mapping, procedure_defs, array_defs)
     validate_end(self.infile.readline())
     p = self.parse_block()
     return (p)
@@ -1251,7 +1279,7 @@ def parse(f) :
   if l == '' :
     return None
   l = l.strip()
-  o = parseObjectiveSpec()
+  o = KnockoutTreatmentObjectiveFunctionParser()
   if o.check_savefile_magic(l) :
      return o.parse_spec(f)
   else :
