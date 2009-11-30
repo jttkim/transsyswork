@@ -1,15 +1,23 @@
-objectivespec ::= magic mapping (procedure_def)* (array_def)*
+objectivespec ::= knockout_treatment_magic knockout_treatment_objectivespec
 
-magic ::= "ObjectiveSpecification-0.1" NEWLINE NEWLINE
+knockout_treatment_objectivespec ::= mapping procedure_defs (array_def)*
+
+knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
+
+procedure_defs ::=
+	| procedure_def procedure_defs
 
 mapping_def ::= mapping_header mapping_body mapping_footer NEWLINE
 procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
 array_def ::= array_header array_body array_footer NEWLINE
 
 procedure_header ::= "procedure" WHITESPACE identifier NEWLINE 
-procedure_body ::= (procedure_identifier | instruction)+
+procedure_body ::= (instruction)+
 
-instruction ::= "knockout:" WHITESPACE gene_identifier NEWLINE
+instruction ::= procedure_identifier
+	| primary_instruction
+
+primary_instruction ::= "knockout:" WHITESPACE gene_identifier NEWLINE
 	| "runtimesteps:" WHITESPACE integer NEWLINE
 	| "treatment:" WHITESPACE factor_identifier WHITESPACE "=" WHITESPACE realnumber
 
