@@ -561,13 +561,15 @@ expression sets.
 The objective function is parametrised by gene expression measurements.
 """ 
 
-  def __init__(self, expression_set) :
+  def __init__(self, mapping_defs, procedure_defs, array_defs) :
     """Constructor.
 @param expression_set: the expression st
 @type expression_set: l{ExpressionSet}
 """
-    self.expression_set = expression_set
-
+    self.expression_set = None
+    self.mapping_defs = mapping_defs
+    self.procedure_defs = procedure_defs
+    self.array_defs = array_defs
 
   def __call__(self, transsys_program) :
     """Abstract method.
@@ -634,69 +636,6 @@ a specified value.
     self.time_step = float(time_step)
   
   
-  def get_variable(self, r, label) :
-    """ Load rules according
-@param r: array containing rules
-@type r: C[]
-""" 
-    if label == r[0] :
-      self.treatment_name = self.verifyString(r[1])
-      self.factor_name = self.verifyString(r[2])
-      self.factor_concentration = self.verifyFloat(r[3])
-      self.time_step = self.verifyArray(r[4])
-    else :
-      raise StandardError, "%s is an incorrect identifier"%r[0]
-  
-
-  def verify_rule(self, s) :
-    """ Verify rule
-@param s: string containing rule
-@type s: C{String}
-@return: flag
-@rtype: bool
-""" 
-    return (isinstance(s[1], StringType) and isinstance(s[2], StringType) and isinstance(float(s[3]), FloatType) and isinstance(float(s[4]), FloatType))
-
-
-  def verifyString(self, s) :
-    """ Verify rule
-@param s: string containing rule
-@type s: C{String}
-@return: String
-@rtype: String
-""" 
-    if (isinstance(s, StringType)) :
-      return(s)
-    else :
-      raise StandardError, "%s is an incorrect assignment"%s
-
-
-  def verifyFloat(self, s) :
-    """ Verify rule
-@param s: string containing rule
-@type s: C{String}
-@return: String
-@rtype: String
-""" 
-    if (isinstance(float(s), FloatType)) :
-      return(float(s))
-    else :
-      raise StandardError, "%s is an incorrect assignment"%s
-
-
-  def verifyArray(self, s) :
-    """ Verify rule
-@param s: string containing rule
-@type s: C{String}
-@return: array
-@rtype: array
-"""
-    t = []
-    for i in s.split(";") :
-      t.append(self.verifyFloat(i))
-    return(t)
-
-
   def match(self, pheno) :
     """Determine whether this rule itself matches the pheno data
 @param pheno: pheno data
@@ -722,30 +661,6 @@ a specified value.
       transsys_instance.factor_concentration[factor_index] = self.factor_concentration
 
 
-def parse_rule(f) :
-  """ Parse rules
-@param f: file containing rules
-@type f: C{file}
-@raise StandardError: If file does not have 'treatment' heading
-"""
-  magic = 'TranssysTreatmentObjectiveFunction'
-
-  arrayrule = []  
-  l = f.readline()
-  if l == '' :
-     return None
-  if l.strip() == magic :
-    l = f.readline() 
-    while l:
-      l = l.strip().split()
-      r = InterventionSimulationRule()
-      r.get_variable(l, "treatmentDesc")
-      arrayrule.append(r)
-      l = f.readline() 
-    return arrayrule 
-  raise StandardError, 'bad magic %s '%l
-
-
 class KnockoutObjective(EmpiricalObjective) : 
   """Objective function
 based on empirical data from the wild type and knockout mutants.
@@ -765,11 +680,11 @@ of the gene expression levels for that genotype.
 @type distance_function: C{function}
 """ 
 
-  def __init__(self, expression_set, equilibration_length) :
+  def __init__(self, mapping_defs, procedure_defs, array_defs) :
     """Constructor.
 """
-    super(KnockoutObjective, self).__init__(expression_set)
-    self.equilibration_length = equilibration_length
+    super(KnockoutObjective, self).__init__(mapping_defs, procedure_defs, array_defs)
+    self.equilibration_length = None
     self.distance_function = None
     self.distance_measu = None
 
@@ -782,6 +697,37 @@ of the gene expression levels for that genotype.
     e = self.get_simulated_set(transsys_program)
     s = self.distance_measu(e.expression_data, self.distance_function)
     return ModelFitnessResult(s)
+
+
+  def set_expression_set(self, expression_set) :
+    if (self.validate_array(expression_set) and self.validate_gene(expression_set)) :
+      self.expression_set = expression_set
+
+  
+  def validate_array(self, expression_set) :
+    array_list = []
+    for array in self.array_defs :
+      if array.get_array_name() not in expression_set.expression_data.array_name :
+	raise StandardError, '%s is not an array in the expression_set'%array.get_array_name()
+      array_list.append(array.get_array_name())
+    
+    if len(array_list) != len(expression_set.expression_data.array_name) :
+      raise StandardError, 'Spec and Expression do not have the same number of arrays'
+    return(True)
+
+
+  def validate_gene(self, expression_set) :
+    gene_list = [] 
+    for gene in self.mapping_defs :
+       gene_list = gene.get_factor_list()
+
+    for gene in gene_list :
+      if gene not in expression_set.expression_data.expression_data.keys() :
+	raise StandardError, '%s is not a gene in the expression_set'%gene
+    
+    if len(gene_list) != len(expression_set.expression_data.expression_data.keys()) :
+      raise StandardError, 'Spec and Expression do not have the same number of genes'
+    return(True)
 
 
   def get_simulated_set(self, transsys_program) :
@@ -844,13 +790,11 @@ series is the simulation of the gene expression levels for that genotype.
 """ 
 
 
-  def __init__(self, expression_set, equilibration_length, rule) :
-    """Constructor.
-"""
-    super(KnockoutTreatmentObjective, self).__init__(expression_set, equilibration_length)
-    self.equilibration_length = equilibration_length
+  def __init__(self, mapping_defs, procedure_defs, array_defs) :
+    """Constructor"""
+    super(KnockoutTreatmentObjective, self).__init__(mapping_defs, procedure_defs, array_defs)
     self.distance_function = None
-    self.rule = rule
+    self.expression_set = None
 
 
   def __call__(self, transsys_program) :
@@ -858,6 +802,8 @@ series is the simulation of the gene expression levels for that genotype.
 @param transsys_program: transsys program   
 @type transsys_program: Instance
 """
+    if self.expression_set is None :
+      raise StandardError, 'There is no expression set'
     e = self.get_simulated_set(transsys_program)
     s = self.distance_measu(e.expression_data, self.distance_function)
     return ModelFitnessResult(s)
@@ -870,8 +816,6 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: object
 """
-    if self.rule == None :
-      raise StandardError, 'no rule file has been loaded'
 
     e = ExpressionSet()
     e = copy.deepcopy(self.expression_set)
@@ -1018,13 +962,16 @@ class Mapping(object) :
 
   
   def get_factor_list(self) :
-    return(self.factor_list)
+    return(self.factor_list.keys())
+
+  def get_mapping_list(self) :
+    return(self.factor_list.keys())
 
 
 class Procedure(object) :
   """  Comment """
 
-  def __init__(self, instruction_list, procedure_name) :
+  def __init__(self, procedure_name, instruction_list) :
     """  Comment """
 
     self.instruction_list = instruction_list
@@ -1483,27 +1430,63 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   
   def parse_mapping_defs(self) :
+    """ Parse mapping block 
+  @return: Mapping object
+  @rtype: object
+  """
     mapping_defs = []
     while self.scanner.next_token[0] == 'mapping' :
       mapping_defs.append(self.parse_mapping_def())
       self.scanner.token()
       self.expect_token('\n')
-    procedure_defs = self.parse_procedure_defs()
     return mapping_defs
 
 
   def parse_spec(self) :
     """ Parse specification file 
-  @return: specifications
+  @return: Spec
   @rtype: object
   """
     mapping_defs = self.parse_mapping_defs()
     procedure_defs = self.parse_procedure_defs()
     array_defs = self.parse_array_defs()
+    self.validate_spec(mapping_defs, procedure_defs, array_defs)
     return KnockoutTreatmentObjective(mapping_defs, procedure_defs, array_defs)
 
 
+  def validate_spec(self, mapping_defs, procedure_defs, array_defs) :
+    """ Validate Spec integrity
+@param mapping_defs = mapping object
+@type mapping_defs = object
+@param procedure_defs = procedure object
+@type procedure_defs = object
+@param array_defs = array object
+@type array_defs = object
+"""
+    procedure_list = [] 
+    gene_list = [] 
+
+    for item in procedure_defs :
+      procedure_list.append(item.procedure_name)
+    for gene in mapping_defs :
+      gene_list = gene.factor_list.keys()
+
+    for procedure in procedure_defs :
+      for gene in procedure.instruction_list :
+        if 'knockout' in gene :
+	  if gene[1] not in gene_list :
+            raise StandardError, '%s gene in procedure %s is not a valid name'%(gene[1], procedure.procedure_name)
+    for array in array_defs :
+      for procedure in array.instruction_list :
+        if procedure not in procedure_list :
+          raise StandardError, '%s procedure in array %s is not valid'%(procedure, array.array_name)
+
+
   def parse(self) :
+    """Parse spec
+@return: Spec objective function
+@rtype: object
+"""
     if (self.scanner.check_magic(self.magic)):
       self.expect_token('\n')
       return self.parse_spec()
