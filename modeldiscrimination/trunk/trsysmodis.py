@@ -803,7 +803,7 @@ series is the simulation of the gene expression levels for that genotype.
 @type transsys_program: Instance
 """
     if self.expression_set is None :
-      raise StandardError, 'There is no expression set'
+      raise StandardError, 'There is not expression set'
     e = self.get_simulated_set(transsys_program)
     s = self.distance_measu(e.expression_data, self.distance_function)
     return ModelFitnessResult(s)
@@ -820,7 +820,8 @@ series is the simulation of the gene expression levels for that genotype.
     e = ExpressionSet()
     e = copy.deepcopy(self.expression_set)
     e.expression_data.array_name = []
-    
+   
+    #for array in self.array_defs
     for array in self.expression_set.expression_data.array_name :
       e.add_array(array)
       if 'wildtype' in self.expression_set.pheno_data.pheno_data[array] :
@@ -951,7 +952,7 @@ class Mapping(object) :
   """ Comment """
 
   def __init__(self, mapping_name, factor_list):
-    """Comment"""
+    """ Class mapping """
 
     self.mapping_name = mapping_name
     self.factor_list = factor_list
@@ -969,7 +970,7 @@ class Mapping(object) :
 
 
 class Procedure(object) :
-  """  Comment """
+  """  Class Proedure """
 
   def __init__(self, procedure_name, instruction_list) :
     """  Comment """
@@ -987,7 +988,7 @@ class Procedure(object) :
 
 
 class Array(object) :
-  """  Comment """
+  """ Class Array """
 
 
   def __init__(self, array_name, instruction_list) :
@@ -1006,7 +1007,7 @@ class Array(object) :
 
 
 class Scanner(object) :
-  """ Comment """
+  """ Class Scanner """
 
   def __init__(self, f) :
     """ Comment """
@@ -1143,7 +1144,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_array_footer(self) :
-    """ Comment """
+    """ Parse array footer
+  @return: Footer
+  @rtype: String{}
+  """
     return(self.scanner.lookahead())
 
 
@@ -1157,7 +1161,11 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_array_defs(self) :
     array_defs = []
     while self.scanner.next_token[0] == 'array':
-      array_defs.append(self.parse_array_def())
+      im = self.parse_array_def()
+      for array in array_defs :
+        if array.array_name == im.array_name :
+	  raise StandardError, '%s already exist'%im.array_name
+      array_defs.append(im)
       self.scanner.token()
       self.expect_token('\n')
     return array_defs
@@ -1217,161 +1225,29 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_procedure_body(self) :
-    """ Comment """
-    procedure = []
-    while self.scanner.next_token[0] != 'endprocedure' :
-      procedure.append(self.get_proceduresen())
-
-
-  def parse_procedure_footer(self) :
-    """ Comment """
-    return(self.scanner.lookahead())
-
-
-  def parse_procedure_def(self) :
-    procedure_name = self.parse_procedure_header()
-    instruction_list = self.parse_procedure_body()
-    self.parse_procedure_footer()
-    return Procedure(procedure_name, instruction_list)
-
-
-  def parse_procedure_defs(self) :
-    procedure_defs = []
-    while self.scanner.next_token[0] == 'procedure' :
-      procedure_defs.append(self.parse_procedure_def())
-      self.scanner.token()
-      self.expect_token('\n')
-    return procedure_defs
-  
-
-  def parse_mapping_header(self) :
-    self.expect_token('mapping')
-    mapping_name = self.expect_token('identifier')
-    return mapping_name
-
-
-  def get_mappingsen(self) :
-    """Check mapping lexicon
-  @param l: sentence
-  @type l: String{}
-  @return: dictionary
-  @rtype: dictionary{}
-  """
-    map_dict = {}
-    factor_name = self.scanner.token()[1]
-    self.expect_token('=')
-    manuf_id = self.scanner.token()[1]
-    map_dict[factor_name] = manuf_id
-    self.scanner.token()
-    return(map_dict)
-
-
-  def parse_mapping_body(self):
-    """ Comment """
-    map_dict = {}
-    while self.scanner.next_token[0] != 'endmapping' :
-      map_dict.update(self.get_mappingsen())
-
-
-  def parse_mapping_footer(self):
-    """ Comment """
-    return(self.scanner.lookahead())
- 
-
-  def parse_mapping_def(self) :
-    mapping_name = self.parse_mapping_header()
-    factor_list = self.parse_mapping_body()
-    self.parse_mapping_footer()
-    return Mapping(mapping_name, factor_list)
-
-  
-  def parse_mapping_defs(self) :
-    mapping_defs = []
-    while self.scanner.next_token[0] == 'mapping' :
-      mapping_defs.append(self.parse_mapping_def())
-    return mapping_defs
-
-
-  def parse_spec(self) :
-    """ Parse specification file 
-  @return: specifications
-  @rtype: object
-  """
-    mapping_defs = self.parse_mapping_defs()
-    self.scanner.token()
-    self.expect_token('\n')
-    procedure_defs = self.parse_procedure_defs()
-    array_defs = self.parse_array_defs()
-    return array_defs
-  
-
-  def parse_procedure_header(self) :
-    self.expect_token('procedure')
-    procedure_name = self.expect_token('identifier')
-    return procedure_name
-
-
-  def get_proceduresen(self) :
-    """Check procedure lexicon
-  @return: array
+    """ Parse procedure body
+  @return: instruction list
   @rtype: array[]
   """
-    t = self.expect_token('identifier')
-    if "treatment" in t :
-      return(t, self.validate_treatment())
-    elif "knockout" in t :
-      return(t, self.validate_knockout())
-    elif t == "runtimesteps" :
-      return(t, self.validate_runtimesteps())
-
-
-  def validate_treatment(self):
-    """ Comment 
-  @return: rule
-  @rtype: array
-  """
-    self.expect_token(':')
-    treatment = self.expect_token('identifier')
-    self.expect_token('=')
-    value = self.expect_token('realvalue')
-    if (isinstance(float(value), FloatType) and isinstance(treatment, StringType)) :
-      return(treatment, value)
-
-
-  def validate_knockout(self) :
-    """ Comment """
-    self.expect_token(':')
-    value = self.scanner.token()[1]
-    if isinstance(value, StringType):
-      return(value)
-    else :
-      raise StandardError, "%s is not a correct string value"%s
-
-
-  def validate_runtimesteps(self) :
-    """ Comment """
-    self.expect_token(':')
-    value = self.scanner.token()[1]
-    if isinstance(float(value), FloatType) :
-      return( value)
-    else :
-      raise StandardError, "%s is not a correct numeric value"%s
-
-
-  def parse_procedure_body(self) :
-    """ Comment """
     procedure = []
     while self.scanner.next_token[0] != 'endprocedure' :
       procedure.append(self.get_proceduresen())
-    return(procedure)
+    return procedure
 
 
   def parse_procedure_footer(self) :
-    """ Comment """
+    """ Parse procedure footer
+  @return: Footer
+  @rtype: String{}
+  """
     return(self.scanner.lookahead())
 
 
   def parse_procedure_def(self) :
+    """ Parse object procedure
+  @return: object procedure
+  @rtype: object procedure
+  """
     procedure_name = self.parse_procedure_header()
     instruction_list = self.parse_procedure_body()
     self.parse_procedure_footer()
@@ -1379,15 +1255,27 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_procedure_defs(self) :
+    """Parse procedure defs
+  @return: array of object procedures
+  @rtype: array[]
+  """
     procedure_defs = []
     while self.scanner.next_token[0] == 'procedure' :
-      procedure_defs.append(self.parse_procedure_def())
+      im = self.parse_procedure_def()
+      for procedure in procedure_defs :
+        if procedure.procedure_name == im.procedure_name :
+	  raise StandardError, '%s already exist'%im.procedure_name
+      procedure_defs.append(im)
       self.scanner.token()
       self.expect_token('\n')
     return procedure_defs
-  
+ 
 
   def parse_mapping_header(self) :
+    """ Parse mapping header
+  @return: mapping header
+  @rtype: String{}
+  """
     self.expect_token('mapping')
     mapping_name = self.expect_token('identifier')
     return mapping_name
@@ -1400,39 +1288,50 @@ class EmpiricalObjectiveFunctionParser(object) :
   @return: dictionary
   @rtype: dictionary{}
   """
-    map_dict = {}
     factor_name = self.scanner.token()[1]
     self.expect_token('=')
     manuf_id = self.scanner.token()[1]
-    map_dict[factor_name] = manuf_id
     self.scanner.token()
-    return(map_dict)
+    return(factor_name, manuf_id)
 
 
   def parse_mapping_body(self):
-    """ Comment """
+    """ Parse mapping body
+  @return: gene dictionary
+  @rtype: dictionary{}
+  """
     map_dict = {}
     while self.scanner.next_token[0] != 'endmapping' :
-      map_dict.update(self.get_mappingsen())
+      f, m = self.get_mappingsen()
+      if f in map_dict.keys() :
+        raise StandardError, '%s already exist'%f
+      map_dict[f] = m
     return(map_dict)
 
 
   def parse_mapping_footer(self):
-    """ Comment """
+    """ Parse mapping footer
+  @return: Footer
+  @rtype: String{}
+  """
     return(self.scanner.lookahead())
  
 
   def parse_mapping_def(self) :
-    mapping_name = self.parse_mapping_header()
-    factor_list = self.parse_mapping_body()
-    self.parse_mapping_footer()
-    return Mapping(mapping_name, factor_list)
-
-  
-  def parse_mapping_defs(self) :
-    """ Parse mapping block 
+    """ Parse mapping object
   @return: Mapping object
-  @rtype: object
+  @rtype: object Mapping
+  """
+    mapping_name = self.parse_mapping_header()
+    factor_list = self.parse_mapping_body()
+    self.parse_mapping_footer()
+    return Mapping(mapping_name, factor_list)
+
+  
+  def parse_mapping_defs(self) :
+    """ Parse mapping array
+  @return: mapping array
+  @rtype: array{}
   """
     mapping_defs = []
     while self.scanner.next_token[0] == 'mapping' :
