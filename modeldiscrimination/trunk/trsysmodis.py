@@ -12,12 +12,11 @@ import transsys
 import transsys.optim
 import re
 import transsys.utils
-import xml.sax.handler
 from types import IntType
 from types import LongType
 from types import FloatType
 from types import StringType
-import string
+
 
 
 class ExpressionData(object) :
@@ -116,14 +115,18 @@ class ExpressionData(object) :
 @rtype: C{dictionary}
 """ 
     profile = {}
-    vector = []
+    profile2 = {}
     wt_index = self.array_name.index(wt)
     wt_value = self.expression_data[gene_name][wt_index]
     profile = self.get_profile(gene_name)
+    t = copy.deepcopy(self.array_name)
+    del t[wt_index]
     profile_c = copy.deepcopy(profile) 
     del profile_c[gene_name][wt_index]
     profile_c[gene_name] = map(lambda t: self.logratio(t, wt_value),profile_c[gene_name])
-    return profile_c
+    for (i, name,) in enumerate(t):
+       profile2[name] = profile_c[gene_name][i]
+    return profile2
 
 
   def get_gene_name(self) :
@@ -561,15 +564,13 @@ expression sets.
 The objective function is parametrised by gene expression measurements.
 """ 
 
-  def __init__(self, mapping_defs, procedure_defs, array_defs) :
+  def __init__(self, expression_set) :
     """Constructor.
 @param expression_set: the expression st
 @type expression_set: l{ExpressionSet}
 """
-    self.expression_set = None
-    self.mapping_defs = mapping_defs
-    self.procedure_defs = procedure_defs
-    self.array_defs = array_defs
+    self.expression_set = expression_set
+
 
   def __call__(self, transsys_program) :
     """Abstract method.
@@ -629,13 +630,33 @@ a specified value.
 @ivar factor_concentration: the concentration to set this factor to
 """
 
-  def __init__(self, treatment_name = 'MeJA', factor_name = 'jasmonate', factor_concentration = 1.0, time_step = 1.0) :
-    self.treatment_name = treatment_name
+  def __init__(self, attribute_name = 'MeJA', factor_name = 'jasmonate', factor_concentration = 1.0) :
+    self.attribute_name = attribute_name
     self.factor_name = factor_name
     self.factor_concentration = float(factor_concentration)
-    self.time_step = float(time_step)
   
   
+  def get_variable(self, r) :
+    """ Load rules according
+@param r: array containing rules
+@type r: C[]
+"""
+    if self.verify_rule(r) :
+      self.attribute_name = r[0]
+      self.factor_name = r[1]
+      self.factor_concentration = float(r[2])
+  
+
+  def verify_rule(self, s) :
+    """ Verify rule
+@param s: string containing rule
+@type s: C{String}
+@return: flag
+@rtype: bool
+""" 
+    return (isinstance(s[0], StringType) and isinstance(s[1], StringType) and isinstance(float(s[2]), FloatType))
+
+
   def match(self, pheno) :
     """Determine whether this rule itself matches the pheno data
 @param pheno: pheno data
@@ -651,7 +672,7 @@ a specified value.
 @param pheno: pheno data
 @type pheno: C{String}
 @param transsys_instance: transsys instance
-@type transsys_instance: Instance
+@type transsys_instance: Instace
 @raise StandardError: If factor does not exist
 """ 
     if self.match(pheno) :
@@ -659,6 +680,30 @@ a specified value.
       if factor_index == -1 :
             raise StandardError, 'factor "%s" not found' %self.factor_name
       transsys_instance.factor_concentration[factor_index] = self.factor_concentration
+
+
+def parse_rule(f) :
+  """ Parse rules
+@param f: file containing rules
+@type f: C{file}
+@raise StandardError: If file does not have 'treament' heading
+"""
+  heading_word = 'treatment'
+
+  arrayrule = []  
+  l = f.readline()
+  if l == '' :
+     return None
+  if l.strip() == heading_word :
+    l = f.readline() 
+    while l:
+      l = l.strip().split() 
+      r = InterventionSimulationRule()
+      r.get_variable(l)
+      arrayrule.append(r)
+      l = f.readline() 
+  return arrayrule 
+  raise StandardError, 'unknown file'
 
 
 class KnockoutObjective(EmpiricalObjective) : 
@@ -680,11 +725,11 @@ of the gene expression levels for that genotype.
 @type distance_function: C{function}
 """ 
 
-  def __init__(self, mapping_defs, procedure_defs, array_defs) :
+  def __init__(self, expression_set, equilibration_length) :
     """Constructor.
 """
-    super(KnockoutObjective, self).__init__(mapping_defs, procedure_defs, array_defs)
-    self.equilibration_length = None
+    super(KnockoutObjective, self).__init__(expression_set)
+    self.equilibration_length = equilibration_length
     self.distance_function = None
     self.distance_measu = None
 
@@ -696,38 +741,8 @@ of the gene expression levels for that genotype.
 """
     e = self.get_simulated_set(transsys_program)
     s = self.distance_measu(e.expression_data, self.distance_function)
+    print s
     return ModelFitnessResult(s)
-
-
-  def set_expression_set(self, expression_set) :
-    if (self.validate_array(expression_set) and self.validate_gene(expression_set)) :
-      self.expression_set = expression_set
-
-  
-  def validate_array(self, expression_set) :
-    array_list = []
-    for array in self.array_defs :
-      if array.get_array_name() not in expression_set.expression_data.array_name :
-	raise StandardError, '%s is not an array in the expression_set'%array.get_array_name()
-      array_list.append(array.get_array_name())
-    
-    if len(array_list) != len(expression_set.expression_data.array_name) :
-      raise StandardError, 'Spec and Expression do not have the same number of arrays'
-    return(True)
-
-
-  def validate_gene(self, expression_set) :
-    gene_list = [] 
-    for gene in self.mapping_defs :
-       gene_list = gene.get_factor_list()
-
-    for gene in gene_list :
-      if gene not in expression_set.expression_data.expression_data.keys() :
-	raise StandardError, '%s is not a gene in the expression_set'%gene
-    
-    if len(gene_list) != len(expression_set.expression_data.expression_data.keys()) :
-      raise StandardError, 'Spec and Expression do not have the same number of genes'
-    return(True)
 
 
   def get_simulated_set(self, transsys_program) :
@@ -790,11 +805,13 @@ series is the simulation of the gene expression levels for that genotype.
 """ 
 
 
-  def __init__(self, mapping_defs, procedure_defs, array_defs) :
-    """Constructor"""
-    super(KnockoutTreatmentObjective, self).__init__(mapping_defs, procedure_defs, array_defs)
+  def __init__(self, expression_set, equilibration_length, rule) :
+    """Constructor.
+"""
+    super(KnockoutTreatmentObjective, self).__init__(expression_set, equilibration_length)
+    self.equilibration_length = equilibration_length
     self.distance_function = None
-    self.expression_set = None
+    self.rule = rule
 
 
   def __call__(self, transsys_program) :
@@ -802,8 +819,6 @@ series is the simulation of the gene expression levels for that genotype.
 @param transsys_program: transsys program   
 @type transsys_program: Instance
 """
-    if self.expression_set is None :
-      raise StandardError, 'There is not expression set'
     e = self.get_simulated_set(transsys_program)
     s = self.distance_measu(e.expression_data, self.distance_function)
     return ModelFitnessResult(s)
@@ -816,12 +831,14 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: object
 """
+    if self.rule == None :
+      raise StandardError, 'no rule file has been loaded'
 
     e = ExpressionSet()
     e = copy.deepcopy(self.expression_set)
     e.expression_data.array_name = []
-   
-    #for array in self.array_defs
+    
+    #for array in self.expression_set.pheno_data.pheno_data :
     for array in self.expression_set.expression_data.array_name :
       e.add_array(array)
       if 'wildtype' in self.expression_set.pheno_data.pheno_data[array] :
@@ -851,13 +868,18 @@ def distance_sum_squares(array1, array2) :
 @return: distance estimation
 @rtype: C{float}
 """
-
-  if array1.keys() != array2.keys() :
-    raise StandardError, 'key are not alike'
-
+ 
+  a = []
+  b = []
+  try:
+    for i in array1:
+      a.append(array1[i])
+      b.append(array2[i])
+  except ValueError:
+    print 'arrays are incompatible'
+  
   d = 0.0
-  for key, profile in array1.iteritems() :
-    d = transsys.utils.euclidean_distance_squared(array1[key], array2[key])
+  d = transsys.utils.euclidean_distance_squared(a, b)
   return d
 
 
@@ -871,12 +893,17 @@ def distance_euclidean(array1, array2) :
 @rtype: C{float}
 """
 
-  if array1.keys() != array2.keys() :
-    raise StandardError, 'key are not alike'
-
-  d = 0.00
-  for key, profile in array1.iteritems() :
-    d = transsys.utils.euclidean_distance(array1[key], array2[key])
+  a = []
+  b = []
+  try:
+    for i in array1:
+      a.append(array1[i])
+      b.append(array2[i])
+  except ValueError:
+    print 'arrays are incompatible'
+  
+  d = 0.0
+  d = transsys.utils.euclidean_distance(a,b)
   return d
 
 
@@ -889,16 +916,21 @@ def distance_correl(array1, array2) :
 @return: distance estimation
 @rtype: C{float}
 """
-  if array1.keys() != array2.keys() :
-    raise StandardError, 'key are not alike'
+  a = []
+  b = []
+  try:
+    for i in array1:
+      a.append(array1[i])
+      b.append(array2[i])
+  except ValueError:
+    print 'arrays are incompatible'
   d = 0.00
-  for key, profile in array1.iteritems() :
-    ave_vec1, stdev1 = statistics(array1[key])
-    ave_vec2, stdev2 = statistics(array2[key])
-    if stdev1 == 0.00 or stdev2 == 0.00 :
-      d = 1.0 
-    else :
-      d = 1.0 - transsys.utils.correlation_coefficient(array1[key], array2[key])
+  (ave_vec1, stdev1,) = statistics(a)
+  (ave_vec2, stdev2,) = statistics(b)
+  if ((stdev1 == 0.0) or (stdev2 == 0.0)):
+    d = 1.0
+  else :
+    d = 1.0 - transsys.utils.correlation_coefficient(a, b)
   return d
 
 
@@ -912,8 +944,14 @@ def distance_correl_sq(array1, array2) :
 @rtype: C{float}
 """
 
-  if array1.keys() != array2.keys() :
-    raise StandardError, 'key are not alike'
+  a = []
+  b = []
+  try:
+    for i in array1:
+      a.append(array1[i])
+      b.append(array2[i])
+  except ValueError:
+    print 'arrays are incompatible'
   
   return 1.0 - (2*distance_correl(array1,array2))
 
@@ -970,7 +1008,7 @@ class Mapping(object) :
 
 
 class Procedure(object) :
-  """  Class Proedure """
+  """  Class Procedure """
 
   def __init__(self, procedure_name, instruction_list) :
     """  Comment """
@@ -985,6 +1023,7 @@ class Procedure(object) :
   
   def get_instruction_list(self) :
     return(self.instruction_list)
+
 
 
 class Array(object) :
@@ -1390,3 +1429,446 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.expect_token('\n')
       return self.parse_spec()
 
+
+class Mapping(object) :
+  """ Comment """
+
+  def __init__(self, mapping_name, factor_list):
+    """ Class mapping """
+
+    self.mapping_name = mapping_name
+    self.factor_list = factor_list
+   
+
+  def get_mapping_name(self) :
+   return(self.mapping_name)
+
+  
+  def get_factor_list(self) :
+    return(self.factor_list.keys())
+
+  def get_mapping_list(self) :
+    return(self.factor_list.keys())
+
+
+class Procedure(object) :
+  """  Class Procedure """
+
+  def __init__(self, procedure_name, instruction_list) :
+    """  Comment """
+
+    self.instruction_list = instruction_list
+    self.procedure_name = procedure_name
+
+
+  def get_procedure_name(self) :
+   return(self.procedure_name)
+
+  
+  def get_instruction_list(self) :
+    return(self.instruction_list)
+
+
+
+class Array(object) :
+  """ Class Array """
+
+
+  def __init__(self, array_name, instruction_list) :
+    """  Comment """
+  
+    self.array_name = array_name
+    self.instruction_list = instruction_list
+
+
+  def get_array_name(self) :
+   return(self.array_name)
+
+  
+  def get_instruction_list(self) :
+    return(self.instruction_list)
+
+
+class Scanner(object) :
+  """ Class Scanner """
+
+  def __init__(self, f) :
+    """ Comment """
+    self.infile = f
+    self.buffer = ''
+    self.lineno = 0
+    self.keywords = ['mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
+    self.identifier_re = re.compile('([A-Za-z_][A-Za-z0-9_]*)|([\\[\\]])')
+    self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
+    self.header = self.lookheader()
+    self.next_token = self.get_token()
+
+
+  def lookheader(self) :
+    return(self.infile.readline())
+
+  def lookahead(self) :
+    return self.next_token[0]
+
+
+  def token(self) :
+    """ Comment """
+    return_token = self.next_token
+    self.next_token = self.get_token()
+    return return_token
+
+
+  def isdelimiter(self, c) :
+    """Comment"""
+    if len(c) != 1 :
+      raise StandardError, 'attempt to classify multicharacter string as delimiter'
+    if c.isspace() :
+      return False
+    if c in '_' :
+      return False
+    return True
+
+
+  def get_token(self) :
+    """ Comment """
+    if len(self.buffer) > 0 :
+      if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
+         self.buffer = ''
+    while self.buffer == '' :
+      self.buffer = self.infile.readline()
+      self.lineno = self.lineno + 1
+    if self.buffer == '' :
+      return None, None
+      self.buffer = string.strip(self.buffer)
+    if len(self.buffer) > 0 :
+      if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
+        self.buffer = ''
+    for kw in self.keywords :
+      if self.buffer[:len(kw)] == kw :
+	if re.match('%s($|[^A-Za-z0-9_])' % kw, self.buffer) is not None :
+	  self.buffer = string.strip(self.buffer[len(kw):])
+	  return kw, None
+    m = self.identifier_re.match(self.buffer)
+    if m :
+      s = m.group()
+      self.buffer = string.strip(self.buffer[len(s):])
+      return ('identifier', s)
+    m = self.realvalue_re.match(self.buffer)
+    if m :
+      s = m.group()
+      v = float(s)
+      self.buffer = string.strip(self.buffer[len(s):])
+      return ('realvalue', v)
+    c = self.buffer[0]
+    self.buffer = string.strip(self.buffer[1:])
+    return c, None
+    raise StandardError, 'line %d: scanner stalled at "%s"' % (self.lineno, self.buffer)
+
+
+  def get_lines(self) :
+    """Comment"""
+    if self.next_token[0] == 'identifier' :
+      l = self.next_token[1]
+    elif self.next_token[0] == 'realvalue' :
+      l = str(self.next_token[1])
+    elif self.next_token[0] is None :
+      l = ''
+    else :
+      l = self.next_token[0] + ' '
+      l = l + self.buffer
+      lines = []
+    if l :
+      lines.append(l)
+    l = self.infile.readline()
+    while l :
+      lines.append(l[:-1])
+      l = self.infile.readline()
+    return lines
+
+
+  def check_magic(self, l) :
+    """ Check consistency of Specification file heading """
+    
+    if l not in self.header.split() :
+      raise StandardError, '% is not a correct file header' %self.header
+    return("true")
+
+
+class EmpiricalObjectiveFunctionParser(object) :
+  """ Object specification """
+
+  magic = "ObjectiveSpecification-0.1" 
+  
+  def __init__(self, f) :
+    """  Comment """
+    self.scanner = Scanner(f)
+
+
+  def expect_token(self, expected_token) :
+    """Comment"""
+    t, v = self.scanner.token()
+    if t != expected_token :
+      raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
+    return v
+
+
+  def parse_array_header(self) :
+    self.expect_token('array')
+    array_name = self.expect_token('identifier')
+    return array_name
+
+
+  def parse_array_body(self) :
+    """Comment"""
+    procedure = []
+    while self.scanner.next_token[0] != 'endarray' :
+      procedure.append(self.expect_token('identifier'))
+    return(procedure)
+
+
+  def parse_array_footer(self) :
+    """ Parse array footer
+  @return: Footer
+  @rtype: String{}
+  """
+    return(self.scanner.lookahead())
+
+
+  def parse_array_def(self) :
+    array_name = self.parse_array_header()
+    instruction_list = self.parse_array_body()
+    self.parse_array_footer()
+    return Array(array_name, instruction_list)
+
+
+  def parse_array_defs(self) :
+    array_defs = []
+    while self.scanner.next_token[0] == 'array':
+      im = self.parse_array_def()
+      for array in array_defs :
+        if array.array_name == im.array_name :
+	  raise StandardError, '%s already exist'%im.array_name
+      array_defs.append(im)
+      self.scanner.token()
+      self.expect_token('\n')
+    return array_defs
+  
+
+  def parse_procedure_header(self) :
+    self.expect_token('procedure')
+    procedure_name = self.expect_token('identifier')
+    return procedure_name
+
+
+  def get_proceduresen(self) :
+    """Check procedure lexicon
+  @return: array
+  @rtype: array[]
+  """
+    t = self.expect_token('identifier')
+    if "treatment" in t :
+      return(t, self.validate_treatment())
+    elif "knockout" in t :
+      return(t, self.validate_knockout())
+    elif t == "runtimesteps" :
+      return(t, self.validate_runtimesteps())
+
+
+  def validate_treatment(self):
+    """ Comment 
+  @return: rule
+  @rtype: array
+  """
+    self.expect_token(':')
+    treatment = self.expect_token('identifier')
+    self.expect_token('=')
+    value = self.expect_token('realvalue')
+    if (isinstance(float(value), FloatType) and isinstance(treatment, StringType)) :
+      return(treatment, value)
+
+
+  def validate_knockout(self) :
+    """ Comment """
+    self.expect_token(':')
+    value = self.scanner.token()[1]
+    if isinstance(value, StringType):
+      return(value)
+    else :
+      raise StandardError, "%s is not a correct string value"%s
+
+
+  def validate_runtimesteps(self) :
+    """ Comment """
+    self.expect_token(':')
+    value = self.scanner.token()[1]
+    if isinstance(float(value), FloatType) :
+      return( value)
+    else :
+      raise StandardError, "%s is not a correct numeric value"%s
+
+
+  def parse_procedure_body(self) :
+    """ Parse procedure body
+  @return: instruction list
+  @rtype: array[]
+  """
+    procedure = []
+    while self.scanner.next_token[0] != 'endprocedure' :
+      procedure.append(self.get_proceduresen())
+    return procedure
+
+
+  def parse_procedure_footer(self) :
+    """ Parse procedure footer
+  @return: Footer
+  @rtype: String{}
+  """
+    return(self.scanner.lookahead())
+
+
+  def parse_procedure_def(self) :
+    """ Parse object procedure
+  @return: object procedure
+  @rtype: object procedure
+  """
+    procedure_name = self.parse_procedure_header()
+    instruction_list = self.parse_procedure_body()
+    self.parse_procedure_footer()
+    return Procedure(procedure_name, instruction_list)
+
+
+  def parse_procedure_defs(self) :
+    """Parse procedure defs
+  @return: array of object procedures
+  @rtype: array[]
+  """
+    procedure_defs = []
+    while self.scanner.next_token[0] == 'procedure' :
+      im = self.parse_procedure_def()
+      for procedure in procedure_defs :
+        if procedure.procedure_name == im.procedure_name :
+	  raise StandardError, '%s already exist'%im.procedure_name
+      procedure_defs.append(im)
+      self.scanner.token()
+      self.expect_token('\n')
+    return procedure_defs
+ 
+
+  def parse_mapping_header(self) :
+    """ Parse mapping header
+  @return: mapping header
+  @rtype: String{}
+  """
+    self.expect_token('mapping')
+    mapping_name = self.expect_token('identifier')
+    return mapping_name
+
+
+  def get_mappingsen(self) :
+    """Check mapping lexicon
+  @param l: sentence
+  @type l: String{}
+  @return: dictionary
+  @rtype: dictionary{}
+  """
+    factor_name = self.scanner.token()[1]
+    self.expect_token('=')
+    manuf_id = self.scanner.token()[1]
+    self.scanner.token()
+    return(factor_name, manuf_id)
+
+
+  def parse_mapping_body(self):
+    """ Parse mapping body
+  @return: gene dictionary
+  @rtype: dictionary{}
+  """
+    map_dict = {}
+    while self.scanner.next_token[0] != 'endmapping' :
+      f, m = self.get_mappingsen()
+      if f in map_dict.keys() :
+        raise StandardError, '%s already exist'%f
+      map_dict[f] = m
+    return(map_dict)
+
+
+  def parse_mapping_footer(self):
+    """ Parse mapping footer
+  @return: Footer
+  @rtype: String{}
+  """
+    return(self.scanner.lookahead())
+ 
+
+  def parse_mapping_def(self) :
+    """ Parse mapping object
+  @return: Mapping object
+  @rtype: object Mapping
+  """
+    mapping_name = self.parse_mapping_header()
+    factor_list = self.parse_mapping_body()
+    self.parse_mapping_footer()
+    return Mapping(mapping_name, factor_list)
+
+  
+  def parse_mapping_defs(self) :
+    """ Parse mapping array
+  @return: mapping array
+  @rtype: array{}
+  """
+    mapping_defs = []
+    while self.scanner.next_token[0] == 'mapping' :
+      mapping_defs.append(self.parse_mapping_def())
+      self.scanner.token()
+      self.expect_token('\n')
+    return mapping_defs
+
+
+  def parse_spec(self) :
+    """ Parse specification file 
+  @return: Spec
+  @rtype: object
+  """
+    mapping_defs = self.parse_mapping_defs()
+    procedure_defs = self.parse_procedure_defs()
+    array_defs = self.parse_array_defs()
+    self.validate_spec(mapping_defs, procedure_defs, array_defs)
+    return KnockoutTreatmentObjective(mapping_defs, procedure_defs, array_defs)
+
+
+  def validate_spec(self, mapping_defs, procedure_defs, array_defs) :
+    """ Validate Spec integrity
+@param mapping_defs = mapping object
+@type mapping_defs = object
+@param procedure_defs = procedure object
+@type procedure_defs = object
+@param array_defs = array object
+@type array_defs = object
+"""
+    procedure_list = [] 
+    gene_list = [] 
+
+    for item in procedure_defs :
+      procedure_list.append(item.procedure_name)
+    for gene in mapping_defs :
+      gene_list = gene.factor_list.keys()
+
+    for procedure in procedure_defs :
+      for gene in procedure.instruction_list :
+        if 'knockout' in gene :
+	  if gene[1] not in gene_list :
+            raise StandardError, '%s gene in procedure %s is not a valid name'%(gene[1], procedure.procedure_name)
+    for array in array_defs :
+      for procedure in array.instruction_list :
+        if procedure not in procedure_list :
+          raise StandardError, '%s procedure in array %s is not valid'%(procedure, array.array_name)
+
+
+  def parse(self) :
+    """Parse spec
+@return: Spec objective function
+@rtype: object
+"""
+    if (self.scanner.check_magic(self.magic)):
+      self.expect_token('\n')
+      return self.parse_spec()

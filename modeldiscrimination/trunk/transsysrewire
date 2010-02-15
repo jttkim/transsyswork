@@ -58,7 +58,7 @@ def search_vertice(v1, v2, intera) :
 
 def rw_operation() :
   sequence = []
-  for i in range(0,20) :
+  for i in range(0,rewiring_operations) :
     n = int(round(1.2**i))
     if n not in sequence:
       sequence.append(n)
@@ -71,13 +71,14 @@ parameters = None
 model = None
 replicate = None
 
-optlist, args = getopt.getopt(sys.argv[1:], 'n:t:r:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 'n:t:r:v:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
     print '-n: <Transsys program number>: Transsys program number'
     print '-t: <Transsys program name>: Transsys program name'
     print '-r: <Specify random replicates>: Random replicates'
+    print '-v: <Specify rewiring operation vector length>: Rewiring operation vector length'
     print '-h: print this help and exit'
     sys.exit()
   if opt == '-n' :
@@ -86,6 +87,8 @@ for opt, par in optlist :
     transsys_name = par
   elif opt == '-r' :
     replicate = int(par)
+  elif opt == '-v' :
+    rewiring_operations = int(par)
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 
