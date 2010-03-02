@@ -7,7 +7,7 @@ import os
 import transsys
 import transsys.optim 
 from math import sqrt
-import makemodel
+import trsysmodis
 import random
 
 
@@ -107,16 +107,16 @@ e = get_expr_data()
 p = get_pheno_data()
 f = get_feature_data()
 
-expression_set = makemodel.ExpressionSet()
+expression_set = trsysmodis.ExpressionSet()
 expression_set.read(e, p, f)
-objective_function = makemodel.KnockoutObjective(expression_set, equilibration_length)
+objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length)
 
 if f_distance == 1 :
-  objective_function.distance_function = makemodel.distance_sum_squares
+  objective_function.distance_function = trsysmodis.distance_sum_squares
 elif f_distance == 2 :
-  objective_function.distance_function = makemodel.distance_correl
+  objective_function.distance_function = trsysmodis.distance_correl
 else :
-  objective_function.distance_function = makemodel.distance_euclidean
+  objective_function.distance_function = trsysmodis.distance_euclidean
 
 if rndseed is not None  :
   objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, sigma)
