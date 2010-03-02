@@ -16,7 +16,7 @@ from types import IntType
 from types import LongType
 from types import FloatType
 from types import StringType
-
+import string
 
 
 class ExpressionData(object) :
@@ -88,7 +88,6 @@ class ExpressionData(object) :
 
     for key in self.expression_data :
       self.expression_data[key] = map(lambda t: t + mfloor, self.expression_data[key] )
-
 
 
   def get_profile(self, gene_name) :
@@ -558,65 +557,68 @@ gene in that array.
     return gene_list
 
 
-class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
-  """Abstract base class for objective functions based on empirical
-expression sets.
-The objective function is parametrised by gene expression measurements.
-""" 
 
-  def __init__(self, expression_set) :
-    """Constructor.
-@param expression_set: the expression st
-@type expression_set: l{ExpressionSet}
-"""
-    self.expression_set = expression_set
+class SimulationRuleObjective(object) :
+  """Abstract function to simulate treatment - i.e. equilibration, knockout, treatment"""
 
 
-  def __call__(self, transsys_program) :
+  def init__(self) :
+    """ Temporary """
+    pass
+
+
+  def __call__(self) :
     """Abstract method.
 """
     raise StandardError, 'abstract method called'
 
 
-  def get_simulated_set(self, transsys_program) :
-    """Abstract method.
-"""
-    raise StandardError, 'abstract method called'
+class SimulationKnockout(SimulationRuleObjective) :
+  """Abstract function to simulate knockout, treatment"""
 
 
-  def write_simulated_set(self, transsys_program, basename) :
-    """ Writes in a simulated expression set.
-
-@param transsys_program: the transsys program to be used to create the simulated expression set
-@param basename: base name for files (expression data, pheno data, feature data file)
-    """
-    expression_set = self.get_simulated_set(transsys_program)
-    expression_set.write_all(basename)
+  def __init__(self, gene_name) :
+    super(SimulationKnockout, self).__init__()
+    self.gene_name = gene_name
 
 
-  def write_noisy_simulated_set(self, transsys_program, basename, rng, sigma) :
-    """Write a noisy simulated expression set.
+  def simulate_rule(self, transsys_program) :
+     knockout_tp = copy.deepcopy(transsys_program)
+     knockout_tp = knockout_tp.get_knockout_copy(this.gene_name)
+     ti = transsys.TranssysInstance(knockout_tp)
 
-To be finished...
 
-@param rng: random number generator
+class SimulationTreatment(SimulationRuleObjective) :
+  """Abstract function to simulate treatment"""
+
+
+  def __init__(self, factor_name, factor_concentration) :
+    super(SimulationTreatment, self).__init__()
+    self.factor_name = factor_name
+    self.factor_concentration = float(factor_concentration)
+
+
+  def applytreatment(self, transsys_instance) :
+    """Apply treatment
+@param pheno: pheno data
+@type pheno: C{String}
+@param transsys_instance: transsys instance
+@type transsys_instance: Instace
+@raise StandardError: If factor does not exist
 """ 
-
-    if sigma == None :
-      raise StandardError, 'Percentage of noise to be added was not specified'
-
-    expression_set = self.get_simulated_set(transsys_program)
-    average = expression_set.get_meanexpressionset()
-    expression_set.apply_noise(rng, average, sigma)
-    expression_set.write_all(basename)
+      factor_index = transsys_instance.transsys_program.find_factor_index(self.factor_name)
+      if factor_index == -1 :
+            raise StandardError, 'factor "%s" not found' %self.factor_name
+      transsys_instance.factor_concentration[factor_index] = self.factor_concentration
 
 
-  def write_data(self, basename) :
-    """ Writes in a simulated expression set.
-@param basename: base name for files (expression data, pheno data, feature data file)
-@type basename: c{String}
-    """
-    expression_set.write_all(basename)
+class SimulationEquilibration(SimulationRuleObjective) :
+  """Abstract function to simulate equilibration"""
+
+
+  def __init__(self) :
+    super(SimulationKnockout, self).__init__()
+
 
 
 class InterventionSimulationRule(object) :
@@ -706,6 +708,67 @@ def parse_rule(f) :
   raise StandardError, 'unknown file'
 
 
+class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
+  """Abstract base class for objective functions based on empirical
+expression sets.
+The objective function is parametrised by gene expression measurements.
+""" 
+
+  def __init__(self, expression_set) :
+    """Constructor.
+@param expression_set: the expression st
+@type expression_set: l{ExpressionSet}
+"""
+    self.expression_set = expression_set
+
+
+  def __call__(self, transsys_program) :
+    """Abstract method.
+"""
+    raise StandardError, 'abstract method called'
+
+
+  def get_simulated_set(self, transsys_program) :
+    """Abstract method.
+"""
+    raise StandardError, 'abstract method called'
+
+
+  def write_simulated_set(self, transsys_program, basename) :
+    """ Writes in a simulated expression set.
+
+@param transsys_program: the transsys program to be used to create the simulated expression set
+@param basename: base name for files (expression data, pheno data, feature data file)
+    """
+    expression_set = self.get_simulated_set(transsys_program)
+    expression_set.write_all(basename)
+
+
+  def write_noisy_simulated_set(self, transsys_program, basename, rng, sigma) :
+    """Write a noisy simulated expression set.
+
+To be finished...
+
+@param rng: random number generator
+""" 
+
+    if sigma == None :
+      raise StandardError, 'Percentage of noise to be added was not specified'
+
+    expression_set = self.get_simulated_set(transsys_program)
+    average = expression_set.get_meanexpressionset()
+    expression_set.apply_noise(rng, average, sigma)
+    expression_set.write_all(basename)
+
+
+  def write_data(self, basename) :
+    """ Writes in a simulated expression set.
+@param basename: base name for files (expression data, pheno data, feature data file)
+@type basename: c{String}
+    """
+    expression_set.write_all(basename)
+
+
 class KnockoutObjective(EmpiricalObjective) : 
   """Objective function
 based on empirical data from the wild type and knockout mutants.
@@ -741,7 +804,6 @@ of the gene expression levels for that genotype.
 """
     e = self.get_simulated_set(transsys_program)
     s = self.distance_measu(e.expression_data, self.distance_function)
-    print s
     return ModelFitnessResult(s)
 
 
@@ -786,7 +848,7 @@ of the gene expression levels for that genotype.
     return ti_wt
 
 
-class KnockoutTreatmentObjective(KnockoutObjective) :
+class KnockoutTreatmentObjective(EmpiricalObjective) :
   """Objective function
 uses knockout objective function and adds treatment.
 
@@ -796,22 +858,24 @@ time steps, added a treatment according to some rules C{String}
 and finally equilibrated again. The instance at the end of this time 
 series is the simulation of the gene expression levels for that genotype.
 
-@ivar equilibration_length: length of the equilibration period.
-@type equilibration_length: C{int}
-@ivar distance_function: metric distance.
-@type distance_function: C{function}
-@param rule: rule
-@type rule: Object
+@ivar expression_set: expression set.
+@type expression_set: Object{expression_set}
+@ivar mapping_defs: gene mapping definition.
+@type mapping_defs: Object{mapping_defs}
+@ivar procedure_defs: procedure definition.
+@type procedure_defs: Object{procedure_defs}
+@ivar array_defs: array definition.
+@type array_defs: Object{array_defs}
 """ 
 
 
-  def __init__(self, expression_set, equilibration_length, rule) :
+  def __init__(self, expression_set, mapping_defs, procedure_defs, array_defs) :
     """Constructor.
-"""
-    super(KnockoutTreatmentObjective, self).__init__(expression_set, equilibration_length)
-    self.equilibration_length = equilibration_length
-    self.distance_function = None
-    self.rule = rule
+""" 
+    super(KnockoutTreatmentObjective, self).__init__(expression_set)
+    self.expression_set = expression_set
+    self.mapping_defs = mapping_defs
+    self.array_defs = array_defs
 
 
   def __call__(self, transsys_program) :
@@ -824,6 +888,18 @@ series is the simulation of the gene expression levels for that genotype.
     return ModelFitnessResult(s)
 
 
+  def set_expression_set(self, expression_set):
+    """Set expression and check it exists
+@param expression_set: expression set
+@type expression_set: object expression set
+"""
+    self.expression_set = expression_set
+    if self.expression_set == None :
+      raise StandardError, 'None expression set %s' %self.expression_set
+    self.validate_spec_array()
+    self.validate_spec_mapping()
+
+
   def get_simulated_set(self, transsys_program) :
     """Produce simulated data
 @param transsys_program: transsys program
@@ -831,14 +907,17 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: object
 """
-    if self.rule == None :
-      raise StandardError, 'no rule file has been loaded'
-
     e = ExpressionSet()
     e = copy.deepcopy(self.expression_set)
     e.expression_data.array_name = []
-    
-    #for array in self.expression_set.pheno_data.pheno_data :
+  
+    #for array in self.array_defs :
+    #  e.add_array(array.get_array_name())
+    #  for instruction in array.get_instruction_list() :
+    #    #print instruction
+    #  #print array.get_instruction_list()
+    #sys.exit()
+
     for array in self.expression_set.expression_data.array_name :
       e.add_array(array)
       if 'wildtype' in self.expression_set.pheno_data.pheno_data[array] :
@@ -857,6 +936,50 @@ series is the simulation of the gene expression levels for that genotype.
       ti_m = self.get_measurement(ti_m)
       map(lambda t: e.set_expression_value(array, t.name, ti_m.get_factor_concentration(t.name)),transsys_program.factor_list)
     return e
+
+
+  def get_measurement(self, ti) :
+    """Get time series value 
+@param ti: time series step
+@type ti: C{int}
+@return: factor concentration
+@rtype: array of C{float}
+"""
+
+    ts = ti.time_series(self.equilibration_length)
+    ti_wt = ts[-1]
+    return ti_wt
+
+
+
+  def validate_spec_array(self) :
+    """ Validate spec file array consistency """
+
+    array_name_spec = []
+    for array in self.array_defs :
+      array_name_spec.append(array.get_array_name())
+    array_name_eset = self.expression_set.expression_data.array_name
+    if (len(array_name_spec) != len(array_name_eset)) :
+      raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(array_name_spec), len(array_name_eset))
+
+    for name in array_name_spec :
+      if name not in array_name_eset :
+        raise StandardError, 'Array %s in spec is not present in eset' %name
+
+  
+  def validate_spec_mapping(self) :
+    """ Validate spec file mapping consistency """
+
+    for gene in self.mapping_defs :
+      gene_name_spec =  gene.get_factor_list()
+
+    if (len(gene_name_spec) != len(self.expression_set.expression_data.get_gene_name())) :
+      raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name()))
+
+    for name in gene_name_spec :
+      if name not in self.expression_set.expression_data.get_gene_name() :
+        raise StandardError, 'Array %s in spec is not present in eset' %name
+
 
 
 def distance_sum_squares(array1, array2) :
@@ -1023,7 +1146,6 @@ class Procedure(object) :
   
   def get_instruction_list(self) :
     return(self.instruction_list)
-
 
 
 class Array(object) :
@@ -1271,6 +1393,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure = []
     while self.scanner.next_token[0] != 'endprocedure' :
       procedure.append(self.get_proceduresen())
+    #print procedure
     return procedure
 
 
@@ -1447,6 +1570,7 @@ class Mapping(object) :
   def get_factor_list(self) :
     return(self.factor_list.keys())
 
+
   def get_mapping_list(self) :
     return(self.factor_list.keys())
 
@@ -1684,6 +1808,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.expect_token('=')
     value = self.expect_token('realvalue')
     if (isinstance(float(value), FloatType) and isinstance(treatment, StringType)) :
+      o = SimulationTreatment(treatment, value)
       return(treatment, value)
 
 
@@ -1734,6 +1859,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure_name = self.parse_procedure_header()
     instruction_list = self.parse_procedure_body()
     self.parse_procedure_footer()
+    
     return Procedure(procedure_name, instruction_list)
 
 
@@ -1829,11 +1955,12 @@ class EmpiricalObjectiveFunctionParser(object) :
   @return: Spec
   @rtype: object
   """
+    expression_set = None
     mapping_defs = self.parse_mapping_defs()
     procedure_defs = self.parse_procedure_defs()
     array_defs = self.parse_array_defs()
     self.validate_spec(mapping_defs, procedure_defs, array_defs)
-    return KnockoutTreatmentObjective(mapping_defs, procedure_defs, array_defs)
+    return KnockoutTreatmentObjective(expression_set, mapping_defs, procedure_defs, array_defs)
 
 
   def validate_spec(self, mapping_defs, procedure_defs, array_defs) :
