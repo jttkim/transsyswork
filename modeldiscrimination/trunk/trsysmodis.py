@@ -600,7 +600,7 @@ class SimulationKnockout(SimulationRuleObjective) :
 """
     knockout_tp = copy.deepcopy(transsys_program)
     knockout_tp = knockout_tp.get_knockout_copy(self.gene_name)
-    ti = transsys.TranssysInstance(knockout_tp)
+    return knockout_tp
 
 
 class SimulationTreatment(SimulationRuleObjective) :
@@ -659,93 +659,6 @@ class SimulationEquilibration(SimulationRuleObjective) :
     ts = transsys_instance.time_series(int(self.time_steps))
     ti_wt = ts[-1]
     return ti_wt
-
-
-class InterventionSimulationRule(object) :
-  """Class to map array pheno attributes to simulation
-operations by setting the concentration of a factor to
-a specified value.
-@ivar attribute_name: name of the attribute to consider
-@type attribute_name: C{String}
-@ivar attribute_value: value of the attribute
-@ivar factor_name: name of the factor
-@ivar factor_concentration: the concentration to set this factor to
-"""
-
-  def __init__(self, attribute_name = 'MeJA', factor_name = 'jasmonate', factor_concentration = 1.0) :
-    self.attribute_name = attribute_name
-    self.factor_name = factor_name
-    self.factor_concentration = float(factor_concentration)
-  
-  
-  def get_variable(self, r) :
-    """ Load rules according
-@param r: array containing rules
-@type r: C[]
-"""
-    if self.verify_rule(r) :
-      self.attribute_name = r[0]
-      self.factor_name = r[1]
-      self.factor_concentration = float(r[2])
-  
-
-  def verify_rule(self, s) :
-    """ Verify rule
-@param s: string containing rule
-@type s: C{String}
-@return: flag
-@rtype: bool
-""" 
-    return (isinstance(s[0], StringType) and isinstance(s[1], StringType) and isinstance(float(s[2]), FloatType))
-
-
-  def match(self, pheno) :
-    """Determine whether this rule itself matches the pheno data
-@param pheno: pheno data
-@type pheno: C[]
-"""
-    for i in pheno :
-      pheno_data = i
-    return (self.attribute_name in pheno_data)
-
-
-  def applytreatment(self, pheno, transsys_instance) :
-    """Apply treatment
-@param pheno: pheno data
-@type pheno: C{String}
-@param transsys_instance: transsys instance
-@type transsys_instance: Instace
-@raise StandardError: If factor does not exist
-""" 
-    if self.match(pheno) :
-      factor_index = transsys_instance.transsys_program.find_factor_index(self.factor_name)
-      if factor_index == -1 :
-            raise StandardError, 'factor "%s" not found' %self.factor_name
-      transsys_instance.factor_concentration[factor_index] = self.factor_concentration
-
-
-def parse_rule(f) :
-  """ Parse rules
-@param f: file containing rules
-@type f: C{file}
-@raise StandardError: If file does not have 'treament' heading
-"""
-  heading_word = 'treatment'
-
-  arrayrule = []  
-  l = f.readline()
-  if l == '' :
-     return None
-  if l.strip() == heading_word :
-    l = f.readline() 
-    while l:
-      l = l.strip().split() 
-      r = InterventionSimulationRule()
-      r.get_variable(l)
-      arrayrule.append(r)
-      l = f.readline() 
-  return arrayrule 
-  raise StandardError, 'unknown file'
 
 
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
@@ -953,37 +866,19 @@ series is the simulation of the gene expression levels for that genotype.
     e = copy.deepcopy(self.expression_set)
     e.expression_data.array_name = []
  
-   
     for array in self.array_defs :
-      ti = transsys.TranssysInstance(transsys_program)
+      tp = copy.deepcopy(transsys_program)
+      ti = transsys.TranssysInstance(tp)
       e.add_array(array.get_array_name())
       for instruction in array.get_instruction_list() :
         if instruction.magic == "knockout" :
-          instruction.applytreatment(transsys_program)
+          tp = instruction.applytreatment(tp)
+          ti = transsys.TranssysInstance(tp)
 	else :
           instruction.applytreatment(ti)
       map(lambda t: e.set_expression_value(array.get_array_name(), t.name, ti.get_factor_concentration(t.name)),transsys_program.factor_list)
     return e
-    """
-    for array in self.expression_set.expression_data.array_name :
-      e.add_array(array)
-      if 'wildtype' in self.expression_set.pheno_data.pheno_data[array] :
-        ti = transsys.TranssysInstance(transsys_program)
-      elif 'knockout' in self.expression_set.pheno_data.pheno_data[array] :
-        knockout_tp = copy.deepcopy(transsys_program)
-        nk = self.expression_set.get_knockout_name(array)
-        for gene_name in nk.split(';') :
-          knockout_tp = knockout_tp.get_knockout_copy(gene_name)
-        ti = transsys.TranssysInstance(knockout_tp)
-      else :
-        raise StandardError, 'unrecognised mutant'
-      ti_m = self.get_measurement(ti)
-      for rule in self.rule :
-        rule.applytreatment(e.pheno_data.get_attribute_list(array), ti_m)
-      ti_m = self.get_measurement(ti_m)
-      map(lambda t: e.set_expression_value(array, t.name, ti_m.get_factor_concentration(t.name)),transsys_program.factor_list)
-    return e
-"""
+
 
   def validate_spec_array(self) :
     """ Validate spec file array consistency """
@@ -1762,12 +1657,20 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def __init__(self, f) :
-    """  Comment """
+    """  Constructor
+@param f: Spec file
+@type f: file
+"""
     self.scanner = Scanner(f)
 
 
   def expect_token(self, expected_token) :
-    """Comment"""
+    """Validate spec keywords
+@param expected_token: expected token
+@type expected_token: String
+@return: v
+@rtype: string
+"""
     t, v = self.scanner.token()
     if t != expected_token :
       raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
@@ -1775,13 +1678,20 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_array_header(self) :
+    """Parse array header
+@return: v
+@rtype: string
+"""
     self.expect_token('array')
     array_name = self.expect_token('identifier')
     return array_name
 
 
   def parse_array_body(self) :
-    """Comment"""
+    """Comment
+@return: procedure array
+@rtype: array[]
+"""
     procedure = []
     while self.scanner.next_token[0] != 'endarray' :
       procedure.append(self.search_procedure(self.expect_token('identifier')))
@@ -1801,13 +1711,17 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_array_footer(self) :
     """ Parse array footer
-  @return: Footer
-  @rtype: String{}
-  """
+@return: Footer
+@rtype: String{}
+"""
     return(self.scanner.lookahead())
 
 
   def parse_array_def(self) :
+    """Parser array 
+@return: Object
+@rtype: Object{Array}
+"""
     array_name = self.parse_array_header()
     instruction_list = self.parse_array_body()
     self.parse_array_footer()
@@ -1815,6 +1729,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_array_defs(self) :
+    """ Parse array blocks """
     while self.scanner.next_token[0] == 'array':
       im = self.parse_array_def()
       for array in self.array_defs :
@@ -1833,9 +1748,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def get_proceduresen(self) :
     """Check procedure lexicon
-  @return: array
-  @rtype: array[]
-  """
+@return: array
+@rtype: array[]
+"""
     t = self.expect_token('identifier')
     if "treatment" in t :
       return(self.validate_treatment())
@@ -1847,9 +1762,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def validate_treatment(self):
     """ Instantiate Simulation Treatment 
-  @return: Object
-  @rtype: SimulationTreatment
-  """
+@return: Object
+@rtype: SimulationTreatment
+"""
     self.expect_token(':')
     treatment = self.expect_token('identifier')
     self.expect_token('=')
@@ -1861,9 +1776,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def validate_knockout(self) :
     """ Instantiate Simulation Knockout
-  @return: Object
-  @rtype: SimulationKnockout
-  """
+@return: Object
+@rtype: SimulationKnockout
+"""
     self.expect_token(':')
     gene = self.scanner.token()[1]
     if isinstance(gene, StringType):
@@ -1875,9 +1790,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def validate_runtimesteps(self) :
     """ Instantiate Simulation Equilibration 
-  @return: Object
-  @rtype: SimulationEquilibration
-  """
+@return: Object
+@rtype: SimulationEquilibration
+"""
     self.expect_token(':')
     time_steps = self.scanner.token()[1]
     if isinstance(float(time_steps), FloatType) :
@@ -1889,9 +1804,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_procedure_body(self) :
     """ Parse procedure body
-  @return: instruction list
-  @rtype: array[]
-  """
+@return: instruction list
+@rtype: array[]
+"""
     procedure = []
     while self.scanner.next_token[0] != 'endprocedure' :
       procedure.append(self.get_proceduresen())
@@ -1900,16 +1815,16 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_procedure_footer(self) :
     """ Parse procedure footer
-  @return: Footer
-  @rtype: String{}
-  """
+@return: Footer
+@rtype: String{}
+"""
     return(self.scanner.lookahead())
 
 
   def parse_procedure_def(self) :
     """ Parse object procedure
-  @return: object procedure
-  @rtype: object procedure
+@return: object procedure
+@rtype: object procedure
   """
     procedure_name = self.parse_procedure_header()
     instruction_list = self.parse_procedure_body()
@@ -1920,9 +1835,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_procedure_defs(self) :
     """Parse procedure defs
-  @return: array of object procedures
-  @rtype: array[]
-  """
+@return: array of object procedures
+@rtype: array[]
+"""
     while self.scanner.next_token[0] == 'procedure' :
       im = self.parse_procedure_def()
       for procedure in self.procedure_defs :
@@ -1935,9 +1850,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_mapping_header(self) :
     """ Parse mapping header
-  @return: mapping header
-  @rtype: String{}
-  """
+@return: mapping header
+@rtype: String{}
+"""
     self.expect_token('mapping')
     mapping_name = self.expect_token('identifier')
     return mapping_name
@@ -1945,11 +1860,11 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def get_mappingsen(self) :
     """Check mapping lexicon
-  @param l: sentence
-  @type l: String{}
-  @return: dictionary
-  @rtype: dictionary{}
-  """
+@param l: sentence
+@type l: String{}
+@return: dictionary
+@rtype: dictionary{}
+"""
     factor_name = self.scanner.token()[1]
     self.expect_token('=')
     manuf_id = self.scanner.token()[1]
@@ -1959,9 +1874,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_mapping_body(self):
     """ Parse mapping body
-  @return: gene dictionary
-  @rtype: dictionary{}
-  """
+@return: gene dictionary
+@rtype: dictionary{}
+"""
     map_dict = {}
     while self.scanner.next_token[0] != 'endmapping' :
       f, m = self.get_mappingsen()
@@ -1973,17 +1888,17 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_mapping_footer(self):
     """ Parse mapping footer
-  @return: Footer
-  @rtype: String{}
-  """
+@return: Footer
+@rtype: String{}
+"""
     return(self.scanner.lookahead())
  
 
   def parse_mapping_def(self) :
     """ Parse mapping object
-  @return: Mapping object
-  @rtype: object Mapping
-  """
+@return: Mapping object
+@rtype: object Mapping
+"""
     mapping_name = self.parse_mapping_header()
     factor_list = self.parse_mapping_body()
     self.parse_mapping_footer()
@@ -1992,9 +1907,9 @@ class EmpiricalObjectiveFunctionParser(object) :
   
   def parse_mapping_defs(self) :
     """ Parse mapping array
-  @return: mapping array
-  @rtype: array{}
-  """
+@return: mapping array
+@rtype: array{}
+"""
     while self.scanner.next_token[0] == 'mapping' :
       self.mapping_defs.append(self.parse_mapping_def())
       self.scanner.token()
@@ -2003,34 +1918,15 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_spec(self) :
     """ Parse specification file 
-  @return: Spec
-  @rtype: object
-  """
+@return: Spec
+@rtype: object
+"""
     expression_set = None
     self.parse_mapping_defs()
     self.parse_procedure_defs()
     self.parse_array_defs()
-    self.validate_spec()
     return KnockoutTreatmentObjective(expression_set, self.mapping_defs, self.procedure_defs, self.array_defs)
 
-
-  def validate_spec(self) :
-    """ Validate Spec integrity
-@param mapping_defs = mapping object
-@type mapping_defs = object
-@param procedure_defs = procedure object
-@type procedure_defs = object
-@param array_defs = array object
-@type array_defs = object
-"""
-    procedure_list = [] 
-    gene_list = [] 
-
-    for item in self.procedure_defs :
-      procedure_list.append(item.procedure_name)
-    for gene in self.mapping_defs :
-      gene_list = gene.factor_list.keys()
-      
 
   def parse(self) :
     """Parse spec
