@@ -21,6 +21,13 @@ import string
 
 class ExpressionData(object) :
   """ Create expression data object
+@ivar array_name: array name
+@type array_name: Array[]
+@ivar expression_data: gene expression data
+@type expression_data: C{}
+@ivar logratio_ofset: logratio offset
+@type logratio_offset: Double
+
 """
 
   def __init__(self) :
@@ -179,6 +186,10 @@ All expression values in the newly added array are initialised with C{None}.
 
 class FeatureData(object) :
   """ Create feature data object
+@ivar array_name: array name
+@type array_name: Array[]
+@ivar feature_data: feature data
+@type feature_data: C{}
 """
 
   def __init__(self) :
@@ -232,6 +243,10 @@ class FeatureData(object) :
 
 class PhenoData(object) :
   """Create pheno data object
+@ivar array_name: array name
+@type array_name: Array[]
+@ivar pheno_data: pheno data
+@type pheno_data: C{}
 """
 
   def __init__(self) :
@@ -293,6 +308,12 @@ class PhenoData(object) :
 
 class ExpressionSet(object) :
   """Complete gene expression, pheno and feature data
+@ivar expression_data: expression data
+@type expression_data: L{ExpressionData}
+@ivar pheno_data: pheno data
+@type pheno_data: L{PhenoData}
+@ivar feature_data: feature data
+@type feature_data: L{FeatureData}
 """
 
   def __init__(self) :
@@ -1037,11 +1058,16 @@ class ModelFitnessResult(transsys.optim.FitnessResult) :
 
 
 class Mapping(object) :
-  """ Comment """
+  """  Object Mapping """
+
 
   def __init__(self, mapping_name, factor_list):
-    """ Class mapping """
-
+    """ Constructor
+@param mapping_name: mapping name
+@type mapping_name: String
+@param factor_list: factor list
+@type factor_list: Dictionary{S}
+"""
     self.mapping_name = mapping_name
     self.factor_list = factor_list
    
@@ -1053,16 +1079,22 @@ class Mapping(object) :
   def get_factor_list(self) :
     return(self.factor_list.keys())
 
+
   def get_mapping_list(self) :
     return(self.factor_list.keys())
 
 
 class Procedure(object) :
-  """  Class Procedure """
+  """Object Procedure """
+
 
   def __init__(self, procedure_name, instruction_list) :
-    """  Comment """
-
+    """  Constructor
+@param procedure_name: procedure name
+@type procedure_name: String
+@param instruction_list: instruction list
+@type instruction_list: Array[]
+"""
     self.instruction_list = instruction_list
     self.procedure_name = procedure_name
 
@@ -1075,13 +1107,18 @@ class Procedure(object) :
     return(self.instruction_list)
 
 
+
 class Array(object) :
-  """ Class Array """
+  """ Object Array """
 
 
   def __init__(self, array_name, instruction_list) :
-    """  Comment """
-  
+    """ Constructor
+@param array_name: array name
+@type array_name: String
+@param instruction_list: instruction list
+@type instruction_list: Array[]
+"""  
     self.array_name = array_name
     self.instruction_list = instruction_list
 
@@ -1112,13 +1149,15 @@ class Scanner(object) :
   def lookheader(self) :
     return(self.infile.readline())
 
-
   def lookahead(self) :
     return self.next_token[0]
 
 
   def token(self) :
-    """ Comment """
+    """ Return token
+@return: return_token
+@rtype: String{}
+ """
     return_token = self.next_token
     self.next_token = self.get_token()
     return return_token
@@ -1201,453 +1240,14 @@ class Scanner(object) :
 
 
 class EmpiricalObjectiveFunctionParser(object) :
-  """ Object specification """
-
-  magic = "ObjectiveSpecification-0.1" 
-  
-  def __init__(self, f) :
-    """  Comment """
-    self.scanner = Scanner(f)
-
-
-  def expect_token(self, expected_token) :
-    """Comment"""
-    t, v = self.scanner.token()
-    if t != expected_token :
-      raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
-    return v
-
-
-  def parse_array_header(self) :
-    self.expect_token('array')
-    array_name = self.expect_token('identifier')
-    return array_name
-
-
-  def parse_array_body(self) :
-    """Comment"""
-    procedure = []
-    while self.scanner.next_token[0] != 'endarray' :
-      procedure.append(self.expect_token('identifier'))
-    return(procedure)
-
-
-  def parse_array_footer(self) :
-    """ Parse array footer
-  @return: Footer
-  @rtype: String{}
-  """
-    return(self.scanner.lookahead())
-
-
-  def parse_array_def(self) :
-    array_name = self.parse_array_header()
-    instruction_list = self.parse_array_body()
-    self.parse_array_footer()
-    return Array(array_name, instruction_list)
-
-
-  def parse_array_defs(self) :
-    array_defs = []
-    while self.scanner.next_token[0] == 'array':
-      im = self.parse_array_def()
-      for array in array_defs :
-        if array.array_name == im.array_name :
-	  raise StandardError, '%s already exist'%im.array_name
-      array_defs.append(im)
-      self.scanner.token()
-      self.expect_token('\n')
-    return array_defs
-  
-
-  def parse_procedure_header(self) :
-    self.expect_token('procedure')
-    procedure_name = self.expect_token('identifier')
-    return procedure_name
-
-
-  def get_proceduresen(self) :
-    """Check procedure lexicon
-  @return: array
-  @rtype: array[]
-  """
-    t = self.expect_token('identifier')
-    if "treatment" in t :
-      return(t, self.validate_treatment())
-    elif "knockout" in t :
-      return(t, self.validate_knockout())
-    elif t == "runtimesteps" :
-      return(t, self.validate_runtimesteps())
-
-
-  def validate_treatment(self):
-    """ Comment 
-  @return: rule
-  @rtype: array
-  """
-    self.expect_token(':')
-    treatment = self.expect_token('identifier')
-    self.expect_token('=')
-    value = self.expect_token('realvalue')
-    if (isinstance(float(value), FloatType) and isinstance(treatment, StringType)) :
-      return(treatment, value)
-
-
-  def validate_knockout(self) :
-    """ Comment """
-    self.expect_token(':')
-    value = self.scanner.token()[1]
-    if isinstance(value, StringType):
-      return(value)
-    else :
-      raise StandardError, "%s is not a correct string value"%s
-
-
-  def validate_runtimesteps(self) :
-    """ Comment """
-    self.expect_token(':')
-    value = self.scanner.token()[1]
-    if isinstance(float(value), FloatType) :
-      return( value)
-    else :
-      raise StandardError, "%s is not a correct numeric value"%s
-
-
-  def parse_procedure_body(self) :
-    """ Parse procedure body
-  @return: instruction list
-  @rtype: array[]
-  """
-    procedure = []
-    while self.scanner.next_token[0] != 'endprocedure' :
-      procedure.append(self.get_proceduresen())
-    return procedure
-
-
-  def parse_procedure_footer(self) :
-    """ Parse procedure footer
-  @return: Footer
-  @rtype: String{}
-  """
-    return(self.scanner.lookahead())
-
-
-  def parse_procedure_def(self) :
-    """ Parse object procedure
-  @return: object procedure
-  @rtype: object procedure
-  """
-    procedure_name = self.parse_procedure_header()
-    instruction_list = self.parse_procedure_body()
-    self.parse_procedure_footer()
-    return Procedure(procedure_name, instruction_list)
-
-
-  def parse_procedure_defs(self) :
-    """Parse procedure defs
-  @return: array of object procedures
-  @rtype: array[]
-  """
-    procedure_defs = []
-    while self.scanner.next_token[0] == 'procedure' :
-      im = self.parse_procedure_def()
-      for procedure in procedure_defs :
-        if procedure.procedure_name == im.procedure_name :
-	  raise StandardError, '%s already exist'%im.procedure_name
-      procedure_defs.append(im)
-      self.scanner.token()
-      self.expect_token('\n')
-    return procedure_defs
- 
-
-  def parse_mapping_header(self) :
-    """ Parse mapping header
-  @return: mapping header
-  @rtype: String{}
-  """
-    self.expect_token('mapping')
-    mapping_name = self.expect_token('identifier')
-    return mapping_name
-
-
-  def get_mappingsen(self) :
-    """Check mapping lexicon
-  @param l: sentence
-  @type l: String{}
-  @return: dictionary
-  @rtype: dictionary{}
-  """
-    factor_name = self.scanner.token()[1]
-    self.expect_token('=')
-    manuf_id = self.scanner.token()[1]
-    self.scanner.token()
-    return(factor_name, manuf_id)
-
-
-  def parse_mapping_body(self):
-    """ Parse mapping body
-  @return: gene dictionary
-  @rtype: dictionary{}
-  """
-    map_dict = {}
-    while self.scanner.next_token[0] != 'endmapping' :
-      f, m = self.get_mappingsen()
-      if f in map_dict.keys() :
-        raise StandardError, '%s already exist'%f
-      map_dict[f] = m
-    return(map_dict)
-
-
-  def parse_mapping_footer(self):
-    """ Parse mapping footer
-  @return: Footer
-  @rtype: String{}
-  """
-    return(self.scanner.lookahead())
- 
-
-  def parse_mapping_def(self) :
-    """ Parse mapping object
-  @return: Mapping object
-  @rtype: object Mapping
-  """
-    mapping_name = self.parse_mapping_header()
-    factor_list = self.parse_mapping_body()
-    self.parse_mapping_footer()
-    return Mapping(mapping_name, factor_list)
-
-  
-  def parse_mapping_defs(self) :
-    """ Parse mapping array
-  @return: mapping array
-  @rtype: array{}
-  """
-    mapping_defs = []
-    while self.scanner.next_token[0] == 'mapping' :
-      mapping_defs.append(self.parse_mapping_def())
-      self.scanner.token()
-      self.expect_token('\n')
-    return mapping_defs
-
-
-  def parse_spec(self) :
-    """ Parse specification file 
-  @return: Spec
-  @rtype: object
-  """
-    mapping_defs = self.parse_mapping_defs()
-    procedure_defs = self.parse_procedure_defs()
-    array_defs = self.parse_array_defs()
-    self.validate_spec(mapping_defs, procedure_defs, array_defs)
-    return KnockoutTreatmentObjective(mapping_defs, procedure_defs, array_defs)
-
-
-  def validate_spec(self, mapping_defs, procedure_defs, array_defs) :
-    """ Validate Spec integrity
-@param mapping_defs = mapping object
-@type mapping_defs = object
-@param procedure_defs = procedure object
-@type procedure_defs = object
-@param array_defs = array object
-@type array_defs = object
+  """ Object specification 
+@ivar procedure_defs: procedure definitions
+@type procedure_defs: Array[]
+@ivar mapping_defs: Mapping definitions
+@type mapping_defs: Array[]
+@ivar array_defs: Array definitions
+@type array_defs: Array[]
 """
-    procedure_list = [] 
-    gene_list = [] 
-
-    for item in procedure_defs :
-      procedure_list.append(item.procedure_name)
-    for gene in mapping_defs :
-      gene_list = gene.factor_list.keys()
-
-    for procedure in procedure_defs :
-      for gene in procedure.instruction_list :
-        if 'knockout' in gene :
-	  if gene[1] not in gene_list :
-            raise StandardError, '%s gene in procedure %s is not a valid name'%(gene[1], procedure.procedure_name)
-    for array in array_defs :
-      for procedure in array.instruction_list :
-        if procedure not in procedure_list :
-          raise StandardError, '%s procedure in array %s is not valid'%(procedure, array.array_name)
-
-
-  def parse(self) :
-    """Parse spec
-@return: Spec objective function
-@rtype: object
-"""
-    if (self.scanner.check_magic(self.magic)):
-      self.expect_token('\n')
-      return self.parse_spec()
-
-
-class Mapping(object) :
-  """ Comment """
-
-  def __init__(self, mapping_name, factor_list):
-    """ Class mapping """
-
-    self.mapping_name = mapping_name
-    self.factor_list = factor_list
-   
-
-  def get_mapping_name(self) :
-   return(self.mapping_name)
-
-  
-  def get_factor_list(self) :
-    return(self.factor_list.keys())
-
-
-  def get_mapping_list(self) :
-    return(self.factor_list.keys())
-
-
-class Procedure(object) :
-  """  Class Procedure """
-
-  def __init__(self, procedure_name, instruction_list) :
-    """  Comment """
-
-    self.instruction_list = instruction_list
-    self.procedure_name = procedure_name
-
-
-  def get_procedure_name(self) :
-   return(self.procedure_name)
-
-  
-  def get_instruction_list(self) :
-    return(self.instruction_list)
-
-
-
-class Array(object) :
-  """ Class Array """
-
-
-  def __init__(self, array_name, instruction_list) :
-    """  Comment """
-  
-    self.array_name = array_name
-    self.instruction_list = instruction_list
-
-
-  def get_array_name(self) :
-   return(self.array_name)
-
-  
-  def get_instruction_list(self) :
-    return(self.instruction_list)
-
-
-class Scanner(object) :
-  """ Class Scanner """
-
-  def __init__(self, f) :
-    """ Comment """
-    self.infile = f
-    self.buffer = ''
-    self.lineno = 0
-    self.keywords = ['mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
-    self.identifier_re = re.compile('([A-Za-z_][A-Za-z0-9_]*)|([\\[\\]])')
-    self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
-    self.header = self.lookheader()
-    self.next_token = self.get_token()
-
-
-  def lookheader(self) :
-    return(self.infile.readline())
-
-  def lookahead(self) :
-    return self.next_token[0]
-
-
-  def token(self) :
-    """ Comment """
-    return_token = self.next_token
-    self.next_token = self.get_token()
-    return return_token
-
-
-  def isdelimiter(self, c) :
-    """Comment"""
-    if len(c) != 1 :
-      raise StandardError, 'attempt to classify multicharacter string as delimiter'
-    if c.isspace() :
-      return False
-    if c in '_' :
-      return False
-    return True
-
-
-  def get_token(self) :
-    """ Comment """
-    if len(self.buffer) > 0 :
-      if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
-         self.buffer = ''
-    while self.buffer == '' :
-      self.buffer = self.infile.readline()
-      self.lineno = self.lineno + 1
-    if self.buffer == '' :
-      return None, None
-      self.buffer = string.strip(self.buffer)
-    if len(self.buffer) > 0 :
-      if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
-        self.buffer = ''
-    for kw in self.keywords :
-      if self.buffer[:len(kw)] == kw :
-	if re.match('%s($|[^A-Za-z0-9_])' % kw, self.buffer) is not None :
-	  self.buffer = string.strip(self.buffer[len(kw):])
-	  return kw, None
-    m = self.identifier_re.match(self.buffer)
-    if m :
-      s = m.group()
-      self.buffer = string.strip(self.buffer[len(s):])
-      return ('identifier', s)
-    m = self.realvalue_re.match(self.buffer)
-    if m :
-      s = m.group()
-      v = float(s)
-      self.buffer = string.strip(self.buffer[len(s):])
-      return ('realvalue', v)
-    c = self.buffer[0]
-    self.buffer = string.strip(self.buffer[1:])
-    return c, None
-    raise StandardError, 'line %d: scanner stalled at "%s"' % (self.lineno, self.buffer)
-
-
-  def get_lines(self) :
-    """Comment"""
-    if self.next_token[0] == 'identifier' :
-      l = self.next_token[1]
-    elif self.next_token[0] == 'realvalue' :
-      l = str(self.next_token[1])
-    elif self.next_token[0] is None :
-      l = ''
-    else :
-      l = self.next_token[0] + ' '
-      l = l + self.buffer
-      lines = []
-    if l :
-      lines.append(l)
-    l = self.infile.readline()
-    while l :
-      lines.append(l[:-1])
-      l = self.infile.readline()
-    return lines
-
-
-  def check_magic(self, l) :
-    """ Check consistency of Specification file heading """
-    
-    if l not in self.header.split() :
-      raise StandardError, '% is not a correct file header' %self.header
-    return("true")
-
-
-class EmpiricalObjectiveFunctionParser(object) :
-  """ Object specification """
-
   procedure_defs = []
   mapping_defs = []
   array_defs = []
@@ -1701,7 +1301,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def search_procedure(self, procedure_name) :
     """Search procedure_defs 
 @return: object
-@rtype: Object{simulation}
+@rtype: Array[]
 """
     for procedure in self.procedure_defs :
       if procedure.get_procedure_name() == procedure_name :
@@ -1720,7 +1320,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_array_def(self) :
     """Parser array 
 @return: Object
-@rtype: Object{Array}
+@rtype: L{Array}
 """
     array_name = self.parse_array_header()
     instruction_list = self.parse_array_body()
@@ -1741,6 +1341,10 @@ class EmpiricalObjectiveFunctionParser(object) :
   
 
   def parse_procedure_header(self) :
+    """Parse procedure header
+@return: procedure_name
+@rtype: String{}
+"""
     self.expect_token('procedure')
     procedure_name = self.expect_token('identifier')
     return procedure_name
@@ -1763,7 +1367,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def validate_treatment(self):
     """ Instantiate Simulation Treatment 
 @return: Object
-@rtype: SimulationTreatment
+@rtype: L{SimulationTreatment}
 """
     self.expect_token(':')
     treatment = self.expect_token('identifier')
@@ -1777,7 +1381,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def validate_knockout(self) :
     """ Instantiate Simulation Knockout
 @return: Object
-@rtype: SimulationKnockout
+@rtype: L{SimulationKnockout}
 """
     self.expect_token(':')
     gene = self.scanner.token()[1]
@@ -1791,7 +1395,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def validate_runtimesteps(self) :
     """ Instantiate Simulation Equilibration 
 @return: Object
-@rtype: SimulationEquilibration
+@rtype: L{SimulationEquilibration}
 """
     self.expect_token(':')
     time_steps = self.scanner.token()[1]
@@ -1823,20 +1427,17 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_procedure_def(self) :
     """ Parse object procedure
-@return: object procedure
-@rtype: object procedure
-  """
+@return: Object
+@rtype: L{Procedure}
+"""
     procedure_name = self.parse_procedure_header()
     instruction_list = self.parse_procedure_body()
     self.parse_procedure_footer()
-    
     return Procedure(procedure_name, instruction_list)
 
 
   def parse_procedure_defs(self) :
     """Parse procedure defs
-@return: array of object procedures
-@rtype: array[]
 """
     while self.scanner.next_token[0] == 'procedure' :
       im = self.parse_procedure_def()
@@ -1860,8 +1461,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def get_mappingsen(self) :
     """Check mapping lexicon
-@param l: sentence
-@type l: String{}
 @return: dictionary
 @rtype: dictionary{}
 """
@@ -1897,7 +1496,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_mapping_def(self) :
     """ Parse mapping object
 @return: Mapping object
-@rtype: object Mapping
+@rtype: L{Mapping}
 """
     mapping_name = self.parse_mapping_header()
     factor_list = self.parse_mapping_body()
@@ -1918,8 +1517,8 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_spec(self) :
     """ Parse specification file 
-@return: Spec
-@rtype: object
+@return: Object
+@rtype: L{KnockoutTreatmentObjective}
 """
     expression_set = None
     self.parse_mapping_defs()
