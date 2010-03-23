@@ -45,7 +45,7 @@ function maketp () # create transsys program
     let "nep=$i*$indegree"
     sed -e '/n: / s/'${nn}'/'$nnp'/' -e '/num_edges: / s/'${ne}'/'$nep'/' $transsys_file > file.dat
     tname=`printf '%sn%de%d' $transsys_name $i $nep`
-    do_run $HOME/makemodel-1.0/transsysrandomprogram -t $tname -m $num_topology -p file.dat
+    do_run transsysrandomprogram -t $tname -m $num_topology -p file.dat
   done
 }
 
@@ -66,7 +66,7 @@ function changeparameter () # Change transsys parameters
       let "rndseed=$rndseed + 1"
       echo $rndseed
       tname=`printf '%sn%de%d%02d' $transsys_name $i $nep $j`
-      do_run $HOME/makemodel-1.0/transsysreparam -r ${rndseed} -n ${tname} -p ${rng_parameter} -T transformerfile.dat ${tname}'.tra'
+      do_run transsysreparam -r ${rndseed} -n ${tname} -p ${rng_parameter} -T transformerfile.dat ${tname}'.tra'
     done
   done
 
@@ -97,9 +97,9 @@ function makesimdata () # create simulated data
         val=$(echo $noise_rate | sed 's/0.//')
         if [[ $val -eq 0 ]]
         then
-          do_run $HOME/makemodel-1.0/transsyswritesimset -e ${equilibration_length} -x expr.txt -p pheno.txt -f feature.txt ${tname}'.tra' ${tname}
+          do_run transsyswritesimset -e ${equilibration_length} -x expr.txt -p pheno.txt -f feature.txt ${tname}'.tra' ${tname}
         else 
-          do_run $HOME/makemodel-1.0/transsyswritesimset -r 1 -s ${noise_rate} -e ${equilibration_length} -x expr.txt -p pheno.txt -f feature.txt ${tname}'.tra' ${tname}
+          do_run transsyswritesimset -r 1 -s ${noise_rate} -e ${equilibration_length} -x expr.txt -p pheno.txt -f feature.txt ${tname}'.tra' ${tname}
         fi
       done    
     done
@@ -127,7 +127,7 @@ function rewire_net ()
       for (( k=1; k<=${rng_parameter}; k++ ))
       do
         tname=`printf '%sn%de%d%02d%02d' $transsys_name $i $nep $j $k`
-        do_run $HOME/makemodel-1.0/transsysrewire -v $rw_operation_vector -t ${tname} -r ${rnd_repetition} $tname'.tra'
+        do_run transsysrewire -v $rw_operation_vector -t ${tname} -r ${rnd_repetition} $tname'.tra'
       done
     done
   done
@@ -162,9 +162,9 @@ function runfunc ()
         feature=`printf "$tname"_feature.txt""`
         if [ $logratio_mode -eq 1 ] 
           then
-          do_run $HOME/makemodel-1.0/netoptrew -N ${j} -P ${k} -r ${rndseedop} -l TRUE -o $offset -w $rw_operation -R ${random_start} -e ${equilibration_length} -n ${rnd_repetition} -t ${tname} -x $expr -p $pheno -f $feature -u correlation -L $log_file -g $optimiser_file -T $transformer_file
+          do_run netoptrew -N ${j} -P ${k} -r ${rndseedop} -l TRUE -o $offset -w $rw_operation -R ${random_start} -e ${equilibration_length} -n ${rnd_repetition} -t ${tname} -x $expr -p $pheno -f $feature -u correlation -L $log_file -g $optimiser_file -T $transformer_file
         else 
-          do_run $HOME/makemodel-1.0/netoptrew -N ${j} -P ${k} -r ${rndseedop} -w $num_operation -R ${random_start} -e ${equilibration_length} -n ${rnd_repetition} -t ${tname} -x $expr -p $pheno -f $feature -u correlation -L $log_file -g $optimiser_file -T $transformer_file
+          do_run netoptrew -N ${j} -P ${k} -r ${rndseedop} -w $num_operation -R ${random_start} -e ${equilibration_length} -n ${rnd_repetition} -t ${tname} -x $expr -p $pheno -f $feature -u correlation -L $log_file -g $optimiser_file -T $transformer_file
         fi
       done
     done
@@ -227,13 +227,11 @@ rndseed=$(grep -w "rndseed:" $transsys_file | awk '{print$2}')
 
 if [ $mode -eq 1 ] 
   then
-  checkpython
   maketp $num_topology $transsys_name $mxnode $nn $nnp $ne $nep
   changeparameter $num_topology $transsys_name $nn $rng_parameter $rndseed
   makesimdata $num_topology $equilibration_length $transsys_name $mxnode $nn $nnp $rng_parameter $noise_rate
   rewire_net $num_topology $transsys_name $mxnode $nn $nnp $rng_parameter $rnd_repetition $rw_operation_vector
  else
-  checkpython
   runfunc $num_topology $equilibration_length $random_start $transsys_name $mxnode $nn $nnp $rnd_parameter $rnd_repetition
 fi
 

@@ -1,7 +1,7 @@
 RandomTranssysParameters-1.1
 topology: random_powerlaw
-n: 3
-num_edges: 6
+n: 30
+num_edges: 60
 power_exp: 2
 power_base: 3
 topology: end
