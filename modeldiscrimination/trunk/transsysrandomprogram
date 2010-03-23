@@ -40,7 +40,9 @@ p = open(parameters, 'r')
 ran = transsys.RandomTranssysParameters()
 ran.parse(p)
 for i in range(1,model+1) :
+  # jtk: control parameter model overwritten here (!!!)
   model = file('%s%02d.tra'%(transsys_program,i),'w')
+  # jtk: control parameter transsys_program  (!!!!!)
   transsys_program = ran.generate_transsys('Transsys_Model%s'%i)
   if gremove is not None :
     i = transsys_program.find_gene_index(gremove)

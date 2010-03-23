@@ -31,6 +31,7 @@ for opt, par in optlist :
   if opt == '-n' :
     transsys_name = par
   elif opt == '-t' :
+    # jtk: network_number is not used at all
     network_number = int(par)
   elif opt == '-p' :
     random_change = int(par)
@@ -57,7 +58,7 @@ randomInitRange = 1.0
 if transformerfile is not None :
   g = open(transformerfile, 'r')
   transformer = transsys.optim.parse_parameter_transformer(g)
-g.close()
+  g.close()
 opt = transsys.optim.AbstractOptimiser(rng, transformer, randomInitRange, verbose = 0)
 
 for i in range (1,random_change+1) :

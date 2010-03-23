@@ -82,6 +82,7 @@ for opt, par in optlist :
     print '-h: print this help and exit'
     sys.exit()
   if opt == '-n' :
+    # jtk: unused control parameter
     transsys_number = int(par)
   elif opt == '-t' :
     transsys_name = par
@@ -118,18 +119,21 @@ for i in rw_operation():
     for j in range(1,i+1) :
       srh = 0
       while( active != 0 and osrh != 0 ) :
+	# jtk: no control over random seed (!!!)
         inx1 = random.choice(optn)
         inx2 = random.choice(optn)
         v1 = inter1[inx1]
         v2 = inter1[inx2]
         active = search_vertice(v1, v2, inter1)
         srh = srh + 1
+	# jtk: what's this osrh thing?
         if srh >= len(inter)*200 :
           osrh = 0
       if osrh == 1 :
         tp1 = rewire_net(v1,v2,tp1)
         inter1 = get_interactions_array(tp1)
         active = 1
+    # jtk: let's consider prefixing all indexes built into filenames with something unique
     model = file('%s%02d%02d.tra'%(transsys_name, i, r),'w')
     model.write('%s'%tp1)
 
