@@ -1,0 +1,16 @@
+RandomTranssysParameters-1.1
+topology: random_powerlaw
+n: 3
+num_edges: 6
+power_exp: 2
+power_base: 3
+topology: end
+constitutive: 0.1
+km_activation: 0.2
+km_repression: 0.3
+vmax_activation: 1.4
+vmax_repression: 1.5
+decay: 0.1
+diffusibility: 0.1
+rndseed: 1
+

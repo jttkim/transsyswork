@@ -7,7 +7,7 @@ import transsys
 import transsys.optim 
 from math import sqrt
 import trsysmodis
-
+import random
 
 def write_result(f, optResult) :
  f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
@@ -39,19 +39,22 @@ finalparam = None
 rw_operation = None
 logratio_offset = None
 logratio_mode = False
+rndseed = 0
 
-optlist, args = getopt.getopt(sys.argv[1:], 'l:o:r:e:w:n:s:t:b:x:p:f:g:T:u:v:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 'N:P:l:o:R:r:e:w:n:s:t:b:x:p:f:g:T:u:v:L:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
     print '-l: logratio mode'
     print '-o <offset>: specify logratio offset'
-    print '-r  <int>: specify number of random restarts'
+    print '-r <int>: specify random seed'
+    print '-R  <int>: specify number of random restarts'
     print '-e  <int>: specify time steps for equilibration'
     print '-w  <int>: specify rewiring operation number'
-    print '-n  <int>: specify number of networks'
-    print '-s  <int>: specify number of reshuffles'
+    print '-n  <int>: specify number of rewiring repetitions'
     print '-t  <int>: specify name of the network'
+    print '-N  <int>: specify network number'
+    print '-P  <int>: specify network reparam number'
     print '-x  <str>: specify gene expression profile file name'
     print '-p  <str>: specify pheno data file name'
     print '-f  <str>: specify feature data file name'
@@ -59,20 +62,25 @@ for opt, par in optlist :
     print '-T  <transformer specfile>: specify transformer specification file to parse'
     print '-u  <str>: 1: sum_squares, 2: correlation, 3: euclidean'
     print '-V  <int>: Verbose'
+    print '-L  <str>: Logfile'
     print '-h: print this help and exit'
     sys.exit()
+  elif opt == '-N' :
+    topology_num = int(par)
+  elif opt == '-P' :
+    topology_rep = int(par)
   elif opt == '-l' :
     logratio_mode = True
   elif opt == '-o' :
     logratio_offset = float(par)
   elif opt == '-r' :
+    rndseed = int(par)
+  elif opt == '-R' :
     num_restarts = int(par)
   elif opt == '-e' :
     equilibration_length = int(par)
   elif opt == '-n' :
     rw_repeticion = int(par)
-  elif opt == '-s' :
-    reshuffles = int(par)
   elif opt == '-t' :
     name_network = par
   elif opt == '-w' :
@@ -91,6 +99,8 @@ for opt, par in optlist :
     f_distance = par
   elif opt == '-v' :
     verbose = int(par)
+  elif opt == '-L' :
+    result_file = par
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 
@@ -100,7 +110,7 @@ if len(args) > 0 :
 if len(args) > 1 :   
   finalparam = open(args[1], 'w')
 
-logo = file('%s%02dlogo.txt'%(name_network,rw_operation),'w')
+logo = file('%s%02d%s.txt'%(name_network,rw_operation, result_file),'w')
 
 g = open(gradient, 'r')
 optimiser = transsys.optim.parse_optimiser(g)
@@ -112,8 +122,10 @@ if transformerfile is not None :
 g.close()
 
 optimiser.verbose = verbose
+rng = random.Random(rndseed)
+optimiser.rng = rng
 
-logo.write('rw_operation\trw_repetition\tfitness\n')
+logo.write('net_top\tnet_rep\trw_operation\trw_repetition\tfitness\n')
 index = 0
 
 x = open('%s'%target_expr_data, 'r')
@@ -141,11 +153,9 @@ if logratio_mode :
 else :
   objective_function.distance_measu = expression_set.divergence
 
-
 a = []
 a.append(rw_operation)
 
-#for i in rw_operation() :
 for i in a :
   j = 1
   while j <= rw_repeticion :
@@ -161,7 +171,7 @@ for i in a :
 
     for restart_index in xrange(num_restarts) :
       opt_result = optimiser.optimise(transsys_program, objective_function)
-      logo.write('%d\t%d\t%f\n' %(i,j,opt_result.objectiveOptimum.fitness))
+      logo.write('%02d\t%02d\t%d\t%d\t%f\n' %(topology_num, topology_rep, i,j,opt_result.objectiveOptimum.fitness))
       sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
       if finalparam is not None :
         write_result(finalparam, opt_result)
