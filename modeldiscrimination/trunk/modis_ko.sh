@@ -177,6 +177,32 @@ function optimise ()
 }
 
 
+function maketable () # create transsys program
+{
+  for gentype in ${gentype_list} ; do
+    target_topology_number=1
+    while test ${target_topology_number} -le ${num_target_topologies} ; do
+      target_parameterisation_number=1
+      while test ${target_parameterisation_number} -le ${num_target_parameterisations} ; do
+        candidate_topology_basename=`printf 'candidate_%s%02d_p%02d' ${gentype} ${target_topology_number} ${target_parameterisation_number}`
+        for num_rewirings in ${num_rewirings_list} ; do
+          rewired_topology_number=1
+            while test ${rewired_topology_number} -le ${num_rewired_topologies} ; do
+              candidate_topology=`printf '%s_w%02d_r%02d' ${candidate_topology_basename} ${num_rewirings} ${rewired_topology_number}`
+              rewired_topology_number=`expr ${rewired_topology_number} + 1`
+	      cp $candidate_topology_logo'.txt' $candidate_topology_logo'.txt.bk'
+              sed '//' $$candidate_topology_logo'.txt.bk' > clean.txt
+              mv clean.txt $candidate_topology_logo'.txt'
+            done
+	done
+        target_parameterisation_number=`expr ${target_parameterisation_number} + 1`
+      done
+      target_parameterisation_number=`expr ${target_parameterisation_number} + 1`
+    done
+  done
+}
+
+
 #control parameters
 num_target_topologies=1
 num_target_parameterisations=1

@@ -40,6 +40,12 @@ function maketp () # create transsys program
    echo "None existing data tp/rp/rw/:" $t_f
 }
 
+function MakeTable()
+{
+
+
+
+}
 
 function makeonetp () # create transsys program
 {
