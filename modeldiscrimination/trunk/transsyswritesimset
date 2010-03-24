@@ -53,41 +53,27 @@ def get_feature_data() :
   return f
 
 
-num_restarts = None
 equilibration_length = None
 nu_m = None
-model_ame = None
-target_expr_data = None
-target_pheno_data = None
-target_feature_data = None
 f_distance = None
 rndseed = None
 sigma = None
 
-optlist, args = getopt.getopt(sys.argv[1:], 'r:x:p:f:e:s:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 's:e:N:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
-    print '-r <int>: specify random seed'
-    print '-x <str>: specify gene expression profile file name'
-    print '-p <str>: specify pheno data file name'
-    print '-f <str>: specify feature data file name'
+    print '-s <int>: Random seed'
     print '-e <int>: Equilibration length'
-    print '-s <int>: Sigma'
+    print '-N <int>: Noise'
     print '-h: print this help and exit'
     sys.exit()
-  elif opt == '-r' :
+  elif opt == '-s' :
     rndseed = int(par)
   elif opt == '-e' :
     equilibration_length = int(par)
-  elif opt == '-x' :
-    target_expr_data = par
-  elif opt == '-p' :
-    target_pheno_data = par
-  elif opt == '-s' :
-    sigma = float(par)
-  elif opt == '-f' :
-    target_feature_data = par
+  elif opt == '-N' :
+    noise = float(par)
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 
@@ -119,6 +105,6 @@ else :
   objective_function.distance_function = trsysmodis.distance_euclidean
 
 if rndseed is not None  :
-  objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, sigma)
+  objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, noise)
 else :
   objective_function.write_simulated_set(transsys_program, outfile_basename)

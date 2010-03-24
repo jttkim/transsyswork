@@ -15,82 +15,51 @@ def write_result(f, optResult) :
  f.flush()
 
 
-def rw_operation() :
-  sequence = [0]
-  for i in range(0,24) :
-    n = int(round(1.2**i))
-    if n not in sequence:
-      sequence.append(n)
-  return sequence
-
 
 num_restarts = None
 equilibration_length = None
-network_name = None
-target_expr_data = None
-target_pheno_data = None
-target_feature_data = None
 gradient = None
 f_distance = None
 verbose = 0
 transformerfile = None
 logfile = None
 finalparam = None
-rw_operation = None
 logratio_offset = None
 logratio_mode = False
 rndseed = 0
 
-optlist, args = getopt.getopt(sys.argv[1:], 'N:P:l:o:R:r:e:w:n:s:t:b:x:p:f:g:T:u:v:L:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 'l:o:s:R:e:n:c:g:T:u:v:L:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
     print '-l: logratio mode'
     print '-o <offset>: specify logratio offset'
-    print '-r <int>: specify random seed'
-    print '-R  <int>: specify number of random restarts'
-    print '-e  <int>: specify time steps for equilibration'
-    print '-w  <int>: specify rewiring operation number'
-    print '-n  <int>: specify number of rewiring repetitions'
-    print '-t  <int>: specify name of the network'
-    print '-N  <int>: specify network number'
-    print '-P  <int>: specify network reparam number'
-    print '-x  <str>: specify gene expression profile file name'
-    print '-p  <str>: specify pheno data file name'
-    print '-f  <str>: specify feature data file name'
-    print '-g  <str>: specify gradient file name'
-    print '-T  <transformer specfile>: specify transformer specification file to parse'
+    print '-s <int>: Random seed'
+    print '-R  <int>: Random restarts'
+    print '-e  <int>: Equilibration length'
+    print '-n  <str>: Prefix name of target network'
+    print '-c  <str>: Prefix name of candidate network'
+    print '-g  <str>: Gradient file name'
+    print '-T  <str>: specify transformer specification file to parse'
     print '-u  <str>: 1: sum_squares, 2: correlation, 3: euclidean'
     print '-V  <int>: Verbose'
     print '-L  <str>: Logfile'
     print '-h: print this help and exit'
     sys.exit()
-  elif opt == '-N' :
-    topology_num = int(par)
-  elif opt == '-P' :
-    topology_rep = int(par)
   elif opt == '-l' :
     logratio_mode = True
   elif opt == '-o' :
     logratio_offset = float(par)
-  elif opt == '-r' :
+  elif opt == '-s' :
     rndseed = int(par)
   elif opt == '-R' :
     num_restarts = int(par)
   elif opt == '-e' :
     equilibration_length = int(par)
   elif opt == '-n' :
-    rw_repeticion = int(par)
-  elif opt == '-t' :
-    name_network = par
-  elif opt == '-w' :
-    rw_operation = int(par)
-  elif opt == '-x' :
-    target_expr_data = par
-  elif opt == '-p' :
-    target_pheno_data = par
-  elif opt == '-f' :
-    target_feature_data = par
+    target_name = par
+  elif opt == '-c' :
+    candidate_name = par
   elif opt == '-g' :
     gradient = par
   elif opt == '-T' :
@@ -110,11 +79,12 @@ if len(args) > 0 :
 if len(args) > 1 :   
   finalparam = open(args[1], 'w')
 
-logo = file('%s%02d%s.txt'%(name_network,rw_operation, result_file),'w')
+logo = file('%s_%s.txt'%(candidate_name, result_file),'w')
 
 g = open(gradient, 'r')
 optimiser = transsys.optim.parse_optimiser(g)
 g.close
+
 
 if transformerfile is not None :
   g = open(transformerfile, 'r')
@@ -125,12 +95,12 @@ optimiser.verbose = verbose
 rng = random.Random(rndseed)
 optimiser.rng = rng
 
-logo.write('net_top\tnet_rep\trw_operation\trw_repetition\tfitness\n')
+logo.write('fitness\n')
 index = 0
 
-x = open('%s'%target_expr_data, 'r')
-p = open('%s'%target_pheno_data, 'r')
-f = open('%s'%target_feature_data, 'r')
+x = open('%s_expr.txt'%target_name, 'r')
+p = open('%s_pheno.txt'%target_name, 'r')
+f = open('%s_feature.txt'%target_name, 'r')
 expression_set = trsysmodis.ExpressionSet()
 expression_set.read(x, p, f)
 expression_set.shift_data()
@@ -153,32 +123,19 @@ if logratio_mode :
 else :
   objective_function.distance_measu = expression_set.divergence
 
-a = []
-a.append(rw_operation)
 
-for i in a :
-  j = 1
-  while j <= rw_repeticion :
-    optimiser.randomInitRange = 1.0
-    if i == 0 :
-      print 'Using %s.tra'%name_network
-      model = open('%s.tra'%name_network,'r')
-    else : 
-      print 'Using %s%02d%02d.tra'%(name_network,i,j) 
-      model = open('%s%02d%02d.tra'%(name_network,i,j),'r')
+optimiser.randomInitRange = 1.0
+model = open('%s.tra'%(candidate_name),'r')
 
-    transsys_program = transsys.TranssysProgramParser(model).parse()
+transsys_program = transsys.TranssysProgramParser(model).parse()
 
-    for restart_index in xrange(num_restarts) :
-      opt_result = optimiser.optimise(transsys_program, objective_function)
-      logo.write('%02d\t%02d\t%d\t%d\t%f\n' %(topology_num, topology_rep, i,j,opt_result.objectiveOptimum.fitness))
-      sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
-      if finalparam is not None :
-        write_result(finalparam, opt_result)
-      if logfile is not None :
-        opt_result.write_log(logfile, 'tp_index')
-    if i == 0 :
-      j = rw_repeticion + 1
-    else :
-      j = j + 1
+for restart_index in xrange(num_restarts) :
+  print 'Using %s.tra'%(candidate_name)
+  opt_result = optimiser.optimise(transsys_program, objective_function)
+  logo.write('%f\n' %(restart_index, opt_result.objectiveOptimum.fitness))
+  sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
+  if finalparam is not None :
+    write_result(finalparam, opt_result)
+  if logfile is not None :
+    opt_result.write_log(logfile, 'tp_index')
 

@@ -17,14 +17,14 @@ rndseed = 1
 random_change = None
 transformerfile = None
 
-optlist, args = getopt.getopt(sys.argv[1:], 't:n:p:r:T:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 't:n:p:s:T:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
     print '-n: <Transsys program name>: Transsys program name'
     print '-t: <Network number>: Network number'
     print '-p: <Random changes>: Random changes'
-    print '-r: <Random seed>: Specify random seed number'
+    print '-s: <Random seed>: Specify random seed number'
     print '-T: <Parameter transformer>: Specify parameter transformer file'
     print '-h: print this help and exit'
     sys.exit()
@@ -35,7 +35,7 @@ for opt, par in optlist :
     network_number = int(par)
   elif opt == '-p' :
     random_change = int(par)
-  elif opt == '-r' :
+  elif opt == '-s' :
     rndseed = int(par)
   elif opt == '-T' :
     transformerfile = par
