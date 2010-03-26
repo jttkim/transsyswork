@@ -28,7 +28,7 @@ logratio_offset = None
 logratio_mode = False
 rndseed = 0
 
-optlist, args = getopt.getopt(sys.argv[1:], 'l:o:s:R:e:n:c:g:T:u:v:L:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:e:n:c:g:T:u:v:L:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
