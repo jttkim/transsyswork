@@ -18,7 +18,7 @@ def write_result(f, optResult) :
 
 num_restarts = None
 equilibration_length = None
-gradient = None
+optimiserfile = None
 f_distance = None
 verbose = 0
 transformerfile = None
@@ -39,7 +39,7 @@ for opt, par in optlist :
     print '-e  <int>: Equilibration length'
     print '-n  <str>: Prefix name of target network'
     print '-c  <str>: Prefix name of candidate network'
-    print '-g  <str>: Gradient file name'
+    print '-g  <str>: Optimiser spec file name'
     print '-T  <str>: specify transformer specification file to parse'
     print '-u  <str>: 1: sum_squares, 2: correlation, 3: euclidean'
     print '-V  <int>: Verbose'
@@ -61,7 +61,7 @@ for opt, par in optlist :
   elif opt == '-c' :
     candidate_name = par
   elif opt == '-g' :
-    gradient = par
+    optimiserfile = par
   elif opt == '-T' :
     transformerfile = par
   elif opt == '-u' :
@@ -81,7 +81,7 @@ if len(args) > 1 :
 
 logo = file('%s_%s.txt'%(candidate_name, result_file),'w')
 
-g = open(gradient, 'r')
+g = open(optimiserfile, 'r')
 optimiser = transsys.optim.parse_optimiser(g)
 g.close
 
@@ -95,7 +95,7 @@ optimiser.verbose = verbose
 rng = random.Random(rndseed)
 optimiser.rng = rng
 
-logo.write('fitness\n')
+logo.write('restart\tfitness\n')
 index = 0
 
 x = open('%s_expr.txt'%target_name, 'r')
@@ -132,7 +132,7 @@ transsys_program = transsys.TranssysProgramParser(model).parse()
 for restart_index in xrange(num_restarts) :
   print 'Using %s.tra'%(candidate_name)
   opt_result = optimiser.optimise(transsys_program, objective_function)
-  logo.write('%f\n' %(restart_index, opt_result.objectiveOptimum.fitness))
+  logo.write('%d\t%f\n' % (restart_index, opt_result.objectiveOptimum.fitness))
   sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
   if finalparam is not None :
     write_result(finalparam, opt_result)
