@@ -108,8 +108,7 @@ class ExpressionData(object) :
     profile = {}
     for array_name in self.array_name :
       array_index = self.array_name.index(array_name)
-      values.append(self.expression_data[gene_name][array_index])
-    profile[gene_name] = values
+      profile[array_name] = self.expression_data[gene_name][array_index]
     return profile
 
 
@@ -128,8 +127,8 @@ class ExpressionData(object) :
     t = copy.deepcopy(self.array_name)
     del t[wt_index]
     profile_c = copy.deepcopy(profile) 
-    del profile_c[gene_name][wt_index]
-    profile_c[gene_name] = map(lambda t: self.logratio(t, wt_value),profile_c[gene_name])
+    del profile_c[wt]
+    profile_c[gene_name] = map(lambda t: self.logratio(t, wt_value),profile_c.values())
     for (i, name,) in enumerate(t):
        profile2[name] = profile_c[gene_name][i]
     return profile2
@@ -521,7 +520,7 @@ gene in that array.
     averagematrix = 0.0
     for gene_name in self.feature_data.get_gene_name() :
       selfProfile = self.get_profile(gene_name)
-      average, stdev = statistics(selfProfile[gene_name])
+      average, stdev = statistics(selfProfile.values())
       averagematrix = averagematrix + average
     averagematrix = averagematrix / len(self.feature_data.feature_data)
     return averagematrix
