@@ -24,7 +24,7 @@ verbose = 0
 transformerfile = None
 logfile = None
 finalparam = None
-logratio_offset = None
+logratio_offset = 0.01
 logratio_mode = False
 rndseed = 0
 
