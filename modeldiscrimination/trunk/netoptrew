@@ -27,8 +27,10 @@ finalparam = None
 logratio_offset = 0.01
 logratio_mode = False
 rndseed = 0
+evaluate_objective = False
 
-optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:e:n:c:g:T:u:v:L:lvh')
+
+optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:e:n:c:g:T:u:v:L:Elh')
 
 for opt, par in optlist :
   if opt == '-h' :
@@ -41,9 +43,10 @@ for opt, par in optlist :
     print '-c  <str>: Prefix name of candidate network'
     print '-g  <str>: Optimiser spec file name'
     print '-T  <str>: specify transformer specification file to parse'
-    print '-u  <str>: 1: sum_squares, 2: correlation, 3: euclidean'
-    print '-V  <int>: Verbose'
+    print '-u  <str>: sum_squares, correlation, euclidean'
+    print '-v  <int>: verbose'
     print '-L  <str>: Logfile'
+    print '-E: evaluate objective function, print that and exit'
     print '-h: print this help and exit'
     sys.exit()
   elif opt == '-l' :
@@ -70,6 +73,8 @@ for opt, par in optlist :
     verbose = int(par)
   elif opt == '-L' :
     result_file = par
+  elif opt == '-E' :
+    evaluate_objective = True
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 
@@ -128,6 +133,11 @@ optimiser.randomInitRange = 1.0
 model = open('%s.tra'%(candidate_name),'r')
 
 transsys_program = transsys.TranssysProgramParser(model).parse()
+if evaluate_objective :
+  obj = objective_function(transsys_program)
+  print obj
+  sys.exit(0)
+
 
 for restart_index in xrange(num_restarts) :
   print 'Using %s.tra'%(candidate_name)

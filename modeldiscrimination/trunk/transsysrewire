@@ -10,59 +10,39 @@ import random
 import pdb
 
 
-def get_interactions_array(tp) :
-  vertices = []
-  for gene in tp.gene_names() :
-    index = tp.find_gene_index(gene)
-    for promoter in tp.gene_list[index].promoter[1:] :
-      for factor in promoter.getIdentifierNodes():
-        vertices.append([gene, factor.factor.name])
-  return vertices
+class Interaction(object) :
+  """Represent a regulatory interaction.
+
+Intended for purposes of "rewiring interactions".
+
+@ivar promoterElement the regulator of the interaction
+@type promoterElement C{transsys.PromoterElementLink}
+@ivar target the target of the interaction
+@type target C{String}
+"""
+
+  def __init__(self, promoterElement, target) :
+    if len(promoterElement.factor_list) != 1 :
+      raise StandardError, 'multiple regulators not supported'
+    self.promoterElement = promoterElement
+    self.target = target
 
 
-def rewire_net(v1,v2,tp) :
-  id = 0
-  ind = 0
-  inx = []
-  v = []
-  promot = []
-  v.append(v1)
-  v.append(v2)
-  inx.append(tp.find_gene_index(v1[0]))
-  inx.append(tp.find_gene_index(v2[0]))
-  for i in inx :
-    v1 = v[id]
-    for j, promoter in enumerate(tp.gene_list[i].promoter[1:]) :
-      if promoter.factor_list[0].name == v1[1] :
-        promot.append(tp.gene_list[i].promoter[j+1])
-	ind = j + 1
-    del tp.gene_list[i].promoter[ind]
-    id = id + 1
-  id = 1
-  for i in inx :
-    tp.gene_list[i].promoter.append(promot[id])
-    id = id - 1
-  return tp
+  def __str__(self) :
+    return 'Interaction: %s -> %s' % (self.promoterElement.factor_list[0].name, self.target)
 
 
-def search_vertice(v1, v2, intera) :
-  new_v1 = [v1[0],v2[1]]
-  new_v2 = [v2[0],v1[1]]
-  active = 1
-  if v1 != v2 :
-    if (new_v1 not in intera) :
-      if (new_v2 not in intera) :
-        active = 0
-  return active
-
-
-def rw_operation() :
-  sequence = []
-  for i in range(0,rewiring_operations) :
-    n = int(round(1.2**i))
-    if n not in sequence:
-      sequence.append(n)
-  return sequence
+def get_interaction_list(tp) :
+  """Extract regulatory interactions into a list of (target, regulator) pairs.
+"""
+  interaction_list = []
+  for gene in tp.gene_list :
+    for pe in gene.promoter :
+      if isinstance(pe, transsys.PromoterElementLink) :
+        if len(pe.factor_list) != 1 :
+          raise StandardError, 'gene %s: promoter element with multiple reglators, not supported' % gene.name
+        interaction_list.append(Interaction(pe, gene.name))
+  return interaction_list
 
 
 transsys_name = None
@@ -72,7 +52,7 @@ replicate = None
 rndseed = 1
 rewiring_operations = 24
 
-optlist, args = getopt.getopt(sys.argv[1:], 'n:w:r:s:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 'n:w:r:s:h')
 
 for opt, par in optlist :
   if opt == '-h' :
@@ -99,7 +79,8 @@ else :
   infile = sys.stdout
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
-inter = get_interactions_array(transsys_program)
+if len(get_interaction_list(transsys_program)) < 2 :
+  raise StandardError, 'less than 2 interactions'
 factor_list = transsys_program.factor_list
 gene_list = transsys_program.gene_list
 
@@ -107,32 +88,19 @@ gene_list = transsys_program.gene_list
 Changing interactions
 """
 
-random.seed(rndseed)
-optn = range(0,len(inter))
-osrh = 1
-srh = 0
-active = 1
+rng = random.Random(rndseed)
 
-for r in range(1,replicate+1) :
+for r in xrange(replicate) :
   tp1 = copy.deepcopy(transsys_program)
-  inter1 = get_interactions_array(tp1)
-  for j in range(1,rewirings + 1) :
-    srh = 0
-    while( active != 0 and osrh != 0 ) :
-      inx1 = random.choice(optn)
-      inx2 = random.choice(optn)
-      v1 = inter1[inx1]
-      v2 = inter1[inx2]
-      active = search_vertice(v1, v2, inter1)
-      srh = srh + 1
-	# jtk: what's this osrh thing?
-      if srh >= len(inter) * 200 :
-        osrh = 0
-    if osrh == 1 :
-      tp1 = rewire_net(v1, v2, tp1)
-      inter1 = get_interactions_array(tp1)
-      active = 1
-    # jtk: let's consider prefixing all indexes built into filenames with something unique
+  for j in xrange(rewirings) :
+    interaction_list = get_interaction_list(tp1)
+    interaction_pair = rng.sample(interaction_list, 2)
+    i1 = interaction_pair[0]
+    i2 = interaction_pair[1]
+    # sys.stderr.write('swapping %s and %s\n' % (str(i1), str(i2)))
+    f1 = i1.promoterElement.factor_list[0]
+    i1.promoterElement.factor_list[0] = i2.promoterElement.factor_list[0]
+    i2.promoterElement.factor_list[0] = f1
   model = file('%s_w%02d_r%02d.tra'%(transsys_name, rewirings, r),'w')
   model.write('%s'%tp1)
 
