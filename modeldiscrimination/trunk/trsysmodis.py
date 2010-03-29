@@ -126,7 +126,7 @@ class ExpressionData(object) :
     profile = self.get_profile(gene_name)
     t = copy.deepcopy(self.array_name)
     del t[wt_index]
-    profile_c = copy.deepcopy(profile) 
+    profile_c = copy.deepcopy(profile)
     del profile_c[wt]
     profile_c[gene_name] = map(lambda t: self.logratio(t, wt_value),profile_c.values())
     for (i, name,) in enumerate(t):
@@ -421,9 +421,9 @@ gene in that array.
 @rtype: C{float}
 """
     if self.feature_data == None :
-      raise StandardError, ' Empirical data does not exist'
+      raise StandardError, ' Empirical dataset does not exist'
     if other == None :
-      raise StandardError, ' Simulated does not exist'
+      raise StandardError, ' Simulated dataset does not exist'
     other.shift_data()
     d = 0.0
     wt = self.get_wildtype_array_name()
