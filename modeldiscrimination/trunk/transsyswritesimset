@@ -54,10 +54,8 @@ def get_feature_data() :
 
 
 equilibration_length = None
-nu_m = None
-f_distance = None
 rndseed = None
-sigma = None
+noise = None
 
 optlist, args = getopt.getopt(sys.argv[1:], 's:e:N:lvh')
 
@@ -97,14 +95,8 @@ expression_set = trsysmodis.ExpressionSet()
 expression_set.read(e, p, f)
 objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length)
 
-if f_distance == 1 :
-  objective_function.distance_function = trsysmodis.distance_sum_squares
-elif f_distance == 2 :
-  objective_function.distance_function = trsysmodis.distance_correl
-else :
-  objective_function.distance_function = trsysmodis.distance_euclidean
-
-if rndseed is not None  :
-  objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, noise)
+if noise is not None :
+  if rndseed is not None :
+    objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, noise)
 else :
   objective_function.write_simulated_set(transsys_program, outfile_basename)
