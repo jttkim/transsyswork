@@ -110,24 +110,7 @@ expression_set = trsysmodis.ExpressionSet()
 expression_set.read(x, p, f)
 
 
-objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length)
-
-if f_distance == 'sum_squares' :
-  objective_function.distance_function = trsysmodis.distance_sum_squares
-elif f_distance == 'correlation' :
-  objective_function.distance_function = trsysmodis.distance_correl
-elif f_distance == 'euclidean' :
-  objective_function.distance_function = trsysmodis.distance_euclidean
-else :
-  raise StandardError, 'unknown distance %d' % f_distance
-
-if logratio_mode :
-  expression_set.expression_data.logratio_offset = logratio_offset
-  expression_set.shift_data()
-  objective_function.distance_measu = expression_set.logratio_divergence
-else :
-  objective_function.distance_measu = expression_set.divergence
-
+objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length, logratio_mode, f_distance, logratio_offset)
 
 optimiser.randomInitRange = 1.0
 model = open('%s.tra'%(candidate_name),'r')
