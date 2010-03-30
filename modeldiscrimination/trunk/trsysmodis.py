@@ -33,7 +33,7 @@ class ExpressionData(object) :
   def __init__(self) :
     self.array_name = []
     self.expression_data = {}
-    self.logratio_offset = 0.01
+    self.logratio_offset = None
 
 
   def read(self, x) :
@@ -85,6 +85,8 @@ class ExpressionData(object) :
 
   def shift_data(self) :
     """ Data shifting """
+    if self.logratio_offset is None :
+      raise StandardError, '%s logratio offset is undefined' 
     intensities = []
     for values in self.expression_data.values() :
       intensities = intensities + values
@@ -406,9 +408,9 @@ gene in that array.
     if other == None :
       raise StandardError, ' Simulated does not exist'
     d = 0.0
-    for gene_name in self.feature_data.get_gene_name() :
-      selfProfile = self.get_profile(gene_name)
-      otherProfile = other.get_profile(gene_name)
+    for factor_name in self.feature_data.get_gene_name() :
+      selfProfile = self.get_profile(factor_name)
+      otherProfile = other.get_profile(factor_name)
       d = d + distance_function(selfProfile, otherProfile)
     return d
 
@@ -427,15 +429,10 @@ gene in that array.
     other.shift_data()
     d = 0.0
     wt = self.get_wildtype_array_name()
-    for gene_name in self.feature_data.get_gene_name() :
-      #jtk this "gene name" really prints factor names
-      #print gene_name
-      selfProfile = self.get_logratioprofile(wt, gene_name)
-      otherProfile = other.get_logratioprofile(wt, gene_name)
-      d_tmp = distance_function(selfProfile, otherProfile)
-#      print d_tmp
-#      d = d + d_tmp
-#    sys.exit(1)
+    for factor_name in self.feature_data.get_gene_name() :
+      selfProfile = self.get_logratioprofile(wt, factor_name)
+      otherProfile = other.get_logratioprofile(wt, factor_name)
+      d = d + distance_function(selfProfile, otherProfile)
     return d
 
 
@@ -947,7 +944,7 @@ def distance_sum_squares(array1, array2) :
   a = []
   b = []
   try:
-    for i in array1:
+    for i in array1.keys():
       a.append(array1[i])
       b.append(array2[i])
   except ValueError:
@@ -971,7 +968,7 @@ def distance_euclidean(array1, array2) :
   a = []
   b = []
   try:
-    for i in array1:
+    for i in array1.keys():
       a.append(array1[i])
       b.append(array2[i])
   except ValueError:
@@ -999,10 +996,6 @@ def distance_correl(array1, array2) :
       b.append(array2[i])
   except ValueError:
     raise StandardError, 'arrays are incompatible: %s not found' % i
-#  print array1
-#  print array2
-#  print a
-#  print b
   d = 0.0
   (ave_vec1, stdev1,) = statistics(a)
   (ave_vec2, stdev2,) = statistics(b)
@@ -1010,7 +1003,6 @@ def distance_correl(array1, array2) :
     d = 1.0
   else :
     d = 1.0 - transsys.utils.correlation_coefficient(a, b)
- # print 'd = %f' % d
   return d
 
 
