@@ -93,7 +93,7 @@ f = get_feature_data()
 
 expression_set = trsysmodis.ExpressionSet()
 expression_set.read(e, p, f)
-objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length)
+objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length, logratio_mode = None, distance_function= None, sd_multiplier = None)
 
 if noise is not None :
   if rndseed is not None :

@@ -421,7 +421,12 @@ gene in that array.
     for factor_name in self.feature_data.get_gene_name() :
       selfProfile = self.get_profile(factor_name)
       otherProfile = other.get_profile(factor_name)
-      d = d + distance_function(selfProfile, otherProfile)
+      if distance_function == 'correlation' :
+         d = d + distance_correl(selfProfile, otherProfile)
+      elif distance_function == 'euclidean' :
+         d = d + distance_euclidean(selfProfile, otherProfile)
+      else :
+        raise StandardError, ' % distance not found' % distance_function
     return d
 
 
@@ -441,7 +446,12 @@ gene in that array.
     for factor_name in self.feature_data.get_gene_name() :
       selfProfile = self.get_logratioprofile(wt, factor_name)
       otherProfile = other.get_logratioprofile(wt, factor_name)
-      d = d + distance_function(selfProfile, otherProfile)
+      if distance_function == 'correlation' :
+         d = d + distance_correl(selfProfile, otherProfile)
+      elif distance_function == 'euclidean' :
+         d = d + distance_euclidean(selfProfile, otherProfile)
+      else :
+        raise StandardError, ' % distance not found' % distance_function
     return d
 
 
@@ -788,10 +798,10 @@ of the gene expression levels for that genotype.
     self.distance_measu = None
 
 
-  def transform_expression_set(expression_set) :
+  def transform_expression_set(self, expression_set) :
     if self.logratio_mode :
       # objective function is responsible for transformations, such as shifting
-      expression_set.shift_to_stddev(self.sd_multiplier)
+      expression_set.expression_data.shift_to_stddev(self.sd_multiplier)
       # note: could also do logratio transform here -- expression set would have to provide methods
     return expression_set
 
