@@ -25,15 +25,11 @@ class ExpressionData(object) :
 @type array_name: Array[]
 @ivar expression_data: gene expression data
 @type expression_data: C{}
-@ivar logratio_ofset: logratio offset
-@type logratio_offset: Double
-
 """
 
   def __init__(self) :
     self.array_name = []
     self.expression_data = {}
-    self.logratio_offset = None
 
 
   def read(self, x) :
@@ -83,20 +79,30 @@ class ExpressionData(object) :
       raise StandardError, '%s was not found' % factor_name
 
 
-  def shift_data(self) :
-    """ Data shifting """
-    if self.logratio_offset is None :
-      raise StandardError, '%s logratio offset is undefined' 
+  def shift_data(self, offset) :
+    """Shift data by offset (i.e. add offset)
+
+@param offset the offset
+@type offset C{float}
+"""
+    for key in self.expression_data :
+      self.expression_data[key] = map(lambda t: t + offset, self.expression_data[key] )
+
+
+  def shift_to_stddev(self, sd_multiplier) :
+    """
+Transform expression data by shifting such that the minimum expression
+level is C{s * sd_multiplier}, where C{s} is the standard deviation of
+expression levels across the data set.
+"""
     intensities = []
     for values in self.expression_data.values() :
       intensities = intensities + values
     average, stdev = statistics(intensities)
-    self.logratio_offset = stdev * self.logratio_offset
+    min_after_shift = stdev * sd_multiplier
     m = min(intensities)
-    mfloor = self.logratio_offset - m
-
-    for key in self.expression_data :
-      self.expression_data[key] = map(lambda t: t + mfloor, self.expression_data[key] )
+    offset = min_after_shift - m
+    self.shift_data(offset)
 
 
   def get_profile(self, gene_name) :
@@ -391,8 +397,12 @@ gene in that array.
     return profile
 
 
-  def shift_data(self) :
-    self.expression_data.shift_data()
+  def shift_data(self, offset) :
+    """Shift expression data by offset.
+
+@param offset the offset
+@type offset C{float}"""
+    self.expression_data.shift_data(offset)
 
 
   def divergence(self, other, distance_function) :
@@ -426,7 +436,6 @@ gene in that array.
       raise StandardError, ' Empirical dataset does not exist'
     if other == None :
       raise StandardError, ' Simulated dataset does not exist'
-    other.shift_data()
     d = 0.0
     wt = self.get_wildtype_array_name()
     for factor_name in self.feature_data.get_gene_name() :
@@ -694,7 +703,7 @@ The objective function is parametrised by gene expression measurements.
 @param expression_set: the expression st
 @type expression_set: l{ExpressionSet}
 """
-    self.expression_set = expression_set
+    self.expression_set = copy.deepcopy(expression_set)
 
 
   def __call__(self, transsys_program) :
@@ -760,16 +769,31 @@ of the gene expression levels for that genotype.
 @ivar equilibration_length: length of the equilibration period.
 @type equilibration_length: C{int}
 @ivar distance_function: metric distance.
-@type distance_function: C{function}
+@type distance_function: C{function}, must take two profiles and return a non-negative distance as a @C{float}
+@ivar logratio_mode: switch for setting logratio mode
+@type logratio_mode: boolean
+@ivar sd_multiplier: if set, shift expression levels so that minimum level is sd_multiplier * stddev of expression levels.
+@type sd_multiplier: C{float}
 """ 
 
-  def __init__(self, expression_set, equilibration_length) :
+  def __init__(self, expression_set, equilibration_length, logratio_mode, distance_function, sd_multiplier = None) :
     """Constructor.
 """
     super(KnockoutObjective, self).__init__(expression_set)
     self.equilibration_length = equilibration_length
-    self.distance_function = None
+    self.logratio_mode = logratio_mode
+    self.sd_multiplier = sd_multiplier
+    self.distance_function = distance_function
+    self.expression_set = self.transform_expression_set(self.expression_set)
     self.distance_measu = None
+
+
+  def transform_expression_set(expression_set) :
+    if self.logratio_mode :
+      # objective function is responsible for transformations, such as shifting
+      expression_set.shift_to_stddev(self.sd_multiplier)
+      # note: could also do logratio transform here -- expression set would have to provide methods
+    return expression_set
 
 
   def __call__(self, transsys_program) :
@@ -778,16 +802,21 @@ of the gene expression levels for that genotype.
 @type transsys_program: c{transsys_program} 
 """
     e = self.get_simulated_set(transsys_program)
-    s = self.distance_measu(e.expression_data, self.distance_function)
+    self.transform_expression_set(e)
+    if self.logratio_mode :
+      s = self.expression_set.logratio_divergence(e, self.distance_function)
+    else :
+      s = self.expression_set.divergence(e, self.distance_function)
     return ModelFitnessResult(s)
 
 
   def get_simulated_set(self, transsys_program) :
-    """Produce simulated data
+    """Produce raw (ie without any transformations applied) simulated data.
+    
 @param transsys_program: transsys program
 @type transsys_program: transsys program
 @return: Expression set
-@rtype: object
+@rtype: C{ExpressionSet}
 """
    
     e = ExpressionSet()
