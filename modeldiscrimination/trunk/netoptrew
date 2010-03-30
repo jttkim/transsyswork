@@ -24,7 +24,7 @@ verbose = 0
 transformerfile = None
 logfile = None
 finalparam = None
-logratio_offset = 0.01
+logratio_offset = None
 logratio_mode = False
 rndseed = 0
 evaluate_objective = False
@@ -122,9 +122,9 @@ else :
   raise StandardError, 'unknown distance %d' % f_distance
 
 if logratio_mode :
+  expression_set.expression_data.logratio_offset = logratio_offset
   expression_set.shift_data()
   objective_function.distance_measu = expression_set.logratio_divergence
-  expression_set.expression_data.logratio_offset = logratio_offset
 else :
   objective_function.distance_measu = expression_set.divergence
 
