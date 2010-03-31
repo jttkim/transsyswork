@@ -101,6 +101,6 @@ for r in xrange(replicate) :
     f1 = i1.promoterElement.factor_list[0]
     i1.promoterElement.factor_list[0] = i2.promoterElement.factor_list[0]
     i2.promoterElement.factor_list[0] = f1
-  model = file('%s_w%02d_r%02d.tra'%(transsys_name, rewirings, r),'w')
+  model = file('%s_w%02d_r%02d.tra'%(transsys_name, rewirings, (r+1)),'w')
   model.write('%s'%tp1)
 
