@@ -14,6 +14,13 @@ function do_run ()
   fi
 }
 
+function checkpython()
+{
+  if [ -z "$PYTHONPATH" ]
+    then
+    export PYTHONPATH=$HOME/lib64/python
+  fi
+}
 
 
 # naming scheme:
@@ -113,7 +120,7 @@ function write_cshscript_header ()
   echo '#$ -j y' >> $scriptname
   echo '#$ -cwd' >> $scriptname
   echo >> $scriptname
-  echo 'setenv PYTHONPATH ${HOME}/lib/python' >> $scriptname
+  echo 'setenv PYTHONPATH ${HOME}/lib64/python' >> $scriptname
   echo "cd $PWD" >> $scriptname
   echo 'echo start time: `date`' >> $scriptname
 }
@@ -129,14 +136,21 @@ function add_command ()
 {
   scriptname=$1
   cmd="$2"
-  # echo adding command to $scriptname
-  echo "echo $cmd" >> $scriptname
-  echo "if ( { $cmd } ) then" >> $scriptname
-  echo "  echo completed \`date\`" >> $scriptname
-  echo "else" >> $scriptname
-  echo "  echo ERROR" >> $scriptname
-  echo "  exit 1" >> $scriptname
-  echo "endif" >> $scriptname
+  echo "$cmd" >> $scriptname
+  #echo '-- end time -- `date`' >> $scriptname
+  #echo "if ( { $cmd } ) then" >> $scriptname
+  #echo "  echo completed \`date\`" >> $scriptname
+  #echo "else" >> $scriptname
+  #echo "  echo ERROR" >> $scriptname
+  #echo "  exit 1" >> $scriptname
+  #echo "endif" >> $scriptname
+  #echo
+  #if ($cmd)
+  #  then 
+  #  echo "completed \`date\`" >> $scriptname
+  #else
+  #  echo "ERROR" >> $scriptname
+  #fi
 }
 
 
@@ -148,13 +162,12 @@ function optimise_numrewired_cluster ()
     rewired_topology_number=1
     while test ${rewired_topology_number} -le ${num_rewired_topologies} ; do
       candidate_topology=`printf '%s_w%02d_r%02d' ${candidate_topology_basename} ${num_rewirings} ${rewired_topology_number}`
-      echo $candidate_topology
-      add_command $scriptname ./netoptrew -s ${rndseed} -l TRUE -o ${offset} -R ${num_optimisations} -e ${equilibration_timesteps} -n ${topology_name} -c ${candidate_topology} -u ${distance_measurement} -L $logfile -T $transformerfile -g ${gradientfile}
+      add_command $scriptname "./netoptrew -s ${rndseed} -l -o ${offset} -R ${num_optimisations} -e ${equilibration_timesteps} -n ${topology_name} -c ${candidate_topology} -u ${distance_measurement} -L $logfile -T $transformerfile -g ${gradientfile}"
       rndseed=`expr ${rndseed} + 1`
       rewired_topology_number=`expr ${rewired_topology_number} + 1`
+      do_run qsub ${scriptname}
     done
   done
-  do_run qsub ${scriptname}
 }
 
 
@@ -167,7 +180,6 @@ function optimise ()
       while test ${target_parameterisation_number} -le ${num_target_parameterisations} ; do
         topology_name=`printf 'target_%s%02d_p%02d' ${gentype} ${target_topology_number} ${target_parameterisation_number} `
         candidate_topology_basename=`printf 'candidate_%s%02d_p%02d' ${gentype} ${target_topology_number} ${target_parameterisation_number}`
-	echo $topology_name  $candidate_topology_basename
         optimise_numrewired_cluster;
         target_parameterisation_number=`expr ${target_parameterisation_number} + 1`
       done
@@ -189,42 +201,46 @@ function maketable () # create transsys program
           rewired_topology_number=1
             while test ${rewired_topology_number} -le ${num_rewired_topologies} ; do
               candidate_topology=`printf '%s_w%02d_r%02d' ${candidate_topology_basename} ${num_rewirings} ${rewired_topology_number}`
+              candidate_topology_logo=`printf '%s_logo.txt' ${candidate_topology}`
+	      cp $candidate_topology_logo $candidate_topology_logo'.bk'
+              sed 's/rst/'$target_topology_number'\t'$target_parameterisation_number'\t'$rewired_topology_number'\t/g' $candidate_topology_logo'.bk' > clean.txt
+              mv clean.txt $candidate_topology_logo
+              rm -f $candidate_topology_logo'.bk'
               rewired_topology_number=`expr ${rewired_topology_number} + 1`
-	      cp $candidate_topology_logo'.txt' $candidate_topology_logo'.txt.bk'
-              sed '//' $$candidate_topology_logo'.txt.bk' > clean.txt
-              mv clean.txt $candidate_topology_logo'.txt'
             done
 	done
         target_parameterisation_number=`expr ${target_parameterisation_number} + 1`
       done
-      target_parameterisation_number=`expr ${target_parameterisation_number} + 1`
+    target_topology_number=`expr ${target_topology_number} + 1`
     done
   done
 }
 
 
 #control parameters
-num_target_topologies=1
-num_target_parameterisations=1
+num_target_topologies=10
+num_target_parameterisations=5
 num_rewirings_list='0 1 2 3 4 5 6 7 9 11 13 15 18 22 27 32 38 46 55 66'
 gentype_list='er'
-num_rewired_topologies=5
+num_rewired_topologies=10
 num_optimisations=5
 equilibration_timesteps=100
 signal_to_noise=0
 transformerfile=transformerfile.dat
 logfile=logo
 distance_measurement=correlation
-offset=0.01
+offset=1e-18
 gradientfile=optspec.dat
 
 # initial rndseed, incremented each time a rndseed parameter is required
 rndseed=2
 
 # run the show
+checkpython
 generate_target_programs
 generate_target_expressionsets
 generate_candidate_programs
-optimise_numrewired
-#optimise
+#optimise_numrewired
+optimise
+#maketable
 
