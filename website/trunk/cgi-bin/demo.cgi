@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 import sys
-sys.path = ['/jtkpc/home/jtk/lib/python'] + sys.path
+# sys.path = ['/jtkpc/home/jtk/lib/python'] + sys.path
+sys.path = ['/home/trsysweb/lib/python', '/home/trsysweb/lib/python/python_igraph-0.5.2-py2.4-linux-x86_64.egg'] + sys.path
 import os
 import popen2
 import cgi
@@ -24,7 +25,8 @@ transexpr <- function(tp, n, initConc = NULL)
   {
     ic <- sprintf("-F '%s'", paste(as.character(initConc), collapse = " "));
   }
-  cmd <- sprintf("transexpr -n %d %s", as.integer(n), ic);
+  # FIXME: absolute path to transexpr
+  cmd <- sprintf("/home/trsysweb/bin/transexpr -n %d %s", as.integer(n), ic);
   l <- xpipe(cmd, tp);
   d <- read.table(textConnection(l), header = TRUE);
   nonsenseCols <- union(grep("stddev$", colnames(d)), grep("entropy$", colnames(d)));
@@ -70,7 +72,8 @@ postscript("|cat", width = 8, height = 6, paper = "special", horizontal = FALSE)
 dfplot(d, "time");
 dev.off();
 """ % (str(tp), numTimesteps)
-  rcmd = 'R --vanilla --slave --quiet'
+  # FIXME: hard-coded path to R
+  rcmd = '/home/trsysweb/bin/R --vanilla --slave --quiet'
   p = popen2.Popen3(rcmd, 1)
   sys.stdout.flush()
   sys.stderr.flush()
@@ -181,12 +184,12 @@ def transsysEchoPage(f, tp) :
   pageEnd(f)
 
 
-def transsysForm(f, tpString, numTimesteps) :
+def transsysForm(f, tpString, numTimesteps, cgiScript) :
   if numTimesteps <= 0 :
     n = ''
   else :
     n = str(numTimesteps)
-  f.write('<form method="post" action="/~jtk/transsys/cgi-bin/demo.cgi">\n')
+  f.write('<form method="post" action="%s">\n' % cgiScript)
   f.write('<fieldset>\n')
   f.write('<legend><code>transsys</code> dynamics demo</legend>\n')
   f.write('Enter <code>transsys</code> program:<br/>\n')
@@ -201,18 +204,18 @@ def transsysForm(f, tpString, numTimesteps) :
   f.write('</form>\n')
 
 
-def demoPage(f, tp, numTimesteps) :
+def demoPage(f, tp, numTimesteps, cgiScript) :
   pageStart(f)
   f.write('<h1><tt>transsys</tt> Web Tool for CMPC2B06</h1>\n\n')
-  transsysForm(f, str(tp), numTimesteps)
-  f.write('<img src="/~jtk/transsys/cgi-bin/demo.cgi?transsys_program=%s&a=plot&num_timesteps=%d" alt="transsys dynamics plot"/>' % (urlString(str(tp)), numTimesteps))
+  transsysForm(f, str(tp), numTimesteps, cgiScript)
+  f.write('<img src="%s?transsys_program=%s&a=plot&num_timesteps=%d" alt="transsys dynamics plot"/>' % (cgiScript, urlString(str(tp)), numTimesteps))
   pageEnd(f)
 
 
-def formPage(f, tpString) :
+def formPage(f, tpString, cgiScript) :
   pageStart(f)
   f.write('<h1><tt>transsys</tt> Web Tool for CMPC2B06</h1>\n\n')
-  transsysForm(f, tpString, 100)
+  transsysForm(f, tpString, 100, cgiScript)
   pageEnd(f)
 
 
@@ -226,6 +229,7 @@ def transsysPlotImage(f, tp, numTimesteps) :
 
 cgitb.enable()
 
+cgiScript = '/cgi-bin/demo.cgi'
 tpField = 'transsys_program'
 actionField = 'a'
 numTimestepsField = 'num_timesteps'
@@ -234,7 +238,7 @@ numTimesteps = 100
 form = cgi.FieldStorage()
 f = sys.stdout
 if tpField not in form :
-  formPage(f, '')
+  formPage(f, '', cgiScript)
   sys.exit()
 tpString = form[tpField].value
 if actionField in form :
@@ -246,7 +250,7 @@ tp = p.parse()
 if action == 'plot' :
   transsysPlotImage(f, tp, numTimesteps)
 else :
-  demoPage(f, tp, numTimesteps)
+  demoPage(f, tp, numTimesteps, cgiScript)
 sys.exit()
 
 # transsysEchoPage(f, tp)
