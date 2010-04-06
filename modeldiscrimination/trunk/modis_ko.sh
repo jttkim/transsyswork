@@ -137,8 +137,6 @@ function add_command ()
 {
   scriptname=$1
   cmd="$2"
-  #echo "$cmd" >> $scriptname
-  #echo 'echo end time: `date`' >> $scriptname
   echo "if ( { $cmd } ) then" >> $scriptname
   echo "  echo completed \`date\`" >> $scriptname
   echo "else" >> $scriptname
@@ -150,18 +148,21 @@ function add_command ()
 
 function optimise_numrewired_cluster ()
 {
-  scriptname=${candidate_topology_basename}.csh
-  write_cshscript_header $scriptname
+ # scriptname=${candidate_topology_basename}.csh
+  #write_cshscript_header $scriptname
   for num_rewirings in ${num_rewirings_list} ; do
+    scriptname=`printf '%s_w%02d.csh' ${candidate_topology_basename} ${num_rewirings}`
+    write_cshscript_header $scriptname
     rewired_topology_number=1
     while test ${rewired_topology_number} -le ${num_rewired_topologies} ; do
       candidate_topology=`printf '%s_w%02d_r%02d' ${candidate_topology_basename} ${num_rewirings} ${rewired_topology_number}`
       add_command $scriptname "./netoptrew -s ${rndseed} -l -o ${offset} -R ${num_optimisations} -e ${equilibration_timesteps} -n ${topology_name} -c ${candidate_topology} -u ${distance_measurement} -L $logfile -T $transformerfile -g ${gradientfile}"
       rndseed=`expr ${rndseed} + 1`
       rewired_topology_number=`expr ${rewired_topology_number} + 1`
-      do_run qsub ${scriptname}
     done
+  do_run qsub ${scriptname}
   done
+  #do_run qsub ${scriptname}
 }
 
 
@@ -212,9 +213,10 @@ function maketable () # create transsys program
 
 
 #control parameters
-num_target_topologies=10
-num_target_parameterisations=5
+num_target_topologies=1
+num_target_parameterisations=1
 num_rewirings_list='0 1 2 3 4 5 6 7 9 11 13 15 18 22 27 32 38 46 55 66'
+#num_rewirings_list='0 1'
 gentype_list='er'
 num_rewired_topologies=10
 num_optimisations=5
