@@ -118,6 +118,7 @@ function write_cshscript_header ()
   echo '#!/bin/csh' > $scriptname
   echo '#$ -q long.q' >> $scriptname
   echo '#$ -j y' >> $scriptname
+  echo '#$ -m e' >> $scriptname
   echo '#$ -cwd' >> $scriptname
   echo >> $scriptname
   echo 'setenv PYTHONPATH ${HOME}/lib64/python' >> $scriptname
@@ -136,21 +137,14 @@ function add_command ()
 {
   scriptname=$1
   cmd="$2"
-  echo "$cmd" >> $scriptname
-  #echo '-- end time -- `date`' >> $scriptname
-  #echo "if ( { $cmd } ) then" >> $scriptname
-  #echo "  echo completed \`date\`" >> $scriptname
-  #echo "else" >> $scriptname
-  #echo "  echo ERROR" >> $scriptname
-  #echo "  exit 1" >> $scriptname
-  #echo "endif" >> $scriptname
-  #echo
-  #if ($cmd)
-  #  then 
-  #  echo "completed \`date\`" >> $scriptname
-  #else
-  #  echo "ERROR" >> $scriptname
-  #fi
+  #echo "$cmd" >> $scriptname
+  #echo 'echo end time: `date`' >> $scriptname
+  echo "if ( { $cmd } ) then" >> $scriptname
+  echo "  echo completed \`date\`" >> $scriptname
+  echo "else" >> $scriptname
+  echo "  echo ERROR" >> $scriptname
+  echo "  exit 1" >> $scriptname
+  echo "endif" >> $scriptname
 }
 
 
