@@ -1,14 +1,17 @@
 objectivespec ::= knockout_treatment_magic knockout_treatment_objectivespec
 
 knockout_treatment_objectivespec ::= transformation_mode, distance_measurement, sd_multiplier, mapping procedure_defs (array_def)*
+knockout_treatment_objectivespec ::= settings, mapping procedure_defs (array_def)*
 
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
 transformation_mode ::= transformation_mode_header transformation_mode_body transformation_mode_footer NEWLINE
 distance_measurement ::= distance_measurement_header distance_measurement_body distance_measurement_footer NEWLINE
 sd_multiplier ::= sd_multiplier_header sd_multiplier_body sd_multiplier_footer NEWLINE
+
+setting_def ::= setting_header setting_body setting_footer NEWLINE
 mapping_def ::= mapping_header mapping_body mapping_footer NEWLINE
-procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
+procedure_defs ::= procedure_header procedure_body procedure_footer NEWLINE
 array_def ::= array_header array_body array_footer NEWLINE
 
 transformation_mode_header ::= "transformation_mode" WHITESPACE identifier NEWLINE
@@ -22,6 +25,18 @@ distance_measurement_footer ::= "enddistance_measurement" NEWLINE
 sd_multiplier_header ::= "sd_multiplier" WHITESPACE identifier NEWLINE
 sd_multiplier_body ::= "sigma:" WHITESPACE realnumber NEWLINE
 sd_multiplier_footer ::= "end_sd_multiplier" NEWLINE
+
+setting_header ::= "setting" WHITESPACE identifier NEWLINE
+setting_body ::= (setting)
+setting_footer ::= "endsetting" NEWLINE
+
+setting ::= "transformation_mode:" WHITESPACE transformation_mode NEWLINE
+            "distance_measurement:" WHITESPACE distance_measurement NEWLINE
+	    "sd_multiplier:" WHITESPACE realnumber NEWLINE
+
+transformation_mode ::= "logratio" | "nonlogratio"
+
+distance_measurement ::= "correlation" | "euclidean" | "sum_squares" 
 
 procedure_header ::= "procedure" WHITESPACE identifier NEWLINE 
 procedure_body ::= (instruction)+
@@ -42,11 +57,9 @@ array_header ::= "array" WHITESPACE identifier NEWLINE
 array_body ::= (identifier NEWLINE)+
 array_footer ::= "endarray" NEWLINE
 
-
 mapping_def ::= "mapping" WHITESPACE identifier NEWLINE
 mapping_body ::= (factor_def NEWLINE)+   
 mapping_footer ::= "endmapping" NEWLINE 
-
 
 factor_def ::= gene_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_identifier NEWLINE
 gene_identifier ::= identifier
