@@ -1296,8 +1296,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 @ivar array_defs: Array definitions
 @type array_defs: Array[]
 """
-  procedure_defs = []
+  setting_defs = []
   mapping_defs = []
+  procedure_defs = []
   array_defs = []
 
 
@@ -1553,13 +1554,101 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   
   def parse_mapping_defs(self) :
-    """ Parse mapping array
-@return: mapping array
-@rtype: array{}
-"""
+    """ Parse mapping array"""
     while self.scanner.next_token[0] == 'mapping' :
       self.mapping_defs.append(self.parse_mapping_def())
       self.scanner.token()
+      self.expect_token('\n')
+
+  
+  def parse_setting_header(self) :
+    """ Parse setting header
+@return: setting header
+@rtype: String{}
+"""
+    self.expect_token('setting')
+    setting_name = self.expect_token('identifier')
+    return setting_name
+
+
+  def get_settingsen(self) :
+    """Check setting lexicon
+@return: array
+@rtype: array[]
+"""
+    t = self.expect_token('identifier')
+    if "transformation_mode" in t :
+      return(t, self.validate_transformation())
+    elif "distance_measurement" in t :
+      return(t, self.validate_transformation())
+    elif t == "sd_multiplier" :
+      return(t, self.validate_sd_multiplier())
+
+
+  def validate_transformation(self) :
+    """ Instantiate Simulation Knockout
+@return: Object
+@rtype: L{SimulationKnockout}
+"""
+    self.expect_token(':')
+    transformation = self.scanner.token()[1]
+    if isinstance(transformation, StringType):
+      return transformation
+    else :
+      raise StandardError, "%s is not a correct string value"%s
+
+
+  def validate_sd_multiplier(self):
+    """ Instantiate Simulation Treatment 
+@return: Object
+@rtype: L{SimulationTreatment}
+"""
+    self.expect_token(':')
+    value = self.scanner.token()[1]
+    if (isinstance(float(value), FloatType) and isinstance(treatment, StringType)) :
+      return value
+    else :
+      raise StandardError, "%s is not a correct string value"%s
+
+
+  def parse_setting_body(self):
+    """ Parse setting body
+@return: setting dictionary
+@rtype: dictionary{}
+"""
+    setting_dict = {}
+    while self.scanner.next_token[0] != 'endsetting' :
+      f, m = self.get_mappingsen()
+      if f in setting_dict.keys() :
+        raise StandardError, '%s already exist'%f
+      setting_dict[f] = m
+    return(setting_dict)
+
+
+  def parse_setting_footer(self):
+    """ Parse setting footer
+@return: Footer
+@rtype: String{}
+"""
+    return(self.scanner.lookahead())
+
+
+  def parse_setting_def())
+    """Parse setting object
+@return: Setting object
+@rtype: L{Setting]
+"""
+    setting_name = self.parse_setting_header()
+    setting_list = self.parse_setting_body()
+    self.parse_mapping_footer()
+    return Setting(setting_name, setting_list) 
+
+
+  def parse_setting_defs(self) :
+    """ Parse objective function settings"""
+    while self.scanner.next_token[0] == 'setting' :
+      self.setting_defs.append(self.parse_setting_def())
+      self.scanner.toke()
       self.expect_token('\n')
 
 
@@ -1569,6 +1658,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{KnockoutTreatmentObjective}
 """
     expression_set = None
+    self.parse_setting_defs()
     self.parse_mapping_defs()
     self.parse_procedure_defs()
     self.parse_array_defs()
