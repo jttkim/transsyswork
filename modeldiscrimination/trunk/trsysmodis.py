@@ -421,12 +421,7 @@ gene in that array.
     for factor_name in self.feature_data.get_gene_name() :
       selfProfile = self.get_profile(factor_name)
       otherProfile = other.get_profile(factor_name)
-      if distance_function == 'correlation' :
-         d = d + distance_correl(selfProfile, otherProfile)
-      elif distance_function == 'euclidean' :
-         d = d + distance_euclidean(selfProfile, otherProfile)
-      else :
-        raise StandardError, ' % distance not found' % distance_function
+      d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
     return d
 
 
@@ -446,13 +441,27 @@ gene in that array.
     for factor_name in self.feature_data.get_gene_name() :
       selfProfile = self.get_logratioprofile(wt, factor_name)
       otherProfile = other.get_logratioprofile(wt, factor_name)
-      if distance_function == 'correlation' :
-         d = d + distance_correl(selfProfile, otherProfile)
-      elif distance_function == 'euclidean' :
-         d = d + distance_euclidean(selfProfile, otherProfile)
-      else :
-        raise StandardError, ' % distance not found' % distance_function
+      d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
     return d
+
+
+  def distance_divergence(self, selfProfile, otherProfile, distance_function) :
+    """ Divergence distance
+@param selfProfile: Empirical data
+@type selfProfile: ExpressionSet
+@param otherProfile: Simulated data
+@type otherProfile: ExpressionSet
+@return distance:distance
+@rtype: C{Float}
+"""
+    if distance_function == 'correlation' :
+      return distance_correl(selfProfile, otherProfile)
+    elif distance_function == 'euclidean' :
+      return distance_euclidean(selfProfile, otherProfile)
+    elif distance_function == 'sum_squares' :
+      return distance_sum_squares(selfProfile, otherProfile)
+    else :
+      raise StandardError, ' % distance not found' % distance_function
 
 
   def write_expression_data(self) :
@@ -795,7 +804,6 @@ of the gene expression levels for that genotype.
     self.sd_multiplier = sd_multiplier
     self.distance_function = distance_function
     self.expression_set = self.transform_expression_set(self.expression_set)
-    self.distance_measu = None
 
 
   def transform_expression_set(self, expression_set) :
