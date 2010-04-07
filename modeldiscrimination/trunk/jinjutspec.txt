@@ -1,15 +1,27 @@
 objectivespec ::= knockout_treatment_magic knockout_treatment_objectivespec
 
-knockout_treatment_objectivespec ::= mapping procedure_defs (array_def)*
+knockout_treatment_objectivespec ::= transformation_mode, distance_measurement, sd_multiplier, mapping procedure_defs (array_def)*
 
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
-procedure_defs ::=
-	| procedure_def procedure_defs
-
+transformation_mode ::= transformation_mode_header transformation_mode_body transformation_mode_footer NEWLINE
+distance_measurement ::= distance_measurement_header distance_measurement_body distance_measurement_footer NEWLINE
+sd_multiplier ::= sd_multiplier_header sd_multiplier_body sd_multiplier_footer NEWLINE
 mapping_def ::= mapping_header mapping_body mapping_footer NEWLINE
 procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
 array_def ::= array_header array_body array_footer NEWLINE
+
+transformation_mode_header ::= "transformation_mode" WHITESPACE identifier NEWLINE
+transformation_mode_body ::= "logratio" NEWLINE | "nonlogratio" NEWLINE
+transformation_mode_footer ::= "endtransformation_mode" NEWLINE
+
+distance_measurement_header ::= "distance measurement" WHITESPACE identifier NEWLINE
+distance_measurement_body ::= "correlation" NEWLINE | "euclidean" NEWLINE | "sum_squares" NEWLINE
+distance_measurement_footer ::= "enddistance_measurement" NEWLINE
+
+sd_multiplier_header ::= "sd_multiplier" WHITESPACE identifier NEWLINE
+sd_multiplier_body ::= "sigma:" WHITESPACE realnumber NEWLINE
+sd_multiplier_footer ::= "end_sd_multiplier" NEWLINE
 
 procedure_header ::= "procedure" WHITESPACE identifier NEWLINE 
 procedure_body ::= (instruction)+
@@ -19,7 +31,9 @@ instruction ::= procedure_identifier
 
 primary_instruction ::= "knockout:" WHITESPACE gene_identifier NEWLINE
 	| "runtimesteps:" WHITESPACE integer NEWLINE
-	| "treatment:" WHITESPACE factor_identifier WHITESPACE "=" WHITESPACE realnumber
+	| "treatment:" WHITESPACE factor_identifier WHITESPACE "=" WHITESPACE realnumber NEWLINE
+	| "equilibration" NEWLINE
+	| "overexpress:" WHITESPACE gene_identifier NEWLINE 
 
 procedure_footer ::= "endprocedure" NEWLINE
 procedure_identifier ::= identifier
@@ -38,105 +52,4 @@ factor_def ::= gene_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_ident
 gene_identifier ::= identifier
 factor_identifier ::= identifier
 gene_manufacturer_identifier ::= identifier
-
-
------ 8< -------------------------------------------------------------------
-
-ObjectiveSpecification-0.1
-
-mapping nameid
-  <transsys factor name> = <row label>
-endmapping
-
-procedure wildtype
-  runtimesteps: 900
-endprocedure
-
-procedure ko_jin1
-  knockout: jin1
-  runtimesteps: 900
-endprocedure
-
-procedure ja_treatment
-  treatment: jasmonate = 1.0
-endprocedure
-
-procedure posttreatment
-  runtimesteps: 100
-endprocedure
-
-array a0
-  wildtype
-  posttreatment
-endarray
-
-array a1
-  wildtype
-  ja_treatment
-  posttreatment
-endarray
-
-array a2
-  ko_jin1
-  posttreatment
-endarray
-
-array a3
-  ko_jin1
-  ja_treatment
-  posttreatment
-endarray
-
-a4
-a5
-
-array a6
-  ko_jin1_and_jut
-  posttreatment
-endarray
-
-array a7
-  ko_jin1_and_jut
-  ja_treatment
-  posttreatment
-endarray
-
------ 8< -------------------------------------------------------------------
-
-array j0
-  wildtype
-  runtimesteps: 1000
-endarray
-
-array j1
-  wildtype
-  runtimesteps: 1000
-  ja_treatment
-  runtimesteps: 12
-endarray
-
-array j2
-  wildtype
-  runtimesteps: 1000
-  ja_treatment
-  runtimesteps: 72
-endarray
-
------ 8< -------------------------------------------------------------------
-
-Given objects:
-
-A transsys program with genes jin1
-A gene expression matrix with columns a0, a1, ..., a7 and columns labelled by
-  Affymetrix number
-
-endexperiment
-
------ 8< -------------------------------------------------------------------
-
-Given objects:
-
-A transsys program with genes jin1
-A gene expression matrix with columns a0, a1, ..., a7 and columns labelled by
-  Affymetrix number
 
