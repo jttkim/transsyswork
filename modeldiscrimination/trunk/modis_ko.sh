@@ -186,6 +186,7 @@ function optimise ()
 
 function maketable () # create transsys program
 {
+  name=""
   for gentype in ${gentype_list} ; do
     target_topology_number=1
     while test ${target_topology_number} -le ${num_target_topologies} ; do
@@ -198,9 +199,10 @@ function maketable () # create transsys program
               candidate_topology=`printf '%s_w%02d_r%02d' ${candidate_topology_basename} ${num_rewirings} ${rewired_topology_number}`
               candidate_topology_logo=`printf '%s_logo.txt' ${candidate_topology}`
 	      cp $candidate_topology_logo $candidate_topology_logo'.bk'
-              sed 's/rst/'$target_topology_number'\t'$target_parameterisation_number'\t'$rewired_topology_number'\t/g' $candidate_topology_logo'.bk' > clean.txt
+              sed 's/rst/'$target_topology_number'\t'$target_parameterisation_number'\t'$num_rewirings'\t'$rewired_topology_number'\t/g' $candidate_topology_logo'.bk' > clean.txt
               mv clean.txt $candidate_topology_logo
               rm -f $candidate_topology_logo'.bk'
+              name=`printf '%s %s ' $name $candidate_topology_logo ` 
               rewired_topology_number=`expr ${rewired_topology_number} + 1`
             done
 	done
@@ -208,6 +210,9 @@ function maketable () # create transsys program
       done
     target_topology_number=`expr ${target_topology_number} + 1`
     done
+    cat $name > 'tt.txt'
+    sed '/restart/d' 'tt.txt' > 'fitnesstable.txt'
+    rm -f 'tt.txt'
   done
 }
 
@@ -216,7 +221,6 @@ function maketable () # create transsys program
 num_target_topologies=1
 num_target_parameterisations=1
 num_rewirings_list='0 1 2 3 4 5 6 7 9 11 13 15 18 22 27 32 38 46 55 66'
-#num_rewirings_list='0 1'
 gentype_list='er'
 num_rewired_topologies=10
 num_optimisations=5
@@ -232,11 +236,11 @@ gradientfile=optspec.dat
 rndseed=2
 
 # run the show
-checkpython
-generate_target_programs
-generate_target_expressionsets
-generate_candidate_programs
+#checkpython
+#generate_target_programs
+#generate_target_expressionsets
+#generate_candidate_programs
 #optimise_numrewired
-optimise
-#maketable
+#optimise
+maketable
 
