@@ -1105,6 +1105,33 @@ class ModelFitnessResult(transsys.optim.FitnessResult) :
     super(ModelFitnessResult, self).__init__(fitness)
 
 
+class Setting(object) :
+  """ object Setting """
+
+
+  def __init__(self, setting_name, setting_list) :
+    """Constructor
+@param setting_name: setting name
+@type setting_name: String
+@param setting_list: setting list
+@type setting_list: Dictionary{S}
+"""
+    self.setting_name = setting_name
+    self.setting_list = setting_list
+   
+
+  def get_setting_name(self) :
+   return(self.setting_name)
+
+  
+  def get_setting_list(self) :
+    return(self.setting_list.keys())
+
+
+  def get_setting_list(self) :
+    return(self.setting_list.keys())
+
+
 class Mapping(object) :
   """  Object Mapping """
 
@@ -1187,7 +1214,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
+    self.keywords = ['setting', 'endsetting', 'mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
     self.identifier_re = re.compile('([A-Za-z_][A-Za-z0-9_]*)|([\\[\\]])')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -1411,13 +1438,16 @@ class EmpiricalObjectiveFunctionParser(object) :
       return(self.validate_knockout())
     elif t == "runtimesteps" :
       return(self.validate_runtimesteps())
+    elif t == "equilibration" :
+      print "hello"
+      return(t)
 
 
   def validate_treatment(self):
     """ Instantiate Simulation Treatment 
 @return: Object
 @rtype: L{SimulationTreatment}
-"""
+""" 
     self.expect_token(':')
     treatment = self.expect_token('identifier')
     self.expect_token('=')
@@ -1442,7 +1472,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def validate_runtimesteps(self) :
-    """ Instantiate Simulation Equilibration 
+    """ Instantiate runtimesteps 
 @return: Object
 @rtype: L{SimulationEquilibration}
 """
@@ -1463,6 +1493,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure = []
     while self.scanner.next_token[0] != 'endprocedure' :
       procedure.append(self.get_proceduresen())
+      print procedure
     return procedure
 
 
@@ -1605,7 +1636,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     self.expect_token(':')
     value = self.scanner.token()[1]
-    if (isinstance(float(value), FloatType) and isinstance(treatment, StringType)) :
+    if (isinstance(float(value), FloatType)) :
       return value
     else :
       raise StandardError, "%s is not a correct string value"%s
@@ -1618,10 +1649,11 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     setting_dict = {}
     while self.scanner.next_token[0] != 'endsetting' :
-      f, m = self.get_mappingsen()
+      f, m = self.get_settingsen()
       if f in setting_dict.keys() :
         raise StandardError, '%s already exist'%f
       setting_dict[f] = m
+    print setting_dict
     return(setting_dict)
 
 
@@ -1633,7 +1665,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     return(self.scanner.lookahead())
 
 
-  def parse_setting_def())
+  def parse_setting_def(self) :
     """Parse setting object
 @return: Setting object
 @rtype: L{Setting]
@@ -1648,7 +1680,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     """ Parse objective function settings"""
     while self.scanner.next_token[0] == 'setting' :
       self.setting_defs.append(self.parse_setting_def())
-      self.scanner.toke()
+      self.scanner.token()
       self.expect_token('\n')
 
 

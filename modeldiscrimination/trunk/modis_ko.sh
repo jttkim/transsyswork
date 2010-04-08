@@ -236,11 +236,11 @@ gradientfile=optspec.dat
 rndseed=2
 
 # run the show
-#checkpython
-#generate_target_programs
-#generate_target_expressionsets
-#generate_candidate_programs
+checkpython
+generate_target_programs
+generate_target_expressionsets
+generate_candidate_programs
 #optimise_numrewired
-#optimise
+optimise
 maketable
 
