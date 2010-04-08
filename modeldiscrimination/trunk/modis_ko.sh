@@ -143,26 +143,31 @@ function add_command ()
   echo "  echo ERROR" >> $scriptname
   echo "  exit 1" >> $scriptname
   echo "endif" >> $scriptname
+  if [[ $target_parameterisation_number -lt $num_target_parameterisations && $rewired_topology_number -eq $num_rewired_topologies ]]
+    then
+    echo "qsub ${c_t}.csh" >> $scriptname
+  fi
 }
 
 
 function optimise_numrewired_cluster ()
 {
- # scriptname=${candidate_topology_basename}.csh
-  #write_cshscript_header $scriptname
   for num_rewirings in ${num_rewirings_list} ; do
     scriptname=`printf '%s_w%02d.csh' ${candidate_topology_basename} ${num_rewirings}`
     write_cshscript_header $scriptname
     rewired_topology_number=1
     while test ${rewired_topology_number} -le ${num_rewired_topologies} ; do
       candidate_topology=`printf '%s_w%02d_r%02d' ${candidate_topology_basename} ${num_rewirings} ${rewired_topology_number}`
+      c_t=`printf '%s_w%02d' ${c_t_b} ${num_rewirings}`
       add_command $scriptname "./netoptrew -s ${rndseed} -l -o ${offset} -R ${num_optimisations} -e ${equilibration_timesteps} -n ${topology_name} -c ${candidate_topology} -u ${distance_measurement} -L $logfile -T $transformerfile -g ${gradientfile}"
       rndseed=`expr ${rndseed} + 1`
       rewired_topology_number=`expr ${rewired_topology_number} + 1`
     done
-  do_run qsub ${scriptname}
+    if [[ $target_parameterisation_number -eq 1 ]]
+      then
+      do_run qsub ${scriptname}
+    fi
   done
-  #do_run qsub ${scriptname}
 }
 
 
@@ -175,7 +180,9 @@ function optimise ()
       while test ${target_parameterisation_number} -le ${num_target_parameterisations} ; do
         topology_name=`printf 'target_%s%02d_p%02d' ${gentype} ${target_topology_number} ${target_parameterisation_number} `
         candidate_topology_basename=`printf 'candidate_%s%02d_p%02d' ${gentype} ${target_topology_number} ${target_parameterisation_number}`
-        optimise_numrewired_cluster;
+        t=`expr $target_parameterisation_number + 1`
+        c_t_b=`printf 'candidate_%s%02d_p%02d' ${gentype} ${target_topology_number} ${t}`
+        optimise_numrewired_cluster
         target_parameterisation_number=`expr ${target_parameterisation_number} + 1`
       done
       target_topology_number=`expr ${target_topology_number} + 1`
@@ -242,5 +249,5 @@ generate_target_expressionsets
 generate_candidate_programs
 #optimise_numrewired
 optimise
-maketable
+#maketable
 
