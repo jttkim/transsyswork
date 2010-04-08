@@ -711,6 +711,34 @@ class SimulationEquilibration(SimulationRuleObjective) :
     return ti_wt
 
 
+class SimulationTimeSteps(SimulationRuleObjective) :
+  """Abstract function to simulate timesteps"""
+
+
+  magic = 'timesteps'
+
+
+  def __init__(self, time_steps) :
+    """Constructor
+@param time_steps: time steps
+@type time_steps: Int
+"""
+    super(SimulationTimeSteps, self).__init__()
+    self.time_steps = time_steps
+
+
+  def applytreatment(self, transsys_instance) :
+    """Equilibrate and output gene expression
+@param transsys_instance: transsys instance
+@type transsys_instance: Instace
+@return: gene_expression
+@rtype: array
+"""
+    ts = transsys_instance.time_series(int(self.time_steps))
+    ti_wt = ts[-1]
+    return ti_wt
+
+
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
   """Abstract base class for objective functions based on empirical
 expression sets.
