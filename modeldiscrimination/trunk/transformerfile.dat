@@ -25,5 +25,5 @@ minValue: 0.01
 maxValue: 10.0
 rmaxTransformation
 ArctanFunction
-minValue: 0.0
+minValue: 0.1
 maxValue: 10.0
