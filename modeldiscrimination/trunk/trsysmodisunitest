@@ -1,14 +1,23 @@
 import random
 import unittest
 import trsysmodis
+import transsys
+import sys
 
 class TestSequenceFunctions(unittest.TestCase):
 
     def setUp(self):
-      self.e = open("test_target_expr.txt", "r")
-      self.p = open("test_target_pheno.txt", "r")
-      self.f = open("test_target_feature.txt", "r")
+      self.e = open('test_target_expr.txt', 'r')
+      self.p = open('test_target_pheno.txt', 'r')
+      self.f = open('test_target_feature.txt', 'r')
+      self.model = open('test_targettopology.tra', 'r')
       self.expression_set = trsysmodis.ExpressionSet()
+      self.expression_set.read(self.e, self.p, self.f)
+      self.equilibration_length = 100
+      self.logratio_mode = True
+      self.f_distance = 'correlation'
+      self.logratio_offset = 0.01
+      self.transsys_program = transsys.TranssysProgramParser(self.model).parse()
 
 
     def test_make_expressionset_exc(self) :
@@ -17,8 +26,12 @@ class TestSequenceFunctions(unittest.TestCase):
 
     def test_make_expressionset(self) :
        self.expression_set.read(self.e, self.p, self.f)
-      
     
+
+    def test_knockout_objectivefunction(self) :
+      self.assertRaises(objective_function = trsysmodis.KnockoutObjective(self.expression_set, self.equilibration_length, self.logratio_mode, self.f_distance, self.logratio_offset))
+      obj = objective_function(self.transsys_program)
+      print obj
     
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
 unittest.TextTestRunner(verbosity=2).run(suite)

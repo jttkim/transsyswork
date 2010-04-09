@@ -848,17 +848,30 @@ of the gene expression levels for that genotype.
     """Constructor.
 """
     super(KnockoutObjective, self).__init__(expression_set)
-    self.equilibration_length = equilibration_length
-    self.logratio_mode = logratio_mode
-    self.sd_multiplier = sd_multiplier
-    self.distance_function = distance_function
+
+    if equilibration_length :
+      self.equilibration_length = equilibration_length
+    else :
+      raise StandardError, 'None equilibration_length %s' %equilibration_length
+    if logratio_mode :  
+      self.logratio_mode = logratio_mode
+    else :
+      raise StandardError, 'None logratio_mode %s' %logratio_mode
+    if sd_multiplier :
+      self.sd_multiplier = sd_multiplier
+    else :
+      raise StandardError, 'None sd_multiplier specified %s' %sd_multiplier
+    if distance_function :
+      self.distance_function = distance_function
+    else :
+      raise StandardError, 'None distance_function specified %s' %distance_function
+
     self.expression_set = self.transform_expression_set(self.expression_set)
 
 
   def transform_expression_set(self, expression_set) :
-    if self.logratio_mode :
       # objective function is responsible for transformations, such as shifting
-      expression_set.expression_data.shift_to_stddev(self.sd_multiplier)
+    expression_set.expression_data.shift_to_stddev(self.sd_multiplier)
       # note: could also do logratio transform here -- expression set would have to provide methods
     return expression_set
 
@@ -1481,7 +1494,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: array[]
 """
     t = self.expect_token('identifier')
-    print "TTTTTTTTTTT", t
     if "treatment" in t :
       return(self.validate_treatment())
     elif "knockout" in t :
