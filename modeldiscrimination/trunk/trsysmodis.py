@@ -630,9 +630,7 @@ class SimulationRuleObjective(object) :
 class SimulationKnockout(SimulationRuleObjective) :
   """Abstract function to simulate knockout, treatment"""
 
-
   magic = 'knockout'
-
 
   def __init__(self, gene_name) :
     """Constructor
@@ -654,7 +652,7 @@ class SimulationKnockout(SimulationRuleObjective) :
 
 
 class SimulationTreatment(SimulationRuleObjective) :
-  """Abstract function to simulate treatment"""
+  """ Class to simulate treatment"""
 
   magic = 'treatment'
 
@@ -684,7 +682,7 @@ class SimulationTreatment(SimulationRuleObjective) :
 
 
 class SimulationEquilibration(SimulationRuleObjective) :
-  """Abstract function to simulate equilibration"""
+  """ Class to simulate equilibration"""
 
 
   magic = 'equilibration'
@@ -700,7 +698,7 @@ class SimulationEquilibration(SimulationRuleObjective) :
 
 
   def applytreatment(self, transsys_instance) :
-    """Equilibrate and output gene expression
+    """ Equilibrate and output gene expression
 @param transsys_instance: transsys instance
 @type transsys_instance: Instace
 @return: gene_expression
@@ -712,7 +710,7 @@ class SimulationEquilibration(SimulationRuleObjective) :
 
 
 class SimulationTimeSteps(SimulationRuleObjective) :
-  """Abstract function to simulate timesteps"""
+  """ Class to simulate timesteps """
 
 
   magic = 'timesteps'
@@ -737,6 +735,29 @@ class SimulationTimeSteps(SimulationRuleObjective) :
     ts = transsys_instance.time_series(int(self.time_steps))
     ti_wt = ts[-1]
     return ti_wt
+
+class SimulationOverexpression(SimulationRuleObjective) :
+  """ Class simulate gene overexpression line """
+
+  magic = 'overexpress'
+
+
+  def __init__(self, gene_name) :
+    """Constructor
+@param gene_name: gene name
+@type gene_name: String
+"""
+    super(SimulationOverexpression, self).__init__()
+    self.gene_name = gene_name
+
+
+  def applytreatment(self, transsys_program) :
+    """ Knock gene name out
+@param transsys_program: transsys program
+@type transsys_program: Object{transsys_program}
+"""
+    knockout_tp = copy.deepcopy(transsys_program)
+    return knockout_tp
 
 
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
@@ -1460,6 +1481,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: array[]
 """
     t = self.expect_token('identifier')
+    print "TTTTTTTTTTT", t
     if "treatment" in t :
       return(self.validate_treatment())
     elif "knockout" in t :
@@ -1467,8 +1489,9 @@ class EmpiricalObjectiveFunctionParser(object) :
     elif t == "runtimesteps" :
       return(self.validate_runtimesteps())
     elif t == "equilibration" :
-      print "hello"
-      return(t)
+      return(self.validate_equilibration())
+    elif t == "overexpress" :
+      return(self.validate_overexpression())
 
 
   def validate_treatment(self):
@@ -1502,7 +1525,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def validate_runtimesteps(self) :
     """ Instantiate runtimesteps 
 @return: Object
-@rtype: L{SimulationEquilibration}
+@rtype: L{SimulationTimeSteps}
 """
     self.expect_token(':')
     time_steps = self.scanner.token()[1]
@@ -1513,6 +1536,31 @@ class EmpiricalObjectiveFunctionParser(object) :
       raise StandardError, "%s is not a correct numeric value"%s
 
 
+  def validate_equilibration(self) :
+    """ Instantiate equilibration
+@return: Object
+@rtype: L{SimulationEquilibration}
+"""
+    for procedure_name in self.procedure_defs :
+      print "NAME", procedure_name.get_procedure_name()
+      print "HELLO"
+    return("hello")
+
+
+  def validate_overexpression(self) :
+    """ Instantiate overexpression
+@return: Object
+@rtype: L{SimulationOverexpression}
+"""
+    self.expect_token(':')
+    gene = self.scanner.token()[1]
+    if isinstance(gene, StringType):
+      oso = SimulationOverexpression(gene)
+      return(oso)
+    else :
+      raise StandardError, "%s is not a correct string value"%s
+
+
   def parse_procedure_body(self) :
     """ Parse procedure body
 @return: instruction list
@@ -1521,7 +1569,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure = []
     while self.scanner.next_token[0] != 'endprocedure' :
       procedure.append(self.get_proceduresen())
-      print procedure
     return procedure
 
 
