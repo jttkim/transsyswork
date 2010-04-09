@@ -1,0 +1,24 @@
+import random
+import unittest
+import trsysmodis
+
+class TestSequenceFunctions(unittest.TestCase):
+
+    def setUp(self):
+      self.e = open("test_target_expr.txt", "r")
+      self.p = open("test_target_pheno.txt", "r")
+      self.f = open("test_target_feature.txt", "r")
+      self.expression_set = trsysmodis.ExpressionSet()
+
+
+    def test_make_expressionset_exc(self) :
+       self.assertRaises(self.expression_set.read())
+
+
+    def test_make_expressionset(self) :
+       self.expression_set.read(self.e, self.p, self.f)
+      
+    
+    
+suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
+unittest.TextTestRunner(verbosity=2).run(suite)
