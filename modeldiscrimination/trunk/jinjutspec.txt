@@ -4,48 +4,23 @@ knockout_treatment_objectivespec ::= globalsettings mapping procedure_defs (arra
 
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
-transformation_mode ::= transformation_mode_header transformation_mode_body transformation_mode_footer NEWLINE
-distance_measurement ::= distance_measurement_header distance_measurement_body distance_measurement_footer NEWLINE
-sd_multiplier ::= sd_multiplier_header sd_multiplier_body sd_multiplier_footer NEWLINE
-
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
-setting_def ::= setting_header setting_body setting_footer NEWLINE
 mapping_def ::= mapping_header mapping_body mapping_footer NEWLINE
 procedure_defs ::= procedure_header procedure_body procedure_footer NEWLINE
 array_def ::= array_header array_body array_footer NEWLINE
 
-transformation_mode_header ::= "transformation_mode" WHITESPACE identifier NEWLINE
-transformation_mode_body ::= "logratio" NEWLINE | "nonlogratio" NEWLINE
-transformation_mode_footer ::= "endtransformation_mode" NEWLINE
-
-distance_measurement_header ::= "distance measurement" WHITESPACE identifier NEWLINE
-distance_measurement_body ::= "correlation" NEWLINE | "euclidean" NEWLINE | "sum_squares" NEWLINE
-distance_measurement_footer ::= "enddistance_measurement" NEWLINE
-
-sd_multiplier_header ::= "sd_multiplier" WHITESPACE identifier NEWLINE
-sd_multiplier_body ::= "sigma:" WHITESPACE realnumber NEWLINE
-sd_multiplier_footer ::= "end_sd_multiplier" NEWLINE
-
-setting_header ::= "setting" WHITESPACE identifier NEWLINE
-setting_body ::= (setting)
-setting_footer ::= "endsetting" NEWLINE
-
+globalsettings_header ::= "globasettings" WHITESPACE identifies NEWLINE
 globalsettings_body ::= transformation_def distancemeasure_def offset_def
+globalsettings_footer ::= "endglobalsettings" NEWLINE
 
 transformation_def ::= "transformation: WHITESPACE transformation_type NEWLINE
+transformation_type ::= "logratio" | "nonlogratio"
 
-# distancemeasure_def like transformation_def
+distancemeasure_def ::= "distance:" WHITESPACE distance_type NEWLINE
+distance_type ::= "correlation" | "euclidean" | "sum_squares" 
 
 offset_def ::= "offset:" WHITESPACE realnumber
 	| "offset:" WHITESPACE realnumber "data_sd"
-
-"transformation_mode:" WHITESPACE transformation_mode NEWLINE
-            "distance_measurement:" WHITESPACE distance_measurement NEWLINE
-	    "sd_multiplier:" WHITESPACE realnumber NEWLINE
-
-transformation_type ::= "logratio" | "nonlogratio"
-
-distance_measurement ::= "correlation" | "euclidean" | "sum_squares" 
 
 procedure_header ::= "procedure" WHITESPACE identifier NEWLINE 
 procedure_body ::= (instruction)+
@@ -74,5 +49,21 @@ factor_def ::= gene_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_ident
 gene_identifier ::= identifier
 factor_identifier ::= identifier
 gene_manufacturer_identifier ::= identifier
-realnumber ::= # C / Java / Python etc. style real number
 
+real-number ::= digit-sequence "." [unsigned-digit-sequence] [scale-factor]
+                | digit-sequence scale-factor
+
+digit-sequence ::= [sign] unsigned-digit-sequence
+
+unsigned-digit-sequence ::= digit {digit}
+
+
+scale-factor ::= ("E" | "e") digit-sequence
+sign ::=  "+" | "-"
+
+
+digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+identifier ::= letter {letter | digit}
+
+letter ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"

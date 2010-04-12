@@ -1167,31 +1167,31 @@ class ModelFitnessResult(transsys.optim.FitnessResult) :
     super(ModelFitnessResult, self).__init__(fitness)
 
 
-class Setting(object) :
-  """ object Setting """
+class GlobalSettings(object) :
+  """ object GlobalSettings """
 
 
-  def __init__(self, setting_name, setting_list) :
+  def __init__(self, globalsettings_name, globalsettings_list) :
     """Constructor
-@param setting_name: setting name
-@type setting_name: String
-@param setting_list: setting list
-@type setting_list: Dictionary{S}
+@param globalsettings_name: globlasettings name
+@type globalsettings_name: String
+@param globalsettings_list: setting list
+@type globalsettings_list: Dictionary{S}
 """
-    self.setting_name = setting_name
-    self.setting_list = setting_list
+    self.globalsettings_name = globalsettings_name
+    self.globalsettings_list = globalsettings_list
    
 
-  def get_setting_name(self) :
-   return(self.setting_name)
+  def get_globalsettings_name(self) :
+   return(self.globalsettings_name)
 
   
-  def get_setting_list(self) :
-    return(self.setting_list.keys())
+  def get_globalsettings_list(self) :
+    return(self.globalsettings_list.keys())
 
 
-  def get_setting_list(self) :
-    return(self.setting_list.keys())
+  def get_globalsettings_list(self) :
+    return(self.globalsettings_list.keys())
 
 
 class Mapping(object) :
@@ -1276,7 +1276,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['setting', 'endsetting', 'mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
+    self.keywords = ['globalsettings', 'endglobalsettings', 'mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
     self.identifier_re = re.compile('([A-Za-z_][A-Za-z0-9_]*)|([\\[\\]])')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -1385,7 +1385,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @ivar array_defs: Array definitions
 @type array_defs: Array[]
 """
-  setting_defs = []
+  globalsettings_defs = []
   mapping_defs = []
   procedure_defs = []
   array_defs = []
@@ -1518,6 +1518,8 @@ class EmpiricalObjectiveFunctionParser(object) :
     if (isinstance(float(value), FloatType) and isinstance(treatment, StringType)) :
       ost = SimulationTreatment(treatment, value)
       return(ost)
+    else :
+      raise StandardError, "%s is not a correct treatment statement"%s
 
 
   def validate_knockout(self) :
@@ -1542,7 +1544,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.expect_token(':')
     time_steps = self.scanner.token()[1]
     if isinstance(float(time_steps), FloatType) :
-      ost = SimulationEquilibration(time_steps)
+      ost = SimulationTimeSteps(time_steps)
       return(ost)
     else :
       raise StandardError, "%s is not a correct numeric value"%s
@@ -1553,10 +1555,14 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: Object
 @rtype: L{SimulationEquilibration}
 """
-    for procedure_name in self.procedure_defs :
-      print "NAME", procedure_name.get_procedure_name()
-      print "HELLO"
-    return("hello")
+    Procedure = None
+    for procedure in self.procedure_defs :
+      if procedure.get_procedure_name() == "equilibration" :
+        Procedure = procedure.get_instruction_list()
+    if Procedure is not None :
+      return(Procedure)
+    else :
+      raise StandardError, "A procedure call equilibration does not exist"
 
 
   def validate_overexpression(self) :
@@ -1679,34 +1685,34 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.expect_token('\n')
 
   
-  def parse_setting_header(self) :
+  def parse_globalsettings_header(self) :
     """ Parse setting header
 @return: setting header
 @rtype: String{}
 """
-    self.expect_token('setting')
+    self.expect_token('globalsettings')
     setting_name = self.expect_token('identifier')
     return setting_name
 
 
-  def get_settingsen(self) :
+  def get_globalsettingsen(self) :
     """Check setting lexicon
 @return: array
 @rtype: array[]
 """
     t = self.expect_token('identifier')
-    if "transformation_mode" in t :
+    if "transformation" in t :
       return(t, self.validate_transformation())
-    elif "distance_measurement" in t :
+    elif "distance" in t :
       return(t, self.validate_transformation())
-    elif t == "sd_multiplier" :
-      return(t, self.validate_sd_multiplier())
+    elif t == "offset" :
+      return(t, self.validate_offset())
 
 
   def validate_transformation(self) :
-    """ Instantiate Simulation Knockout
-@return: Object
-@rtype: L{SimulationKnockout}
+    """ Validate transformation definition
+@return: String
+@rtype: String
 """
     self.expect_token(':')
     transformation = self.scanner.token()[1]
@@ -1716,10 +1722,10 @@ class EmpiricalObjectiveFunctionParser(object) :
       raise StandardError, "%s is not a correct string value"%s
 
 
-  def validate_sd_multiplier(self):
-    """ Instantiate Simulation Treatment 
-@return: Object
-@rtype: L{SimulationTreatment}
+  def validate_offset(self):
+    """ Validate offset definition
+@return: float
+@rtype: float
 """
     self.expect_token(':')
     value = self.scanner.token()[1]
@@ -1729,44 +1735,43 @@ class EmpiricalObjectiveFunctionParser(object) :
       raise StandardError, "%s is not a correct string value"%s
 
 
-  def parse_setting_body(self):
-    """ Parse setting body
-@return: setting dictionary
+  def parse_globalsettings_body(self):
+    """ Parse globalsetting body
+@return: globalsetting dictionary
 @rtype: dictionary{}
 """
-    setting_dict = {}
-    while self.scanner.next_token[0] != 'endsetting' :
-      f, m = self.get_settingsen()
-      if f in setting_dict.keys() :
+    globalsettings_dict = {}
+    while self.scanner.next_token[0] != 'endglobalsettings' :
+      f, m = self.get_globalsettingsen()
+      if f in globalsettings_dict.keys() :
         raise StandardError, '%s already exist'%f
-      setting_dict[f] = m
-    print setting_dict
-    return(setting_dict)
+      globalsettings_dict[f] = m
+    return(globalsettings_dict)
 
 
-  def parse_setting_footer(self):
-    """ Parse setting footer
+  def parse_globalsettings_footer(self):
+    """ Parse globalsettings footer
 @return: Footer
 @rtype: String{}
 """
     return(self.scanner.lookahead())
 
 
-  def parse_setting_def(self) :
-    """Parse setting object
-@return: Setting object
+  def parse_globalsettings_def(self) :
+    """Parse globalsettings object
+@return: Globalsettings object
 @rtype: L{Setting]
 """
-    setting_name = self.parse_setting_header()
-    setting_list = self.parse_setting_body()
-    self.parse_mapping_footer()
-    return Setting(setting_name, setting_list) 
+    globalsettings_name = self.parse_globalsettings_header()
+    globalsettings_list = self.parse_globalsettings_body()
+    self.parse_globalsettings_footer()
+    return GlobalSettings(globalsettings_name, globalsettings_list) 
 
 
-  def parse_setting_defs(self) :
+  def parse_globalsettings_defs(self) :
     """ Parse objective function settings"""
-    while self.scanner.next_token[0] == 'setting' :
-      self.setting_defs.append(self.parse_setting_def())
+    while self.scanner.next_token[0] == 'globalsettings' :
+      self.globalsettings_defs.append(self.parse_globalsettings_def())
       self.scanner.token()
       self.expect_token('\n')
 
@@ -1777,7 +1782,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{KnockoutTreatmentObjective}
 """
     expression_set = None
-    self.parse_setting_defs()
+    self.parse_globalsettings_defs()
     self.parse_mapping_defs()
     self.parse_procedure_defs()
     self.parse_array_defs()
