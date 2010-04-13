@@ -953,16 +953,33 @@ series is the simulation of the gene expression levels for that genotype.
 """ 
 
 
-  def __init__(self, expression_set, mapping_defs, procedure_defs, array_defs) :
-    """Constructor.
-""" 
+  def __init__(self, expression_set, globalsettings_defs, mapping_defs, procedure_defs, array_defs) :
+    """ Constructor """ 
     super(KnockoutTreatmentObjective, self).__init__(expression_set)
     self.expression_set = expression_set
+    self.globalsettings_defs = globalsettings_defs
     self.mapping_defs = mapping_defs
     self.procedure_defs = procedure_defs
     self.array_defs = array_defs
-    self.distance_function =  distance_correl
+    for o in self.globalsettings_defs :
+      print o.
+      #print o.get_globalsettings_list()
+    """
+    if logratio_mode :  
+      self.logratio_mode = logratio_mode
+    else :
+      raise StandardError, 'None logratio_mode %s' %logratio_mode
+    if sd_multiplier :
+      self.sd_multiplier = sd_multiplier
+    else :
+      raise StandardError, 'None sd_multiplier specified %s' %sd_multiplier
+    if distance_function :
+      self.distance_function = distance_function
+    else :
+      raise StandardError, 'None distance_function specified %s' %distance_function
 
+    self.expression_set = self.transform_expression_set(self.expression_set)
+    """
 
   def __call__(self, transsys_program) :
     """
@@ -970,8 +987,19 @@ series is the simulation of the gene expression levels for that genotype.
 @type transsys_program: Instance
 """
     e = self.get_simulated_set(transsys_program)
+    self.transform_expression_set(e)
+    if self.logratio_mode :
+      s = self.expression_set.logratio_divergence(e, self.distance_function)
+
     s = self.expression_set.logratio_divergence(e.expression_data, self.distance_function)
     return ModelFitnessResult(s)
+
+
+  def transform_expression_set(self, expression_set) :
+      # objective function is responsible for transformations, such as shifting
+    expression_set.expression_data.shift_to_stddev(self.sd_multiplier)
+      # note: could also do logratio transform here -- expression set would have to provide methods
+    return expression_set
 
 
   def set_expression_set(self, expression_set):
@@ -1186,10 +1214,6 @@ class GlobalSettings(object) :
    return(self.globalsettings_name)
 
   
-  def get_globalsettings_list(self) :
-    return(self.globalsettings_list.keys())
-
-
   def get_globalsettings_list(self) :
     return(self.globalsettings_list.keys())
 
@@ -1786,7 +1810,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.parse_mapping_defs()
     self.parse_procedure_defs()
     self.parse_array_defs()
-    return KnockoutTreatmentObjective(expression_set, self.mapping_defs, self.procedure_defs, self.array_defs)
+    return KnockoutTreatmentObjective(expression_set, self.globalsettings_defs, self.mapping_defs, self.procedure_defs, self.array_defs)
 
 
   def parse(self) :
