@@ -31,7 +31,6 @@ instruction ::= procedure_identifier
 primary_instruction ::= "knockout:" WHITESPACE gene_identifier NEWLINE
 	| "runtimesteps:" WHITESPACE integer NEWLINE
 	| "treatment:" WHITESPACE factor_identifier WHITESPACE "=" WHITESPACE realnumber NEWLINE
-	| "equilibration" NEWLINE
 	| "overexpress:" WHITESPACE gene_identifier NEWLINE 
 
 procedure_footer ::= "endprocedure" NEWLINE
@@ -50,20 +49,20 @@ gene_identifier ::= identifier
 factor_identifier ::= identifier
 gene_manufacturer_identifier ::= identifier
 
-real-number ::= digit-sequence "." [unsigned-digit-sequence] [scale-factor]
-                | digit-sequence scale-factor
+realnumber ::= digit_sequence "." unsigned_digit_sequence+ scale_factor+
+                | digit_sequence scale_factor
 
-digit-sequence ::= [sign] unsigned-digit-sequence
+digit_sequence ::= sign+ unsigned_digit_sequence
 
-unsigned-digit-sequence ::= digit {digit}
+unsigned_digit_sequence ::= digit*
 
 
-scale-factor ::= ("E" | "e") digit-sequence
+scale_factor ::= ("E" | "e") digit_sequence
 sign ::=  "+" | "-"
 
 
 digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
-identifier ::= letter {letter | digit}
+identifier ::= letter* | digit*
 
 letter ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
