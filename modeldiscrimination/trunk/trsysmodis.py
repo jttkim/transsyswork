@@ -329,6 +329,16 @@ class ExpressionSet(object) :
     self.feature_data = FeatureData()
 
 
+  def read_exp(self, x) :
+    """Read the content of this expression set from files.
+
+Notice that the current contents of this instance are lost.
+@param x: Input file, gene expression data
+@type x: C{file}
+"""
+    self.expression_data.read(x)
+
+
   def read(self, x, p, f) :
     """Read the content of this expression set from files.
 
@@ -418,7 +428,8 @@ gene in that array.
     if other == None :
       raise StandardError, ' Simulated does not exist'
     d = 0.0
-    for factor_name in self.feature_data.get_gene_name() :
+    #for factor_name in self.feature_data.get_gene_name() :
+    for factor_name in self.expression_data.expression_data.keys() :
       selfProfile = self.get_profile(factor_name)
       otherProfile = other.get_profile(factor_name)
       d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
@@ -438,7 +449,8 @@ gene in that array.
       raise StandardError, ' Simulated dataset does not exist'
     d = 0.0
     wt = self.get_wildtype_array_name()
-    for factor_name in self.feature_data.get_gene_name() :
+    #for factor_name in self.feature_data.get_gene_name() :  old version
+    for factor_name in self.expression_data.expression_data.keys() :
       selfProfile = self.get_logratioprofile(wt, factor_name)
       otherProfile = other.get_logratioprofile(wt, factor_name)
       d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
@@ -681,34 +693,6 @@ class SimulationTreatment(SimulationRuleObjective) :
     transsys_instance.factor_concentration[factor_index] = self.factor_concentration
 
 
-class SimulationEquilibration(SimulationRuleObjective) :
-  """ Class to simulate equilibration"""
-
-
-  magic = 'equilibration'
-
-
-  def __init__(self, time_steps) :
-    """Constructor
-@param time_steps: time steps
-@type time_steps: Int
-"""
-    super(SimulationEquilibration, self).__init__()
-    self.time_steps = time_steps
-
-
-  def applytreatment(self, transsys_instance) :
-    """ Equilibrate and output gene expression
-@param transsys_instance: transsys instance
-@type transsys_instance: Instace
-@return: gene_expression
-@rtype: array
-"""
-    ts = transsys_instance.time_series(int(self.time_steps))
-    ti_wt = ts[-1]
-    return ti_wt
-
-
 class SimulationTimeSteps(SimulationRuleObjective) :
   """ Class to simulate timesteps """
 
@@ -844,34 +828,20 @@ of the gene expression levels for that genotype.
 @type sd_multiplier: C{float}
 """ 
 
-  def __init__(self, expression_set, equilibration_length, logratio_mode, distance_function, sd_multiplier = None) :
+  def __init__(self, expression_set, equilibration_length, logratio_mode = None, distance_function = None, sd_multiplier = None) :
     """Constructor.
 """
     super(KnockoutObjective, self).__init__(expression_set)
-
-    if equilibration_length :
-      self.equilibration_length = equilibration_length
-    else :
-      raise StandardError, 'None equilibration_length %s' %equilibration_length
-    if logratio_mode :  
-      self.logratio_mode = logratio_mode
-    else :
-      raise StandardError, 'None logratio_mode %s' %logratio_mode
-    if sd_multiplier :
-      self.sd_multiplier = sd_multiplier
-    else :
-      raise StandardError, 'None sd_multiplier specified %s' %sd_multiplier
-    if distance_function :
-      self.distance_function = distance_function
-    else :
-      raise StandardError, 'None distance_function specified %s' %distance_function
-
+    self.equilibration_length = equilibration_length
+    self.logratio_mode = logratio_mode
+    self.sd_multiplier = sd_multiplier
+    self.distance_function = distance_function
     self.expression_set = self.transform_expression_set(self.expression_set)
 
 
   def transform_expression_set(self, expression_set) :
-      # objective function is responsible for transformations, such as shifting
-    expression_set.expression_data.shift_to_stddev(self.sd_multiplier)
+    if self.logratio_mode :
+      expression_set.expression_data.shift_to_stddev(self.sd_multiplier)
       # note: could also do logratio transform here -- expression set would have to provide methods
     return expression_set
 
@@ -898,7 +868,6 @@ of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: C{ExpressionSet}
 """
-   
     e = ExpressionSet()
     e = copy.deepcopy(self.expression_set)
     e.expression_data.array_name = []
@@ -961,44 +930,29 @@ series is the simulation of the gene expression levels for that genotype.
     self.mapping_defs = mapping_defs
     self.procedure_defs = procedure_defs
     self.array_defs = array_defs
-    for o in self.globalsettings_defs :
-      print o.
-      #print o.get_globalsettings_list()
-    """
-    if logratio_mode :  
-      self.logratio_mode = logratio_mode
-    else :
-      raise StandardError, 'None logratio_mode %s' %logratio_mode
-    if sd_multiplier :
-      self.sd_multiplier = sd_multiplier
-    else :
-      raise StandardError, 'None sd_multiplier specified %s' %sd_multiplier
-    if distance_function :
-      self.distance_function = distance_function
-    else :
-      raise StandardError, 'None distance_function specified %s' %distance_function
-
+    self.transformation = globalsettings_defs.get_globalsettings_list()['transformation']
+    self.offset = globalsettings_defs.get_globalsettings_list()['offset']
+    self.distance = globalsettings_defs.get_globalsettings_list()['distance']
+    self.set_expression_set(expression_set)
     self.expression_set = self.transform_expression_set(self.expression_set)
-    """
 
   def __call__(self, transsys_program) :
     """
 @param transsys_program: transsys program   
 @type transsys_program: Instance
 """
+   
     e = self.get_simulated_set(transsys_program)
     self.transform_expression_set(e)
-    if self.logratio_mode :
-      s = self.expression_set.logratio_divergence(e, self.distance_function)
-
-    s = self.expression_set.logratio_divergence(e.expression_data, self.distance_function)
+    if self.transformation == 'logratio' :
+      s = self.expression_set.logratio_divergence(e, self.distance)
+    else :
+      s = self.expression_set.divergence(e, self.distance)
     return ModelFitnessResult(s)
 
 
   def transform_expression_set(self, expression_set) :
-      # objective function is responsible for transformations, such as shifting
-    expression_set.expression_data.shift_to_stddev(self.sd_multiplier)
-      # note: could also do logratio transform here -- expression set would have to provide methods
+    expression_set.expression_data.shift_to_stddev(self.offset)
     return expression_set
 
 
@@ -1040,7 +994,8 @@ series is the simulation of the gene expression levels for that genotype.
 
 
   def validate_spec_array(self) :
-    """ Validate spec file array consistency """
+    """ Validate spec file array consistency 
+"""
 
     array_name_spec = []
     for array in self.array_defs :
@@ -1057,16 +1012,9 @@ series is the simulation of the gene expression levels for that genotype.
   def validate_spec_mapping(self) :
     """ Validate spec file mapping consistency """
 
-    for gene in self.mapping_defs :
-      gene_name_spec =  gene.get_factor_list()
-
+    gene_name_spec = self.mapping_defs.get_factor_list()
     if (len(gene_name_spec) != len(self.expression_set.expression_data.get_gene_name())) :
       raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name()))
-
-    for name in gene_name_spec :
-      if name not in self.expression_set.expression_data.get_gene_name() :
-        raise StandardError, 'Array %s in spec is not present in eset' %name
-
 
 def distance_sum_squares(array1, array2) :
   """ Calculates the Sum Square Distance of two arrays
@@ -1215,7 +1163,7 @@ class GlobalSettings(object) :
 
   
   def get_globalsettings_list(self) :
-    return(self.globalsettings_list.keys())
+    return(self.globalsettings_list)
 
 
 class Mapping(object) :
@@ -1300,7 +1248,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['globalsettings', 'endglobalsettings', 'mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
+    self.keywords = ['globalsettings', 'endglobalsettings', 'empiricaldata','endempiricaldata', 'mapping', 'endmapping', 'procedure', 'endprocedure','array','endarray', 'endspec']
     self.identifier_re = re.compile('([A-Za-z_][A-Za-z0-9_]*)|([\\[\\]])')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -1409,8 +1357,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 @ivar array_defs: Array definitions
 @type array_defs: Array[]
 """
-  globalsettings_defs = []
-  mapping_defs = []
+  globalsettings_defs = None
+  mapping_defs = None
+  expression_set = None
   procedure_defs = []
   array_defs = []
 
@@ -1524,8 +1473,6 @@ class EmpiricalObjectiveFunctionParser(object) :
       return(self.validate_knockout())
     elif t == "runtimesteps" :
       return(self.validate_runtimesteps())
-    elif t == "equilibration" :
-      return(self.validate_equilibration())
     elif t == "overexpress" :
       return(self.validate_overexpression())
 
@@ -1553,11 +1500,11 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     self.expect_token(':')
     gene = self.scanner.token()[1]
-    if isinstance(gene, StringType):
+    if gene in self.mapping_defs.get_factor_list() :
       osk = SimulationKnockout(gene)
       return(osk)
     else :
-      raise StandardError, "%s is not a correct string value"%s
+      raise StandardError, "%s has not been mapped"%gene
 
 
   def validate_runtimesteps(self) :
@@ -1571,22 +1518,7 @@ class EmpiricalObjectiveFunctionParser(object) :
       ost = SimulationTimeSteps(time_steps)
       return(ost)
     else :
-      raise StandardError, "%s is not a correct numeric value"%s
-
-
-  def validate_equilibration(self) :
-    """ Instantiate equilibration
-@return: Object
-@rtype: L{SimulationEquilibration}
-"""
-    Procedure = None
-    for procedure in self.procedure_defs :
-      if procedure.get_procedure_name() == "equilibration" :
-        Procedure = procedure.get_instruction_list()
-    if Procedure is not None :
-      return(Procedure)
-    else :
-      raise StandardError, "A procedure call equilibration does not exist"
+      raise StandardError, "%s is not a correct overpression statement"%s
 
 
   def validate_overexpression(self) :
@@ -1596,6 +1528,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     self.expect_token(':')
     gene = self.scanner.token()[1]
+    if gene not in self.mapping_defs.get_factor_list() :
+      raise StandardError, "%s has not been mapped"%gene
+    self.expect_token('=')
+    value = self.expect_token('realvalue')
     if isinstance(gene, StringType):
       oso = SimulationOverexpression(gene)
       return(oso)
@@ -1704,11 +1640,80 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_mapping_defs(self) :
     """ Parse mapping array"""
     while self.scanner.next_token[0] == 'mapping' :
-      self.mapping_defs.append(self.parse_mapping_def())
+      self.mapping_defs = self.parse_mapping_def()
       self.scanner.token()
       self.expect_token('\n')
 
   
+  def parse_empiricaldata_header(self) :
+    """ Parse empiricaldata header
+@return: empiricaldata header
+@rtype: String{}
+"""
+    self.expect_token('empiricaldata')
+    self.expect_token('identifier')
+
+
+  def validate_filespec(self):
+    """ Instantiate Simulation Treatment 
+@return: Object
+@rtype: L{SimulationTreatment}
+"""
+    t = self.expect_token('identifier')
+    self.expect_token(':')
+    name = self.expect_token('identifier')
+    self.expect_token('.')
+    ext = self.expect_token('identifier')
+    filename = name + '.' + ext
+    if (isinstance(filename, StringType)) :
+      return(filename)
+    else :
+      raise StandardError, "%s is not a correct filename statement"%filename
+
+
+  def parse_empiricaldata_body(self):
+    """ Parse empiricaldata body
+@return: empiricaldata dictionary
+@rtype: dictionary{}
+"""
+    while self.scanner.next_token[0] != 'endempiricaldata' :
+      filename = self.validate_filespec()
+      try :
+        e = open(filename,'r')
+      except IOError:
+        print 'cannot open', filename
+    return(e)
+
+
+  def parse_empiricaldata_footer(self):
+    """ Parse empiricaldata footer
+@return: Footer
+@rtype: String{}
+""" 
+    return(self.scanner.lookahead())
+
+
+  def parse_empiricaldata_def(self) :
+    """Parse empiricaldata object
+@return: ExpressionSet object
+@rtype: L{ExpressionSet]
+"""
+    self.parse_empiricaldata_header()
+    e = self.parse_empiricaldata_body()
+    self.parse_empiricaldata_footer()
+    return (e) 
+
+
+  def parse_empiricaldata_defs(self) :
+    """ Parse objective function settings"""
+    while self.scanner.next_token[0] == 'empiricaldata' :
+      e = self.parse_empiricaldata_def()
+      self.expression_set = ExpressionSet()
+      self.expression_set.read_exp(e) 
+      self.scanner.token()
+      self.expect_token('\n')
+
+
   def parse_globalsettings_header(self) :
     """ Parse setting header
 @return: setting header
@@ -1795,9 +1800,12 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_globalsettings_defs(self) :
     """ Parse objective function settings"""
     while self.scanner.next_token[0] == 'globalsettings' :
-      self.globalsettings_defs.append(self.parse_globalsettings_def())
-      self.scanner.token()
-      self.expect_token('\n')
+      self.globalsettings_defs = self.parse_globalsettings_def()
+      if 'transformation' and 'distance' and 'offset' in self.globalsettings_defs.get_globalsettings_list().keys() :
+        self.scanner.token()
+        self.expect_token('\n')
+      else :
+        raise StandardError, 'complete list of settings was not provided'
 
 
   def parse_spec(self) :
@@ -1805,12 +1813,12 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: Object
 @rtype: L{KnockoutTreatmentObjective}
 """
-    expression_set = None
     self.parse_globalsettings_defs()
+    self.parse_empiricaldata_defs()
     self.parse_mapping_defs()
     self.parse_procedure_defs()
     self.parse_array_defs()
-    return KnockoutTreatmentObjective(expression_set, self.globalsettings_defs, self.mapping_defs, self.procedure_defs, self.array_defs)
+    return KnockoutTreatmentObjective(self.expression_set, self.globalsettings_defs, self.mapping_defs, self.procedure_defs, self.array_defs)
 
 
   def parse(self) :
@@ -1821,3 +1829,5 @@ class EmpiricalObjectiveFunctionParser(object) :
     if (self.scanner.check_magic(self.magic)):
       self.expect_token('\n')
       return self.parse_spec()
+
+

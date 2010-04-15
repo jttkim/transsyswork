@@ -1,0 +1,77 @@
+ObjectiveSpecification-0.1
+
+globalsettings globalsettingsid
+transformation: nonelogratio
+distance: correlation
+offset: 1e-18
+endglobalsettings
+
+empiricaldata empiricalid
+expressionset: test_ktobj.txt 
+endempiricaldata
+
+mapping nameid
+g0000 = 257221_at 
+g0001 = 257221_at 
+g0002 = 257221_at 
+g0003 = 257221_at 
+g0004 = 257221_at 
+g0005 = 257221_at 
+endmapping
+
+procedure equilibration
+runtimesteps: 300
+endprocedure
+
+procedure timepoint015min
+runtimesteps: 3
+endprocedure
+
+procedure timepoint030min
+runtimesteps: 6
+endprocedure
+
+procedure ko_jin1
+knockout: g0002
+endprocedure
+
+procedure ja_treatment
+treatment: f0001 = 1.0
+endprocedure
+
+array jin1_MeJA15
+ko_jin1
+equilibration
+ja_treatment
+timepoint015min
+endarray
+
+array wt
+equilibration
+endarray
+
+array wt_MeJA15
+equilibration
+ja_treatment
+timepoint015min
+endarray
+
+array wt_MeJA30
+equilibration
+ja_treatment
+timepoint030min
+endarray
+
+array jin1
+ko_jin1
+equilibration
+endarray
+
+array jin1_MeJA30
+ko_jin1
+equilibration
+ja_treatment
+timepoint030min
+endarray
+
+

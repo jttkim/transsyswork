@@ -5,16 +5,17 @@ knockout_treatment_objectivespec ::= globalsettings mapping procedure_defs (arra
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
+empiricaldata ::= empiricaldata_header empiricaldata_body empiricaldata_footer NEWLINE
 mapping_def ::= mapping_header mapping_body mapping_footer NEWLINE
 procedure_defs ::= procedure_header procedure_body procedure_footer NEWLINE
 array_def ::= array_header array_body array_footer NEWLINE
 
-globalsettings_header ::= "globasettings" WHITESPACE identifies NEWLINE
+globalsettings_header ::= "globasettings" WHITESPACE identifier NEWLINE
 globalsettings_body ::= transformation_def distancemeasure_def offset_def
 globalsettings_footer ::= "endglobalsettings" NEWLINE
 
 transformation_def ::= "transformation: WHITESPACE transformation_type NEWLINE
-transformation_type ::= "logratio" | "nonlogratio"
+transformation_type ::= "logratio" | "nonelogratio"
 
 distancemeasure_def ::= "distance:" WHITESPACE distance_type NEWLINE
 distance_type ::= "correlation" | "euclidean" | "sum_squares" 
@@ -31,7 +32,14 @@ instruction ::= procedure_identifier
 primary_instruction ::= "knockout:" WHITESPACE gene_identifier NEWLINE
 	| "runtimesteps:" WHITESPACE integer NEWLINE
 	| "treatment:" WHITESPACE factor_identifier WHITESPACE "=" WHITESPACE realnumber NEWLINE
-	| "overexpress:" WHITESPACE gene_identifier NEWLINE 
+	| "overexpress:" WHITESPACE gene_identifier WHITESPACE "=" WHITESPACE realnumber NEWLINE 
+
+
+empiricaldata_header ::= "empiricaldata" WHITESPACE identifier NEWLINE
+empiricaldata_body ::= filename_def
+empiricaldata_footer ::= "endempiricaldata" NEWLINE
+
+filename_def ::= 'expressionset:' WHITESPACE identifier NEWLINE
 
 procedure_footer ::= "endprocedure" NEWLINE
 procedure_identifier ::= identifier
