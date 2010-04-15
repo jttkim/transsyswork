@@ -1,0 +1,121 @@
+#!/usr/bin/python
+
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+from math import sqrt
+import trsysmodis
+import random
+
+def write_result(f, optResult) :
+ f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
+ f.write('%s\n' %  str(optResult.optimised_transsys_program))
+ f.flush()
+
+
+
+num_restarts = None
+optimiserfile = None
+verbose = 0
+transformerfile = None
+logfile = None
+finalparam = None
+rndseed = 0
+evaluate_objective = False
+
+
+optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:e:n:c:g:T:u:v:L:Elh')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-l: logratio mode'
+    print '-o <str>: specify spec file'
+    print '-s <int>: Random seed'
+    print '-R  <int>: Random restarts'
+    print '-e  <int>: Equilibration length'
+    print '-n  <str>: Prefix name of target network'
+    print '-c  <str>: Prefix name of candidate network'
+    print '-g  <str>: Optimiser spec file name'
+    print '-T  <str>: specify transformer specification file to parse'
+    print '-u  <str>: sum_squares, correlation, euclidean'
+    print '-v  <int>: verbose'
+    print '-L  <str>: Logfile'
+    print '-E: evaluate objective function, print that and exit'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-l' :
+    logratio_mode = True
+  elif opt == '-o' :
+    spec = par
+  elif opt == '-s' :
+    rndseed = int(par)
+  elif opt == '-R' :
+    num_restarts = int(par)
+  elif opt == '-e' :
+    equilibration_length = int(par)
+  elif opt == '-n' :
+    target_name = par
+  elif opt == '-c' :
+    candidate_name = par
+  elif opt == '-g' :
+    optimiserfile = par
+  elif opt == '-T' :
+    transformerfile = par
+  elif opt == '-u' :
+    f_distance = par
+  elif opt == '-v' :
+    verbose = int(par)
+  elif opt == '-L' :
+    result_file = par
+  elif opt == '-E' :
+    evaluate_objective = True
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+
+if len(args) > 0 :   
+  logfile = open(args[0], 'w')
+if len(args) > 1 :   
+  finalparam = open(args[1], 'w')
+
+g = open(optimiserfile, 'r')
+optimiser = transsys.optim.parse_optimiser(g)
+g.close
+
+
+if transformerfile is not None :
+  g = open(transformerfile, 'r')
+  optimiser.transformer = transsys.optim.parse_parameter_transformer(g)
+g.close()
+
+optimiser.verbose = verbose
+rng = random.Random(rndseed)
+optimiser.rng = rng
+
+index = 0
+
+specfile = open(spec, 'r')
+o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
+objective_function = o.parse()
+
+optimiser.randomInitRange = 1.0
+model = open(candidate_name,'r')
+
+transsys_program = transsys.TranssysProgramParser(model).parse()
+if evaluate_objective :
+  obj = objective_function(transsys_program)
+  print obj
+  sys.exit(0)
+
+
+for restart_index in xrange(num_restarts) :
+  print 'Using %s'%(candidate_name)
+  opt_result = optimiser.optimise(transsys_program, objective_function)
+  sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
+  if finalparam is not None :
+    write_result(finalparam, opt_result)
+  if logfile is not None :
+    opt_result.write_log(logfile, 'tp_index')
+
