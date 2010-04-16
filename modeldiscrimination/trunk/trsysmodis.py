@@ -720,19 +720,23 @@ class SimulationTimeSteps(SimulationRuleObjective) :
     ti_wt = ts[-1]
     return ti_wt
 
+
 class SimulationOverexpression(SimulationRuleObjective) :
   """ Class simulate gene overexpression line """
 
   magic = 'overexpress'
 
 
-  def __init__(self, gene_name) :
+  def __init__(self, gene_name, constitute_value) :
     """Constructor
 @param gene_name: gene name
 @type gene_name: String
+@param constitute_value: constitute value
+@type constitute_value: float
 """
     super(SimulationOverexpression, self).__init__()
     self.gene_name = gene_name
+    self.constitute_value = float(constitute_value)
 
 
   def applytreatment(self, transsys_program) :
@@ -741,6 +745,9 @@ class SimulationOverexpression(SimulationRuleObjective) :
 @type transsys_program: Object{transsys_program}
 """
     knockout_tp = copy.deepcopy(transsys_program)
+    i = knockout_tp.find_gene_index(self.gene_name)
+    knockout_tp.gene_list.append(transsys.Gene('dummy', knockout_tp.gene_list[i].product_name(), [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
+    knockout_tp = transsys.TranssysProgram(knockout_tp.name, knockout_tp.factor_list, knockout_tp.gene_list)
     return knockout_tp
 
 
@@ -984,12 +991,13 @@ series is the simulation of the gene expression levels for that genotype.
       ti = transsys.TranssysInstance(tp)
       e.add_array(array.get_array_name())
       for instruction in array.get_instruction_list() :
-        if instruction.magic == "knockout" :
+        if instruction.magic == "knockout" or instruction.magic == "overexpress":
           tp = instruction.applytreatment(tp)
           ti = transsys.TranssysInstance(tp)
 	else :
           instruction.applytreatment(ti)
       map(lambda t: e.set_expression_value(array.get_array_name(), t.name, ti.get_factor_concentration(t.name)),transsys_program.factor_list)
+    sys.exit()
     return e
 
 
@@ -1533,7 +1541,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.expect_token('=')
     value = self.expect_token('realvalue')
     if isinstance(gene, StringType):
-      oso = SimulationOverexpression(gene)
+      oso = SimulationOverexpression(gene, value)
       return(oso)
     else :
       raise StandardError, "%s is not a correct string value"%s

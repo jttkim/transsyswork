@@ -9,6 +9,8 @@ from math import sqrt
 import trsysmodis
 import random
 
+#python netopt -o modeldisdummy.txt -R 5 -g optspec.dat -T transformerfile.dat -s 1 -c test_targettopology.tra t1.tzxt t2.txt
+
 def write_result(f, optResult) :
  f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
  f.write('%s\n' %  str(optResult.optimised_transsys_program))
@@ -118,4 +120,3 @@ for restart_index in xrange(num_restarts) :
     write_result(finalparam, opt_result)
   if logfile is not None :
     opt_result.write_log(logfile, 'tp_index')
-
