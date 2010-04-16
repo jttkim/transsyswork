@@ -39,8 +39,13 @@ procedure ja_treatment
 treatment: f0001 = 1.0
 endprocedure
 
+procedure overexpressgene
+overexpress: g0003 = 0.7
+endprocedure
+
 array jin1_MeJA15
 ko_jin1
+overexpressgene
 equilibration
 ja_treatment
 timepoint015min
