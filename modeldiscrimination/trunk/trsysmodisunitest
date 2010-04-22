@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import random
 import unittest
 import trsysmodis
@@ -6,52 +8,57 @@ import sys
 
 class TestSequenceFunctions(unittest.TestCase):
 
-    def setUp(self):
-      # testko.sh is used to generate data: nodes=6, edges=12, noise=0.0
-      self.e = open('test_target_expr.txt', 'r')
-      self.p = open('test_target_pheno.txt', 'r')
-      self.f = open('test_target_feature.txt', 'r')
-      self.model = open('test_targettopology.tra', 'r')
-      self.modelkt = open('test_ktobj.tra', 'r')
-      self.transformerfile = open('transformerfile.dat', 'r')
-      self.optimiserfile = open('optspec.dat', 'r')
-      self.specfile = open('modeldisdummy.txt', 'r')
-      self.expression_set = trsysmodis.ExpressionSet()
-      self.expression_set.read(self.e, self.p, self.f)
-      self.equilibration_length = 100
-      self.logratio_mode = True
-      self.f_distance = 'correlation'
-      self.logratio_offset = 0.01
-      self.transsys_program = transsys.TranssysProgramParser(self.model).parse()
-      self.rndseed = 1
+  def setUp(self):
+    # testko.sh is used to generate data: nodes=6, edges=12, noise=0.0
+    # sys.stderr.write('setup\n')
+    self.e = open('test_target_expr.txt', 'r')
+    self.p = open('test_target_pheno.txt', 'r')
+    self.f = open('test_target_feature.txt', 'r')
+    self.model = open('test_targettopology.tra', 'r')
+    self.modelkt = open('test_ktobj.tra', 'r')
+    self.transformerfile = open('transformerfile.dat', 'r')
+    self.optimiserfile = open('optspec.dat', 'r')
+    self.specfile = open('modeldisdummy.txt', 'r')
+    self.expression_set = trsysmodis.ExpressionSet()
+    self.expression_set.read(self.e, self.p, self.f)
+    self.equilibration_length = 100
+    self.logratio_mode = True
+    self.f_distance = 'correlation'
+    self.logratio_offset = 0.01
+    self.transsys_program = transsys.TranssysProgramParser(self.model).parse()
+    self.rndseed = 1
 
-    def test_make_expressionset(self) :
-       self.expression_set.read(self.e, self.p, self.f)
+  def test_make_expressionset(self) :
+    # sys.stderr.write('expresssionset test\n')
+    self.expression_set.read(self.e, self.p, self.f)
     
 
-    def test_make_expressionset_exp(self) :
-       self.expression_set.read_exp(self.e)
+  def test_make_expressionset_exp(self) :
+    # sys.stderr.write('expressinset_exp\n')
+    self.expression_set.read_exp(self.e)
 
 
-    def test_knockout_objectivefunction(self) :
-      objective_function = trsysmodis.KnockoutObjective(self.expression_set, self.equilibration_length, self.logratio_mode, self.f_distance, self.logratio_offset)
-      obj = objective_function(self.transsys_program)
-      self.assertEqual(round(obj.fitness), 2.0)
+  def test_knockout_objectivefunction(self) :
+    # sys.stderr.write('knockout_objectivefunction\n')
+    objective_function = trsysmodis.KnockoutObjective(self.expression_set, self.equilibration_length, self.logratio_mode, self.f_distance, self.logratio_offset)
+    obj = objective_function(self.transsys_program)
+    self.assertEqual(round(obj.fitness), 2.0)
 
 
-    def test_objectivefunctionparser(self) :
-      o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
-      objective_function = o.parse()
-      optimiser = transsys.optim.parse_optimiser(self.optimiserfile)
-      optimiser.transformer = transsys.optim.parse_parameter_transformer(self.transformerfile)
-      rng = random.Random(self.rndseed)
-      optimiser.rng = rng
-      optimiser.randomInitRange = 1.0
-      transsys_program = transsys.TranssysProgramParser(self.modelkt).parse()
-      obj = objective_function(transsys_program)
-      self.assertEqual(round(obj.fitness), 6.0)
-      opt_result = optimiser.optimise(transsys_program, objective_function)
-      self.assertEqual(round(objective_function(opt_result.optimised_transsys_program).fitness), 6.0)
+  def test_objectivefunctionparser(self) :
+    # sys.stderr.write('objectivefunctionparser\n')
+    o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
+    objective_function = o.parse()
+    optimiser = transsys.optim.parse_optimiser(self.optimiserfile)
+    optimiser.transformer = transsys.optim.parse_parameter_transformer(self.transformerfile)
+    rng = random.Random(self.rndseed)
+    optimiser.rng = rng
+    optimiser.randomInitRange = 1.0
+    transsys_program = transsys.TranssysProgramParser(self.modelkt).parse()
+    obj = objective_function(transsys_program)
+    self.assertEqual(round(obj.fitness), 6.0)
+    opt_result = optimiser.optimise(transsys_program, objective_function)
+    self.assertEqual(round(objective_function(opt_result.optimised_transsys_program).fitness), 6.0)
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
