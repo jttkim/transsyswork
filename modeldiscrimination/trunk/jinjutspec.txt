@@ -52,7 +52,7 @@ mapping_def ::= "mapping" WHITESPACE identifier NEWLINE
 mapping_body ::= (factor_def NEWLINE)+   
 mapping_footer ::= "endmapping" NEWLINE 
 
-factor_def ::= gene_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_identifier NEWLINE
+factor_def ::= factor_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_identifier NEWLINE
 gene_identifier ::= identifier
 factor_identifier ::= identifier
 gene_manufacturer_identifier ::= identifier
