@@ -17,6 +17,7 @@ from types import LongType
 from types import FloatType
 from types import StringType
 import string
+from Numeric import *
 
 
 class ExpressionData(object) :
@@ -169,8 +170,8 @@ All expression values in the newly added array are initialised with C{None}.
       raise StandardError, '%s already in array list' % array_name
     self.array_name.append(array_name)
     i = self.array_name.index(array_name)
-    for profile in self.expression_data.values() :
-      profile[i] = None
+    #for profile in self.expression_data.values() :
+    #  profile[i] = None
 
 
   def logratio(self, x, r) :
@@ -982,10 +983,8 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: object
 """
-    e = ExpressionSet()
-    e = copy.deepcopy(self.expression_set)
-    e.expression_data.array_name = []
- 
+
+    e = self.createTemplate()
     for array in self.array_defs :
       tp = copy.deepcopy(transsys_program)
       ti = transsys.TranssysInstance(tp)
@@ -997,14 +996,26 @@ series is the simulation of the gene expression levels for that genotype.
 	else :
           instruction.applytreatment(ti)
       map(lambda t: e.set_expression_value(array.get_array_name(), t.name, ti.get_factor_concentration(t.name)),transsys_program.factor_list)
-    sys.exit()
+    return e
+
+   
+  def createTemplate(self) :
+    """ Create expression set according to spec file 
+@return: Expression set
+@rtype: L{ExpressionSet}
+"""
+    e = ExpressionSet()
+    e.expression_data.array_name = []
+    for i in self.mapping_defs.get_factor_list() :
+      values = []
+      for j in range(0, len(self.array_defs)) :
+        values.append('None')
+      e.expression_data.expression_data[i] = values
     return e
 
 
   def validate_spec_array(self) :
-    """ Validate spec file array consistency 
-"""
-
+    """ Validate spec file array consistency """
     array_name_spec = []
     for array in self.array_defs :
       array_name_spec.append(array.get_array_name())
@@ -1508,11 +1519,8 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     self.expect_token(':')
     gene = self.scanner.token()[1]
-    if gene in self.mapping_defs.get_factor_list() :
-      osk = SimulationKnockout(gene)
-      return(osk)
-    else :
-      raise StandardError, "%s has not been mapped"%gene
+    osk = SimulationKnockout(gene)
+    return(osk)
 
 
   def validate_runtimesteps(self) :
@@ -1536,8 +1544,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     self.expect_token(':')
     gene = self.scanner.token()[1]
-    if gene not in self.mapping_defs.get_factor_list() :
-      raise StandardError, "%s has not been mapped"%gene
     self.expect_token('=')
     value = self.expect_token('realvalue')
     if isinstance(gene, StringType):

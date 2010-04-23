@@ -11,12 +11,12 @@ expressionset: test_ktobj.txt
 endempiricaldata
 
 mapping nameid
-g0000 = 257221_at 
-g0001 = 257221_at 
-g0002 = 257221_at 
-g0003 = 257221_at 
-g0004 = 257221_at 
-g0005 = 257221_at 
+f0000 = 257221_at 
+f0001 = 257221_at 
+f0002 = 257221_at 
+f0003 = 257221_at 
+f0004 = 257221_at 
+f0005 = 257221_at 
 endmapping
 
 procedure equilibration
