@@ -82,9 +82,8 @@ class ExpressionData(object) :
 
   def shift_data(self, offset) :
     """Shift data by offset (i.e. add offset)
-
-@param offset the offset
-@type offset C{float}
+@param offset: the offset
+@type offset: C{float}
 """
     for key in self.expression_data :
       self.expression_data[key] = map(lambda t: t + offset, self.expression_data[key] )
@@ -410,9 +409,9 @@ gene in that array.
 
   def shift_data(self, offset) :
     """Shift expression data by offset.
-
-@param offset the offset
-@type offset C{float}"""
+@param offset: the offset
+@type offset: C{float}
+"""
     self.expression_data.shift_data(offset)
 
 
@@ -464,8 +463,6 @@ gene in that array.
 @type selfProfile: ExpressionSet
 @param otherProfile: Simulated data
 @type otherProfile: ExpressionSet
-@return distance:distance
-@rtype: C{Float}
 """
     if distance_function == 'correlation' :
       return distance_correl(selfProfile, otherProfile)
@@ -1712,7 +1709,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_empiricaldata_def(self) :
     """Parse empiricaldata object
 @return: ExpressionSet object
-@rtype: L{ExpressionSet]
+@rtype: L{ExpressionSet}
 """
     self.parse_empiricaldata_header()
     e = self.parse_empiricaldata_body()
@@ -1805,7 +1802,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_globalsettings_def(self) :
     """Parse globalsettings object
 @return: Globalsettings object
-@rtype: L{Setting]
+@rtype: L{Setting}
 """
     globalsettings_name = self.parse_globalsettings_header()
     globalsettings_list = self.parse_globalsettings_body()

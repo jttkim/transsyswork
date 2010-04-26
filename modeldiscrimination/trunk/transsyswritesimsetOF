@@ -1,0 +1,101 @@
+#!/usr/bin/python
+
+import StringIO
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+from math import sqrt
+import trsysmodis
+import random
+
+
+#./modelopt -r 2 -e 1000 -n 2 -m 'model_transsys' exp_data.txt pheno_data.txt grad.txt outfile.txt
+
+
+def get_expr_data() :
+  e = StringIO.StringIO()
+  e.write('wt')
+  for gene in gene_list :
+     e.write('\t%s'%gene.name)
+  e.write('\n')
+  for factor in factor_list :
+    e.write('%s'%factor.name)
+    for array in range(len(gene_list)+1) :
+      e.write('\t%d.2'%0.00)
+    e.write('\n')
+  e.seek(0)
+  return e
+
+
+def get_pheno_data() :
+  p = StringIO.StringIO()
+  list = 'MeJA'
+  p.write('mutant\tgene\ttreatment')
+  p.write('\n')
+  p.write('wt\twildtype\tnone\t%s'%list)
+  p.write('\n')
+  for gene in gene_list :
+    p.write('a%s\tknockout\t%s\t%s'%(gene.name,gene.name,list))
+    p.write('\n')
+  p.seek(0)
+  return p
+
+
+def get_feature_data() :
+  f = StringIO.StringIO()
+  f.write('\n')
+  for factor in factor_list :
+    f.write('%s'%factor.name)
+    f.write('\n')
+  f.seek(0)
+  return f
+
+
+equilibration_length = 100
+spec = 'modeldisdummy.txt' 
+rndseed = 1
+noise = 0.0
+
+optlist, args = getopt.getopt(sys.argv[1:], 's:e:o:N:lvh')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-s <int>: Random seed'
+    print '-e <int>: Equilibration length'
+    print '-N <int>: Noise'
+    print '-o <str>: specify spec file'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-o' :
+    spec = par
+  elif opt == '-s' :
+    rndseed = int(par)
+  elif opt == '-e' :
+    equilibration_length = int(par)
+  elif opt == '-N' :
+    noise = float(par)
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+rng = random.Random(rndseed)
+
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdin
+outfile_basename = args[1]
+
+
+specfile = open(spec, 'r')
+o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
+objective_function = o.parse()
+
+transsys_program = transsys.TranssysProgramParser(infile).parse()
+
+if noise > 0.0 :
+  if rndseed is not None :
+    objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, noise)
+else :
+  objective_function.write_simulated_set(transsys_program, outfile_basename)
