@@ -527,8 +527,10 @@ gene in that array.
       raise StandardError, 'Cannot write simulated expression data, basename is not provided'
     self.basename = basename
     self.write_expression_data()
-    self.write_pheno_data()
-    self.write_feature_data()
+    if self.pheno_data.pheno_data > 0 :
+      self.write_pheno_data()
+    if self.feature_data.feature_data > 0 :
+      self.write_feature_data()
 
 
   def apply_noise(self, rng, aver, sigma) :
