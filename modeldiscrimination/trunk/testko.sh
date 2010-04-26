@@ -21,7 +21,7 @@ do_run ./transsysrewire -w 1 -n test_candidate -r 1 -s 3 test_targettopology.tra
 do_run ./transsysrewire -w 3 -n test_candidate -r 1 -s 3 test_targettopology.tra
 do_run ./transsysrewire -w 4 -n test_candidate -r 1 -s 3 test_targettopology.tra
 
-#do_run ./netoptrew -l -o 0.01 -s 4 -R 5 -e 100 -n test_target -c test_targettopology -g optspec.dat -T transformerfile.dat -u correlation -L test_rew0 testlog_rew0.txt testfinalparam_rew0.txt
+do_run ./netoptrew -l -o 0.01 -s 4 -R 5 -e 100 -n test_target -c test_targettopology -g optspec.dat -T transformerfile.dat -u correlation -L test_rew0 testlog_rew0.txt testfinalparam_rew0.txt
 #do_run ./netoptrew -l -o 1e-10 -s 4 -R 1 -e 100 -n test_target -c test_candidate_w01_r01 -g optspec.dat -T transformerfile.dat -u correlation -L test_rew1 testlog_rew1.txt testfinalparam_rew1.txt
 #do_run ./netoptrew -l -o 0.01 -s 4 -R 1 -e 100 -n test_target -c test_candidate_w03_r01 -g optspec.dat -T transformerfile.dat -u correlation -L test_rew1 testlog_rew1.txt testfinalparam_rew1.txt
 #do_run ./netoptrew -l -o 0.01 -s 4 -R 1 -e 100 -n test_target -c test_candidate_w10_r01 -g optspec.dat -T transformerfile.dat -u correlation -L test_rew1 testlog_rew1.txt testfinalparam_rew1.txt
