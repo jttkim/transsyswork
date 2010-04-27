@@ -12,6 +12,7 @@ import transsys
 import transsys.optim
 import re
 import transsys.utils
+# use standard import syntax to keep namespaces separate
 from types import IntType
 from types import LongType
 from types import FloatType

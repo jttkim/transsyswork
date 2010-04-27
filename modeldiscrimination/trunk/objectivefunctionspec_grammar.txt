@@ -10,6 +10,7 @@ mapping_def ::= mapping_header mapping_body mapping_footer NEWLINE
 procedure_defs ::= procedure_header procedure_body procedure_footer NEWLINE
 array_def ::= array_header array_body array_footer NEWLINE
 
+# no identifier necessary for global settings
 globalsettings_header ::= "globasettings" WHITESPACE identifier NEWLINE
 globalsettings_body ::= transformation_def distancemeasure_def offset_def
 globalsettings_footer ::= "endglobalsettings" NEWLINE
@@ -35,6 +36,7 @@ primary_instruction ::= "knockout:" WHITESPACE gene_identifier NEWLINE
 	| "overexpress:" WHITESPACE gene_identifier WHITESPACE "=" WHITESPACE realnumber NEWLINE 
 
 
+# separate concern
 empiricaldata_header ::= "empiricaldata" WHITESPACE identifier NEWLINE
 empiricaldata_body ::= filename_def
 empiricaldata_footer ::= "endempiricaldata" NEWLINE
@@ -52,7 +54,7 @@ mapping_def ::= "mapping" WHITESPACE identifier NEWLINE
 mapping_body ::= (factor_def NEWLINE)+   
 mapping_footer ::= "endmapping" NEWLINE 
 
-factor_def ::= factor_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_identifier NEWLINE
+factor_def ::= gene_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_identifier NEWLINE
 gene_identifier ::= identifier
 factor_identifier ::= identifier
 gene_manufacturer_identifier ::= identifier
