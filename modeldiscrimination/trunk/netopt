@@ -9,7 +9,7 @@ from math import sqrt
 import trsysmodis
 import random
 
-#python netopt -o modeldisdummy.txt -R 5 -g optspec.dat -T transformerfile.dat -s 1 -c test_targettopology.tra t1.tzxt t2.txt
+#python netopt -x test_ktobj.txt -o modeldisdummy.txt -R 5 -g optspec.dat -T transformerfile.dat -s 1 -c test_targettopology.tra t1.tzxt t2.txt
 
 def write_result(f, optResult) :
  f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
@@ -26,9 +26,9 @@ logfile = None
 finalparam = None
 rndseed = 0
 evaluate_objective = False
+expression_set = None
 
-
-optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:e:n:c:g:T:u:v:L:Elh')
+optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:e:n:c:g:T:u:v:L:x:Elh')
 
 for opt, par in optlist :
   if opt == '-h' :
@@ -41,6 +41,7 @@ for opt, par in optlist :
     print '-c  <str>: Prefix name of candidate network'
     print '-g  <str>: Optimiser spec file name'
     print '-T  <str>: specify transformer specification file to parse'
+    print '-x  <str>: specify gene expression dataset file'
     print '-u  <str>: sum_squares, correlation, euclidean'
     print '-v  <int>: verbose'
     print '-L  <str>: Logfile'
@@ -65,6 +66,8 @@ for opt, par in optlist :
     optimiserfile = par
   elif opt == '-T' :
     transformerfile = par
+  elif opt == '-x' :
+    expression_set = par
   elif opt == '-u' :
     f_distance = par
   elif opt == '-v' :
@@ -98,10 +101,13 @@ optimiser.rng = rng
 
 index = 0
 
+x = open(expression_set, 'r')
+expression_set = trsysmodis.ExpressionSet()
+expression_set.read(x, p = None, f = None)
 specfile = open(spec, 'r')
 o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
 objective_function = o.parse()
-
+objective_function.set_expression_set(expression_set)
 optimiser.randomInitRange = 1.0
 model = open(candidate_name,'r')
 

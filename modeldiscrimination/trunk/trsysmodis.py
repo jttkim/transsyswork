@@ -12,14 +12,9 @@ import transsys
 import transsys.optim
 import re
 import transsys.utils
-# use standard import syntax to keep namespaces separate
-from types import IntType
-from types import LongType
-from types import FloatType
-from types import StringType
 import string
-from Numeric import *
-
+import types
+import Numeric
 
 class ExpressionData(object) :
   """ Create expression data object
@@ -352,9 +347,12 @@ Notice that the current contents of this instance are lost.
 @type f: C{file}
 """
     self.expression_data.read(x)
-    self.pheno_data.read(p)
-    self.feature_data.read(f)
-    self.verify_integrity()
+    if p is not None :
+     self.pheno_data.read(p)
+    if f is not None :
+      self.feature_data.read(f)
+    if p != None and f != None :
+      self.verify_integrity()
   
 
   def verify_integrity(self) :
@@ -429,7 +427,6 @@ gene in that array.
     if other == None :
       raise StandardError, ' Simulated does not exist'
     d = 0.0
-    #for factor_name in self.feature_data.get_gene_name() :
     for factor_name in self.expression_data.expression_data.keys() :
       selfProfile = self.get_profile(factor_name)
       otherProfile = other.get_profile(factor_name)
@@ -525,9 +522,9 @@ gene in that array.
       raise StandardError, 'Cannot write simulated expression data, basename is not provided'
     self.basename = basename
     self.write_expression_data()
-    if self.pheno_data.pheno_data > 0 :
+    if len(self.pheno_data.pheno_data) > 0 :
       self.write_pheno_data()
-    if self.feature_data.feature_data > 0 :
+    if len(self.feature_data.feature_data) > 0 :
       self.write_feature_data()
 
 
@@ -540,7 +537,6 @@ gene in that array.
 @param sigma: percent of noise
 @type sigma: C{float}
 """
-
     noiseadd = float(aver*sigma)
     for key, profile in self.expression_data.expression_data.iteritems() :
       for i in xrange(len(profile)) :
@@ -565,7 +561,7 @@ gene in that array.
       selfProfile = self.get_profile(gene_name)
       average, stdev = statistics(selfProfile.values())
       averagematrix = averagematrix + average
-    averagematrix = averagematrix / len(self.feature_data.feature_data)
+    averagematrix = averagematrix / len(self.expression_data.expression_data.keys())
     return averagematrix
 
 
@@ -941,8 +937,7 @@ series is the simulation of the gene expression levels for that genotype.
     self.transformation = globalsettings_defs.get_globalsettings_list()['transformation']
     self.offset = globalsettings_defs.get_globalsettings_list()['offset']
     self.distance = globalsettings_defs.get_globalsettings_list()['distance']
-    self.set_expression_set(expression_set)
-    self.expression_set = self.transform_expression_set(self.expression_set)
+
 
   def __call__(self, transsys_program) :
     """
@@ -960,6 +955,8 @@ series is the simulation of the gene expression levels for that genotype.
 
 
   def transform_expression_set(self, expression_set) :
+    if expression_set == None :
+      raise StandardError, 'Expression set is %s' %expression_set
     expression_set.expression_data.shift_to_stddev(self.offset)
     return expression_set
 
@@ -974,6 +971,7 @@ series is the simulation of the gene expression levels for that genotype.
       raise StandardError, 'None expression set %s' %self.expression_set
     self.validate_spec_array()
     self.validate_spec_mapping()
+    self.expression_set = self.transform_expression_set(expression_set)
 
 
   def get_simulated_set(self, transsys_program) :
@@ -995,7 +993,7 @@ series is the simulation of the gene expression levels for that genotype.
           ti = transsys.TranssysInstance(tp)
 	else :
           instruction.applytreatment(ti)
-      map(lambda t: e.set_expression_value(array.get_array_name(), t.name, ti.get_factor_concentration(t.name)),transsys_program.factor_list)
+      map(lambda t: e.set_expression_value(array.get_array_name(), t, ti.get_factor_concentration(t)),e.expression_data.expression_data.keys())
     return e
 
    
@@ -1101,9 +1099,9 @@ def distance_correl(array1, array2) :
   except ValueError:
     raise StandardError, 'arrays are incompatible: %s not found' % i
   d = 0.0
-  (ave_vec1, stdev1,) = statistics(a)
-  (ave_vec2, stdev2,) = statistics(b)
-  if ((stdev1 == 0.0) or (stdev2 == 0.0)):
+  (ave_vec1, stdev1) = statistics(a)
+  (ave_vec2, stdev2) = statistics(b)
+  if ((round(stdev1) == 0.0) or (round(stdev2) == 0.0)):
     d = 1.0
   else :
     d = 1.0 - transsys.utils.correlation_coefficient(a, b)
@@ -1166,21 +1164,14 @@ class GlobalSettings(object) :
   """ object GlobalSettings """
 
 
-  def __init__(self, globalsettings_name, globalsettings_list) :
+  def __init__(self, globalsettings_list) :
     """Constructor
-@param globalsettings_name: globlasettings name
-@type globalsettings_name: String
 @param globalsettings_list: setting list
 @type globalsettings_list: Dictionary{S}
 """
-    self.globalsettings_name = globalsettings_name
     self.globalsettings_list = globalsettings_list
    
 
-  def get_globalsettings_name(self) :
-   return(self.globalsettings_name)
-
-  
   def get_globalsettings_list(self) :
     return(self.globalsettings_list)
 
@@ -1189,21 +1180,14 @@ class Mapping(object) :
   """  Object Mapping """
 
 
-  def __init__(self, mapping_name, factor_list):
+  def __init__(self, factor_list):
     """ Constructor
-@param mapping_name: mapping name
-@type mapping_name: String
 @param factor_list: factor list
 @type factor_list: Dictionary{S}
 """
-    self.mapping_name = mapping_name
     self.factor_list = factor_list
    
 
-  def get_mapping_name(self) :
-   return(self.mapping_name)
-
-  
   def get_factor_list(self) :
     return(self.factor_list.keys())
 
@@ -1505,7 +1489,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     treatment = self.expect_token('identifier')
     self.expect_token('=')
     value = self.expect_token('realvalue')
-    if (isinstance(float(value), FloatType) and isinstance(treatment, StringType)) :
+    if (isinstance(float(value), types.FloatType) and isinstance(treatment, types.StringType)) :
       ost = SimulationTreatment(treatment, value)
       return(ost)
     else :
@@ -1530,7 +1514,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     self.expect_token(':')
     time_steps = self.scanner.token()[1]
-    if isinstance(float(time_steps), FloatType) :
+    if isinstance(float(time_steps), types.FloatType) :
       ost = SimulationTimeSteps(time_steps)
       return(ost)
     else :
@@ -1546,7 +1530,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     gene = self.scanner.token()[1]
     self.expect_token('=')
     value = self.expect_token('realvalue')
-    if isinstance(gene, StringType):
+    if isinstance(gene, types.StringType):
       oso = SimulationOverexpression(gene, value)
       return(oso)
     else :
@@ -1602,8 +1586,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: String{}
 """
     self.expect_token('mapping')
-    mapping_name = self.expect_token('identifier')
-    return mapping_name
 
 
   def get_mappingsen(self) :
@@ -1645,10 +1627,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: Mapping object
 @rtype: L{Mapping}
 """
-    mapping_name = self.parse_mapping_header()
+    self.parse_mapping_header()
     factor_list = self.parse_mapping_body()
     self.parse_mapping_footer()
-    return Mapping(mapping_name, factor_list)
+    return Mapping(factor_list)
 
   
   def parse_mapping_defs(self) :
@@ -1659,83 +1641,12 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.expect_token('\n')
 
   
-  def parse_empiricaldata_header(self) :
-    """ Parse empiricaldata header
-@return: empiricaldata header
-@rtype: String{}
-"""
-    self.expect_token('empiricaldata')
-    self.expect_token('identifier')
-
-
-  def validate_filespec(self):
-    """ Instantiate Simulation Treatment 
-@return: Object
-@rtype: L{SimulationTreatment}
-"""
-    t = self.expect_token('identifier')
-    self.expect_token(':')
-    name = self.expect_token('identifier')
-    self.expect_token('.')
-    ext = self.expect_token('identifier')
-    filename = name + '.' + ext
-    if (isinstance(filename, StringType)) :
-      return(filename)
-    else :
-      raise StandardError, "%s is not a correct filename statement"%filename
-
-
-  def parse_empiricaldata_body(self):
-    """ Parse empiricaldata body
-@return: empiricaldata dictionary
-@rtype: dictionary{}
-"""
-    while self.scanner.next_token[0] != 'endempiricaldata' :
-      filename = self.validate_filespec()
-      try :
-        e = open(filename,'r')
-      except IOError:
-        print 'cannot open', filename
-    return(e)
-
-
-  def parse_empiricaldata_footer(self):
-    """ Parse empiricaldata footer
-@return: Footer
-@rtype: String{}
-""" 
-    return(self.scanner.lookahead())
-
-
-  def parse_empiricaldata_def(self) :
-    """Parse empiricaldata object
-@return: ExpressionSet object
-@rtype: L{ExpressionSet}
-"""
-    self.parse_empiricaldata_header()
-    e = self.parse_empiricaldata_body()
-    self.parse_empiricaldata_footer()
-    return (e) 
-
-
-  def parse_empiricaldata_defs(self) :
-    """ Parse objective function settings"""
-    while self.scanner.next_token[0] == 'empiricaldata' :
-      e = self.parse_empiricaldata_def()
-      self.expression_set = ExpressionSet()
-      self.expression_set.read_exp(e) 
-      self.scanner.token()
-      self.expect_token('\n')
-
-
   def parse_globalsettings_header(self) :
     """ Parse setting header
 @return: setting header
 @rtype: String{}
 """
     self.expect_token('globalsettings')
-    setting_name = self.expect_token('identifier')
-    return setting_name
 
 
   def get_globalsettingsen(self) :
@@ -1759,7 +1670,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     self.expect_token(':')
     transformation = self.scanner.token()[1]
-    if isinstance(transformation, StringType):
+    if isinstance(transformation, types.StringType):
       return transformation
     else :
       raise StandardError, "%s is not a correct string value"%s
@@ -1772,7 +1683,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     self.expect_token(':')
     value = self.scanner.token()[1]
-    if (isinstance(float(value), FloatType)) :
+    if (isinstance(float(value), types.FloatType)) :
       return value
     else :
       raise StandardError, "%s is not a correct string value"%s
@@ -1805,10 +1716,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: Globalsettings object
 @rtype: L{Setting}
 """
-    globalsettings_name = self.parse_globalsettings_header()
+    self.parse_globalsettings_header()
     globalsettings_list = self.parse_globalsettings_body()
     self.parse_globalsettings_footer()
-    return GlobalSettings(globalsettings_name, globalsettings_list) 
+    return GlobalSettings(globalsettings_list) 
 
 
   def parse_globalsettings_defs(self) :
@@ -1828,7 +1739,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{KnockoutTreatmentObjective}
 """
     self.parse_globalsettings_defs()
-    self.parse_empiricaldata_defs()
     self.parse_mapping_defs()
     self.parse_procedure_defs()
     self.parse_array_defs()
@@ -1843,5 +1753,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     if (self.scanner.check_magic(self.magic)):
       self.expect_token('\n')
       return self.parse_spec()
+    else : 
+      raise StandardError, 'Incorrect magic word'
 
 
