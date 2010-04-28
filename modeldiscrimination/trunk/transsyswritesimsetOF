@@ -93,9 +93,10 @@ o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
 objective_function = o.parse()
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
+e = objective_function.get_simulated_set(transsys_program)
 
 if noise > 0.0 :
   if rndseed is not None :
-    objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, noise)
+    e.write_noisy_simulated_set(outfile_basename, rng, noise)
 else :
-  objective_function.write_simulated_set(transsys_program, outfile_basename)
+  e.write_simulated_set(outfile_basename)
