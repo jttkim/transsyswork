@@ -1101,7 +1101,7 @@ def distance_correl(array1, array2) :
   d = 0.0
   (ave_vec1, stdev1) = statistics(a)
   (ave_vec2, stdev2) = statistics(b)
-  if ((round(stdev1) == 0.0) or (round(stdev2) == 0.0)):
+  if stdev1 == 0.0 or stdev2 == 0.0 :
     d = 1.0
   else :
     d = 1.0 - transsys.utils.correlation_coefficient(a, b)
