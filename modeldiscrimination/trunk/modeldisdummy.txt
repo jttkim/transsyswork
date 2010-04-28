@@ -1,12 +1,12 @@
 ObjectiveSpecification-0.1
 
-globalsettings
-transformation: nonelogratio
+globalsettingdefs
+transformation: log
 distance: correlation
 offset: 1e-18
-endglobalsettings
+endglobalsettingdefs
 
-mapping
+mappingdefs
 f0000 = 257221_at 
 f0001 = 257221_at 
 f0002 = 257221_at 
@@ -14,7 +14,7 @@ f0003 = 257221_at
 f0004 = 257221_at 
 f0005 = 257221_at 
 f0006 = 257221_at 
-endmapping
+endmappingdefs
 
 procedure equilibration
 runtimesteps: 300
@@ -75,5 +75,12 @@ equilibration
 f01_treatment
 timepoint030min
 endarray
+
+ratiodefs
+wt_treatment15 : wt
+wt_treatment30 : wt
+g0000_treatment15 : g0000
+g0000_treatment30 : g0000
+endratiodefs
 
 

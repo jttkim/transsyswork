@@ -15,12 +15,12 @@ class TestSequenceFunctions(unittest.TestCase):
     self.p = open('test_target_pheno.txt', 'r')
     self.f = open('test_target_feature.txt', 'r')
     self.model = open('test_targettopology.tra', 'r')
-    self.modelkt = open('test_ktobj.tra', 'r')
+    self.modelkt = open('test_target.tra', 'r')
     self.transformerfile = open('transformerfile.dat', 'r')
     self.optimiserfile = open('optspec.dat', 'r')
     self.specfile = open('modeldisdummy.txt', 'r')
     self.expression_set = trsysmodis.ExpressionSet()
-    self.expression_set.read(self.e, self.p, self.f)
+    self.expression_set.read(self.e, self.p = None, self.f=None)
     self.equilibration_length = 100
     self.logratio_mode = True
     self.f_distance = 'correlation'
@@ -49,6 +49,7 @@ class TestSequenceFunctions(unittest.TestCase):
     # sys.stderr.write('objectivefunctionparser\n')
     o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
     objective_function = o.parse()
+    objective_function.set_expression_set(self.expression_set)
     optimiser = transsys.optim.parse_optimiser(self.optimiserfile)
     optimiser.transformer = transsys.optim.parse_parameter_transformer(self.transformerfile)
     rng = random.Random(self.rndseed)

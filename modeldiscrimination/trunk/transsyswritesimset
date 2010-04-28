@@ -95,8 +95,18 @@ expression_set = trsysmodis.ExpressionSet()
 expression_set.read(e, p, f)
 objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length, logratio_mode = None, distance_function= None, sd_multiplier = None)
 
-if noise is not None :
+
+e = objective_function.get_simulated_set(transsys_program)
+
+if noise > 0.0 :
   if rndseed is not None :
-    objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, noise)
+    e.write_noisy_simulated_set(outfile_basename, rng, noise)
 else :
-  objective_function.write_simulated_set(transsys_program, outfile_basename)
+  e.write_simulated_set(outfile_basename)
+
+
+#if noise is not None :
+#  if rndseed is not None :
+#    objective_function.write_noisy_simulated_set(transsys_program, outfile_basename, rng, noise)
+#else :
+#  objective_function.write_simulated_set(transsys_program, outfile_basename)

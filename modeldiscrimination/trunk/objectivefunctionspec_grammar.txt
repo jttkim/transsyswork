@@ -8,10 +8,11 @@ globalsettings ::= globalsettings_header globalsettings_body globalsettings_foot
 mapping_def ::= mapping_header mapping_body mapping_footer NEWLINE
 procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
 array_def ::= array_header array_body array_footer NEWLINE
+ratio_def ::= ratio_header ratio_body ratio_footer
 
-globalsettings_header ::= "globasettings" NEWLINE
+globalsettings_header ::= "globasettingdefs" NEWLINE
 globalsettings_body ::= transformation_def distancemeasure_def offset_def
-globalsettings_footer ::= "endglobalsettings" NEWLINE
+globalsettings_footer ::= "endglobalsettingdefs" NEWLINE
 
 transformation_def ::= "transformation: WHITESPACE transformation_type NEWLINE
 transformation_type ::= "log" | "none"
@@ -41,11 +42,10 @@ array_header ::= "array" WHITESPACE identifier NEWLINE
 array_body ::= (identifier NEWLINE)+
 array_footer ::= "endarray" NEWLINE
 
-mapping_header ::= "mapping" NEWLINE
+mapping_header ::= "mappingdefs" NEWLINE
 mapping_body ::= (factor_def NEWLINE)+   
-mapping_footer ::= "endmapping" NEWLINE 
+mapping_footer ::= "endmappingdefs" NEWLINE 
 
-ratio_def ::= ratio_header ratio_body ratio_footer
 ratio_header ::= "ratiodefs" NEWLINE
 ratio_body ::= (ratio_spec)+
 # identifiers identify arrays
