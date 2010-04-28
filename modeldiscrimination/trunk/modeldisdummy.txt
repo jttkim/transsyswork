@@ -32,7 +32,7 @@ procedure ko_g0000
 knockout: g0000
 endprocedure
 
-procedure ja_treatment
+procedure f01_treatment
 treatment: f0001 = 1.0
 endprocedure
 
@@ -44,15 +44,15 @@ array wt
 equilibration
 endarray
 
-array wt_MeJA15
+array wt_treatment15
 equilibration
-ja_treatment
+f01_treatment
 timepoint015min
 endarray
 
-array wt_MeJA30
+array wt_treatment30
 equilibration
-ja_treatment
+f01_treatment
 timepoint030min
 endarray
 
@@ -61,18 +61,18 @@ ko_g0000
 equilibration
 endarray
 
-array g0000_MeJA15
+array g0000_treatment15
 ko_g0000
 overexpressgene
 equilibration
-ja_treatment
+f01_treatment
 timepoint015min
 endarray
 
-array g0000_MeJA30
+array g0000_treatment30
 ko_g0000
 equilibration
-ja_treatment
+f01_treatment
 timepoint030min
 endarray
 
