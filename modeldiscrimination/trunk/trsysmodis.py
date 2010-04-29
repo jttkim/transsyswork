@@ -456,6 +456,26 @@ gene in that array.
     return d
 
 
+  def logratio_divergence_treat(self, other, distance_function) :
+    """Divergence measurement.
+@param other: the other expression set
+@type other: ExpressionSet
+@return: divergence between this expression set and the other expression set
+@rtype: C{float}
+"""
+    if self.feature_data == None :
+      raise StandardError, ' Empirical dataset does not exist'
+    if other == None :
+      raise StandardError, ' Simulated dataset does not exist'
+    d = 0.0
+    wt = self.get_wildtype_array_name()
+    #for factor_name in self.feature_data.get_gene_name() :  old version
+    for factor_name in self.expression_data.expression_data.keys() :
+      selfProfile = self.get_logratioprofile(wt, factor_name)
+      otherProfile = other.get_logratioprofile(wt, factor_name)
+      d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
+    return d
+
   def distance_divergence(self, selfProfile, otherProfile, distance_function) :
     """ Divergence distance
 @param selfProfile: Empirical data
@@ -951,8 +971,7 @@ series is the simulation of the gene expression levels for that genotype.
     e = self.get_simulated_set(transsys_program)
     self.transform_expression_set(e)
     if self.transformation == 'log' :
-      print self.expression_set
-      s = self.expression_set.logratio_divergence(e, self.distance)
+      s = self.expression_set.logratio_divergence_treat(e, self.distance)
     else :
       s = self.expression_set.divergence(e, self.distance)
     return ModelFitnessResult(s)

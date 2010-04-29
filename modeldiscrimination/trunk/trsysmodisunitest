@@ -20,7 +20,7 @@ class TestSequenceFunctions(unittest.TestCase):
     self.optimiserfile = open('optspec.dat', 'r')
     self.specfile = open('modeldisdummy.txt', 'r')
     self.expression_set = trsysmodis.ExpressionSet()
-    self.expression_set.read(self.e, self.p = None, self.f=None)
+    self.expression_set.read(self.e, self.p, self.f)
     self.equilibration_length = 100
     self.logratio_mode = True
     self.f_distance = 'correlation'
@@ -47,9 +47,12 @@ class TestSequenceFunctions(unittest.TestCase):
 
   def test_objectivefunctionparser(self) :
     # sys.stderr.write('objectivefunctionparser\n')
+    self.e = open('toy_target_expr.txt', 'r')
+    expression_set = trsysmodis.ExpressionSet()
+    expression_set.read(self.e, None, None)
     o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
     objective_function = o.parse()
-    objective_function.set_expression_set(self.expression_set)
+    objective_function.set_expression_set(expression_set)
     optimiser = transsys.optim.parse_optimiser(self.optimiserfile)
     optimiser.transformer = transsys.optim.parse_parameter_transformer(self.transformerfile)
     rng = random.Random(self.rndseed)
