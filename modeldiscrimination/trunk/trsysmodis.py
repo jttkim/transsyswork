@@ -803,12 +803,18 @@ class SimulationOverexpression(SimulationRuleObjective) :
     return knockout_tp
 
 
+
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
   """Abstract base class for objective functions based on empirical
 expression sets.
 The objective function is parametrised by gene expression measurements.
 """ 
 
+  # consider setting the expression set via a mutator rather than at construction.
+  # rationale: expression sets have to be consistent with simulated experimentation,
+  # therefore setting an expression set before the simulated experimentation is
+  # specified is premature -- the expression set can be checked for suitability
+  # only after the experimentation is specified, and the mutator should do that.
   def __init__(self, expression_set) :
     """Constructor.
 @param expression_set: the expression st
@@ -927,6 +933,7 @@ of the gene expression levels for that genotype.
     return ti_wt
 
 
+# does KnockoutTreatmentObjective inherit anything useful from EmpiricalObjective anymore?
 class KnockoutTreatmentObjective(EmpiricalObjective) :
   """Objective function
 uses knockout objective function and adds treatment.
@@ -1300,6 +1307,7 @@ class Scanner(object) :
   def lookheader(self) :
     return(self.infile.readline())
 
+
   def lookahead(self) :
     return self.next_token[0]
 
@@ -1362,6 +1370,7 @@ class Scanner(object) :
 
 
   def get_lines(self) :
+    # obsolete?
     """Comment"""
     if self.next_token[0] == 'identifier' :
       l = self.next_token[1]
@@ -1401,7 +1410,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
   globalsettings_defs = None
   mapping_defs = None
-  expression_set = None
   procedure_defs = []
   array_defs = []
   ratio_defs = None
@@ -1476,7 +1484,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: dictionary{}
 """
     ratiodefs_dict = {}
-    while self.scanner.next_token[0] != 'endratiodefs' :
+    while self.scanner.lookahead() != 'endratiodefs' :
       f, m = self.get_ratiodefsen()
       if f in ratiodefs_dict.keys() :
         raise StandardError, '%s already exist'%f
@@ -1505,8 +1513,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def parse_ratio_defs(self) :
     """ Parse objective function ratio defs"""
-    while self.scanner.next_token[0] == 'ratiodefs' :
+    # FIXME: only 0 or one ratio_defs allowed -- while should be if??
+    while self.scanner.lookahead() == 'ratiodefs' :
       self.ratio_defs = self.parse_ratio_def()
+      # FIXME: should expect a specific token
       self.scanner.token()
       self.expect_token('\n')
 
@@ -1887,8 +1897,38 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.parse_ratio_defs()
       if self.ratio_defs is None :
         raise StandardError, 'Definition of ratios has not been provided'
-    return KnockoutTreatmentObjective(self.expression_set, self.globalsettings_defs, self.mapping_defs, self.procedure_defs, self.array_defs, self.ratio_defs)
+    #FIXME: the expression set parameter (#1, set to None) should go away after refactoring the EmpiricalObjective's API
+    return KnockoutTreatmentObjective(None, self.globalsettings_defs, self.mapping_defs, self.procedure_defs, self.array_defs, self.ratio_defs)
 
+
+  def parse_procedcure_defs(self) :
+    procedure_list = []
+    while self.scanner.lookahead() == 'procedure' :
+      procedure_list.append(self.parse_procedure_def())
+    return procedure_list
+
+
+  def parse_ratio_def(self) :
+    self.parse_ratio_header()
+    self.parse_ratio_body()
+    self.parse_ratio_footer()
+    
+
+  def parse_knockout_treatment_objectivespec(self) :
+    globalsettings = self.parse_globalsettings()
+    mapping = self.parse_mapping()
+    procedure_defs = self.parse_procedure_defs()
+    # arrays...
+    ratio_def = None
+    if self.scanner.lookahead() == 'ratiodefs' :
+      ratio_def = self.parse_ratio_def()
+    
+  # name methods after rule lhs (with parse_ prefix)
+  def parse_objectivespec(self) :
+    if (!self.scanner.check_magic(self.magic)) :
+      raise StandardError, 'bad magic'
+    f = self.parse_knockout_treatment_objectivespec()
+    
 
   def parse(self) :
     """Parse spec

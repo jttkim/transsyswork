@@ -1,7 +1,8 @@
 objectivespec ::= knockout_treatment_magic knockout_treatment_objectivespec
 
-knockout_treatment_objectivespec ::= globalsettings mapping (procedure_def)* (array_def)* (ratio_def)?
+knockout_treatment_objectivespec ::= globalsettings mapping procedure_defs (array_def)* (ratio_def)?
 
+procedure_defs ::= (procedure_def)*
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
@@ -11,11 +12,13 @@ array_def ::= array_header array_body array_footer NEWLINE
 ratio_def ::= ratio_header ratio_body ratio_footer
 
 globalsettings_header ::= "globasettingdefs" NEWLINE
-globalsettings_body ::= transformation_def distancemeasure_def offset_def
+globalsettings_body ::= transformation_def relative_expression_def distancemeasure_def offset_def
 globalsettings_footer ::= "endglobalsettingdefs" NEWLINE
 
-transformation_def ::= "transformation: WHITESPACE transformation_type NEWLINE
+transformation_def ::= "transformation:" WHITESPACE transformation_type NEWLINE
 transformation_type ::= "log" | "none"
+relative_expression_def ::= "relexpression:" WHITESPACE relative_expression_type NEWLINE
+relative_expression_type ::= "ratio" | "none"
 
 distancemeasure_def ::= "distance:" WHITESPACE distance_type NEWLINE
 distance_type ::= "correlation" | "euclidean" | "sum_squares" 
