@@ -28,6 +28,7 @@ class TestSequenceFunctions(unittest.TestCase):
     self.transsys_program = transsys.TranssysProgramParser(self.model).parse()
     self.rndseed = 1
 
+
   def test_make_expressionset(self) :
     # sys.stderr.write('expresssionset test\n')
     self.expression_set.read(self.e, self.p, self.f)
