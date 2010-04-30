@@ -6,7 +6,7 @@ procedure_defs ::= (procedure_def)*
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
-mapping_def ::= mapping_header mapping_body mapping_footer NEWLINE
+mapping ::= mapping_header mapping_body mapping_footer NEWLINE
 procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
 array_def ::= array_header array_body array_footer NEWLINE
 ratio_def ::= ratio_header ratio_body ratio_footer

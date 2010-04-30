@@ -106,7 +106,7 @@ expression_set = trsysmodis.ExpressionSet()
 expression_set.read(x, p = None, f = None)
 specfile = open(spec, 'r')
 o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
-objective_function = o.parse()
+objective_function = o.parse_objectivespec()
 objective_function.set_expression_set(expression_set)
 optimiser.randomInitRange = 1.0
 model = open(candidate_name,'r')

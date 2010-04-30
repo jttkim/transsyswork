@@ -965,6 +965,7 @@ series is the simulation of the gene expression levels for that genotype.
     self.array_defs = array_defs
     self.ratio_defs = ratio_defs
     self.transformation = globalsettings_defs.get_globalsettings_list()['transformation']
+    self.relexpression = globalsettings_defs.get_globalsettings_list()['relexpression']
     self.offset = globalsettings_defs.get_globalsettings_list()['offset']
     self.distance = globalsettings_defs.get_globalsettings_list()['distance']
 
@@ -1408,11 +1409,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 @ivar array_defs: Array definitions
 @type array_defs: Array[]
 """
-  globalsettings_defs = None
-  mapping_defs = None
-  procedure_defs = []
-  array_defs = []
-  ratio_defs = None
 
   magic = "ObjectiveSpecification-0.1" 
 
@@ -1433,17 +1429,25 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: string
 """
     t, v = self.scanner.token()
-    if t != expected_token :
+    if t not in expected_token :
       raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
     return v
 
   
-  def parse_ratiodefs_header(self) :
+  def parse_ratio_header(self) :
     """ Parse ratiodefs header
 @return: ratiodefs header
 @rtype: C{String}
 """
     self.expect_token('ratiodefs')
+
+
+  def parse_ratio_footer(self):
+    """ Parse ratiodefs footer
+@return: Footer
+@rtype: C{String}
+"""
+    return(self.scanner.lookahead())
 
 
   def get_ratiodefsen(self) :
@@ -1478,26 +1482,19 @@ class EmpiricalObjectiveFunctionParser(object) :
       raise StandardError, "Arrays might not be declared in array session"
 
 
-  def parse_ratiodefs_body(self):
+  def parse_ratio_body(self):
     """ Parse ratiodefs body
 @return: ratiodefs dictionary
 @rtype: dictionary{}
 """
     ratiodefs_dict = {}
     while self.scanner.lookahead() != 'endratiodefs' :
-      f, m = self.get_ratiodefsen()
-      if f in ratiodefs_dict.keys() :
-        raise StandardError, '%s already exist'%f
-      ratiodefs_dict[f] = m
+      m = self.expect_token('identifier')
+      self.expect_token(':')
+      self.expect_token('identifier')
+      d = self.expect_token(['identifier', 'realvalue'])
+      ratiodefs_dict[m] = d
     return(ratiodefs_dict)
-
-
-  def parse_ratiodefs_footer(self):
-    """ Parse ratiodefs footer
-@return: Footer
-@rtype: C{String}
-"""
-    return(self.scanner.lookahead())
 
 
   def parse_ratio_def(self) :
@@ -1505,21 +1502,21 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: RatioDefs object
 @rtype: L{RatioDefs}
 """
-    self.parse_ratiodefs_header()
-    ratiodefs_list = self.parse_ratiodefs_body()
-    self.parse_ratiodefs_footer()
+    self.parse_ratio_header()
+    ratiodefs_list = self.parse_ratio_body()
+    self.parse_ratio_footer()
     return RatioDefs(ratiodefs_list) 
 
 
   def parse_ratio_defs(self) :
     """ Parse objective function ratio defs"""
-    # FIXME: only 0 or one ratio_defs allowed -- while should be if??
-    while self.scanner.lookahead() == 'ratiodefs' :
-      self.ratio_defs = self.parse_ratio_def()
-      # FIXME: should expect a specific token
-      self.scanner.token()
+    if self.scanner.lookahead() == 'ratiodefs' :
+      ratio_defs = self.parse_ratio_def()
+      self.expect_token('endratiodefs')
       self.expect_token('\n')
+    return ratio_defs
 
+## Array
 
   def parse_array_header(self) :
     """Parse array header
@@ -1531,14 +1528,22 @@ class EmpiricalObjectiveFunctionParser(object) :
     return array_name
 
 
+  def parse_array_footer(self) :
+    """ Parse array footer
+@return: Footer
+@rtype: C{String}
+"""
+    return(self.scanner.lookahead())
+
+
   def parse_array_body(self) :
     """Comment
 @return: procedure array
 @rtype: array[]
 """
     procedure = []
-    while self.scanner.next_token[0] != 'endarray' :
-      procedure.append(self.search_procedure(self.expect_token('identifier')))
+    while self.scanner.lookahead() != 'endarray' :
+      procedure.append(self.expect_token('identifier'))
     return(procedure)
 
 
@@ -1555,14 +1560,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     return procedure.get_instruction_list()[0]
 
 
-  def parse_array_footer(self) :
-    """ Parse array footer
-@return: Footer
-@rtype: C{String}
-"""
-    return(self.scanner.lookahead())
-
-
   def parse_array_def(self) :
     """Parser array 
 @return: Object
@@ -1574,17 +1571,28 @@ class EmpiricalObjectiveFunctionParser(object) :
     return Array(array_name, instruction_list)
 
 
+  def parse_array_def(self) :
+    """ Parse object array
+@return: Object
+@rtype: L{Array}
+"""
+    array_name = self.parse_array_header()
+    instruction = self.parse_array_body()
+    self.parse_array_footer()
+    return Array(array_name, instruction)
+
+
   def parse_array_defs(self) :
     """ Parse array blocks """
-    while self.scanner.next_token[0] == 'array':
-      im = self.parse_array_def()
-      for array in self.array_defs :
-        if array.array_name == im.array_name :
-	  raise StandardError, '%s already exist'%im.array_name
-      self.array_defs.append(im)
-      self.scanner.token()
+    array_list = []
+    while self.scanner.lookahead() == 'array' :
+      array_list.append(self.parse_array_def())
+      self.expect_token('endarray')
       self.expect_token('\n')
-  
+    return array_list
+
+
+### Procedure
 
   def parse_procedure_header(self) :
     """Parse procedure header
@@ -1596,7 +1604,15 @@ class EmpiricalObjectiveFunctionParser(object) :
     return procedure_name
 
 
-  def get_proceduresen(self) :
+  def parse_procedure_footer(self) :
+    """ Parse procedure footer
+@return: Footer
+@rtype: C{String}
+"""
+    return(self.scanner.lookahead())
+
+
+  def parse_instruction(self) :
     """Check procedure lexicon
 @return: array
 @rtype: array[]
@@ -1675,17 +1691,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: array[]
 """
     procedure = []
-    while self.scanner.next_token[0] != 'endprocedure' :
-      procedure.append(self.get_proceduresen())
+    while self.scanner.lookahead() != 'endprocedure' :
+      procedure.append(self.parse_instruction())
     return procedure
-
-
-  def parse_procedure_footer(self) :
-    """ Parse procedure footer
-@return: Footer
-@rtype: C{String}
-"""
-    return(self.scanner.lookahead())
 
 
   def parse_procedure_def(self) :
@@ -1694,23 +1702,24 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{Procedure}
 """
     procedure_name = self.parse_procedure_header()
-    instruction_list = self.parse_procedure_body()
+    instruction = self.parse_procedure_body()
     self.parse_procedure_footer()
-    return Procedure(procedure_name, instruction_list)
+    return Procedure(procedure_name, instruction)
 
 
   def parse_procedure_defs(self) :
-    """Parse procedure defs
-"""
-    while self.scanner.next_token[0] == 'procedure' :
-      im = self.parse_procedure_def()
-      for procedure in self.procedure_defs :
-        if procedure.procedure_name == im.procedure_name :
-	  raise StandardError, '%s already exist'%im.procedure_name
-      self.procedure_defs.append(im)
-      self.scanner.token()
+    """Parse procedure defs """
+
+    procedure_list = []
+    while self.scanner.lookahead() == 'procedure' :
+      procedure_list.append(self.parse_procedure_def())
+      self.expect_token('endprocedure')
       self.expect_token('\n')
- 
+    return procedure_list
+
+
+### Mapping
+
 
   def parse_mapping_header(self) :
     """ Parse mapping header
@@ -1718,32 +1727,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: C{String}
 """
     self.expect_token('mappingdefs')
-
-
-  def get_mappingsen(self) :
-    """Check mapping lexicon
-@return: dictionary
-@rtype: dictionary{}
-"""
-    factor_name = self.scanner.token()[1]
-    self.expect_token('=')
-    manuf_id = self.scanner.token()[1]
-    self.scanner.token()
-    return(factor_name, manuf_id)
-
-
-  def parse_mapping_body(self):
-    """ Parse mapping body
-@return: gene dictionary
-@rtype: dictionary{}
-"""
-    map_dict = {}
-    while self.scanner.next_token[0] != 'endmappingdefs' :
-      f, m = self.get_mappingsen()
-      if f in map_dict.keys() :
-        raise StandardError, '%s already exist'%f
-      map_dict[f] = m
-    return(map_dict)
 
 
   def parse_mapping_footer(self):
@@ -1754,31 +1737,48 @@ class EmpiricalObjectiveFunctionParser(object) :
     return(self.scanner.lookahead())
  
 
-  def parse_mapping_def(self) :
-    """ Parse mapping object
-@return: Mapping object
-@rtype: L{Mapping}
+  def parse_mapping_body(self):
+    """ Parse mapping body
+@return: mapping dictionary
+@rtype: dictionary{}
 """
-    self.parse_mapping_header()
-    factor_list = self.parse_mapping_body()
-    self.parse_mapping_footer()
-    return Mapping(factor_list)
+    mapping_dict = {}
+    while self.scanner.lookahead() != 'endmappingdefs' :
+      m = self.expect_token('identifier')
+      self.expect_token('=')
+      d = self.expect_token(['identifier', 'realvalue'])
+      mapping_dict[m] = d
+    return(mapping_dict)
 
-  
-  def parse_mapping_defs(self) :
-    """ Parse mapping array"""
-    while self.scanner.next_token[0] == 'mappingdefs' :
-      self.mapping_defs = self.parse_mapping_def()
-      self.scanner.token()
+
+  def parse_mapping(self) :
+    """ Parse objective function mapping """
+     
+    if self.scanner.lookahead() == 'mappingdefs' :
+      self.parse_mapping_header()
+      mapping_list = self.parse_mapping_body()
+      self.parse_mapping_footer()
+      self.expect_token('endmappingdefs')
       self.expect_token('\n')
+    return Mapping(mapping_list) 
 
-  
+
+### Global settings 
+
   def parse_globalsettings_header(self) :
     """ Parse setting header
 @return: setting header
 @rtype: C{String}
 """
     self.expect_token('globalsettingdefs')
+
+
+  def parse_globalsettings_footer(self):
+    """ Parse globalsettings footer
+@return: Footer
+@rtype: C{String}
+"""
+    return(self.scanner.lookahead())
 
 
   def get_globalsettingsen(self) :
@@ -1846,20 +1846,12 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: dictionary{}
 """
     globalsettings_dict = {}
-    while self.scanner.next_token[0] != 'endglobalsettingdefs' :
-      f, m = self.get_globalsettingsen()
-      if f in globalsettings_dict.keys() :
-        raise StandardError, '%s already exist'%f
-      globalsettings_dict[f] = m
+    while self.scanner.lookahead() != 'endglobalsettingdefs' :
+      m = self.expect_token('identifier')
+      self.expect_token(':')
+      d = self.expect_token(['identifier', 'realvalue'])
+      globalsettings_dict[m] = d
     return(globalsettings_dict)
-
-
-  def parse_globalsettings_footer(self):
-    """ Parse globalsettings footer
-@return: Footer
-@rtype: C{String}
-"""
-    return(self.scanner.lookahead())
 
 
   def parse_globalsettings_def(self) :
@@ -1873,71 +1865,51 @@ class EmpiricalObjectiveFunctionParser(object) :
     return GlobalSettings(globalsettings_list) 
 
 
-  def parse_globalsettings_defs(self) :
-    """ Parse objective function settings"""
-    while self.scanner.next_token[0] == 'globalsettingdefs' :
+  def parse_globalsettings(self) :
+    """ Parse objective function settings """
+    
+    if self.scanner.lookahead() == 'globalsettingdefs' :
+      self.parse_globalsettings_header()
+      globalsettings_list = self.parse_globalsettings_body()
+      self.parse_globalsettings_footer()
+      self.expect_token('endglobalsettingdefs')
+      self.expect_token('\n')
+    return GlobalSettings(globalsettings_list) 
+
+
+    def resolv_spec(self) :
+      """ Resolve spec """
+      pass
+    """
+    while self.scanner.lookahead == 'globalsettingdefs' :
       self.globalsettings_defs = self.parse_globalsettings_def()
       if 'transformation' and 'distance' and 'offset' in self.globalsettings_defs.get_globalsettings_list().keys() :
         self.scanner.token()
         self.expect_token('\n')
       else :
         raise StandardError, 'complete list of settings was not provided'
+"""
 
-
-  def parse_spec(self) :
+  def parse_knockout_treatment_objectivespec(self) :
     """ Parse specification file 
 @return: Object
 @rtype: L{KnockoutTreatmentObjective}
 """
-    self.parse_globalsettings_defs()
-    self.parse_mapping_defs()
-    self.parse_procedure_defs()
-    self.parse_array_defs()
-    if self.globalsettings_defs.get_globalsettings_list()['transformation'] == 'log' :
-      self.parse_ratio_defs()
-      if self.ratio_defs is None :
-        raise StandardError, 'Definition of ratios has not been provided'
-    #FIXME: the expression set parameter (#1, set to None) should go away after refactoring the EmpiricalObjective's API
-    return KnockoutTreatmentObjective(None, self.globalsettings_defs, self.mapping_defs, self.procedure_defs, self.array_defs, self.ratio_defs)
-
-
-  def parse_procedcure_defs(self) :
-    procedure_list = []
-    while self.scanner.lookahead() == 'procedure' :
-      procedure_list.append(self.parse_procedure_def())
-    return procedure_list
-
-
-  def parse_ratio_def(self) :
-    self.parse_ratio_header()
-    self.parse_ratio_body()
-    self.parse_ratio_footer()
-    
-
-  def parse_knockout_treatment_objectivespec(self) :
     globalsettings = self.parse_globalsettings()
     mapping = self.parse_mapping()
     procedure_defs = self.parse_procedure_defs()
-    # arrays...
-    ratio_def = None
-    if self.scanner.lookahead() == 'ratiodefs' :
-      ratio_def = self.parse_ratio_def()
-    
-  # name methods after rule lhs (with parse_ prefix)
-  def parse_objectivespec(self) :
-    if (!self.scanner.check_magic(self.magic)) :
-      raise StandardError, 'bad magic'
-    f = self.parse_knockout_treatment_objectivespec()
-    
+    array_defs = self.parse_array_defs()
+    ratio_defs = self.parse_ratio_defs()
+    return KnockoutTreatmentObjective(None, globalsettings, mapping, procedure_defs, array_defs, ratio_defs)
 
-  def parse(self) :
+
+  def parse_objectivespec(self) :
     """Parse spec
 @return: Spec objective function
 @rtype: object
 """
-    if (self.scanner.check_magic(self.magic)):
+    if self.scanner.check_magic(self.magic) :
       self.expect_token('\n')
-      return self.parse_spec()
-    else : 
-      raise StandardError, 'Incorrect magic word'
-
+      f = self.parse_knockout_treatment_objectivespec()
+    else :
+      raise StandardError, 'bad magic'
