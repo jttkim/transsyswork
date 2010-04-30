@@ -1299,7 +1299,7 @@ class Scanner(object) :
     self.buffer = ''
     self.lineno = 0
     self.keywords = ['globalsettingdefs', 'endglobalsettingdefs', 'mappingdefs', 'endmappingdefs', 'procedure', 'endprocedure','array','endarray', 'ratiodefs', 'endratiodefs', 'endspec']
-    self.identifier_re = re.compile('([A-Za-z_][A-Za-z0-9_]*)|([\\[\\]])')
+    self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
     self.next_token = self.get_token()
@@ -1877,7 +1877,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     return GlobalSettings(globalsettings_list) 
 
 
-    def resolv_spec(self) :
+    def resolve_spec(self, globalsettings, mapping, procedure_defs, array_defs, ratio_defs) :
       """ Resolve spec """
       pass
     """
@@ -1900,6 +1900,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure_defs = self.parse_procedure_defs()
     array_defs = self.parse_array_defs()
     ratio_defs = self.parse_ratio_defs()
+    self.resolve_spec(globalsettings, mapping, procedure_defs, array_defs, ratio_defs)
     return KnockoutTreatmentObjective(None, globalsettings, mapping, procedure_defs, array_defs, ratio_defs)
 
 
