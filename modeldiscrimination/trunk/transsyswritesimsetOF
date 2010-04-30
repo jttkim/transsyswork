@@ -90,7 +90,7 @@ outfile_basename = args[1]
 
 specfile = open(spec, 'r')
 o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
-objective_function = o.parse()
+objective_function = o.parse_objectivespec()
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
 e = objective_function.get_simulated_set(transsys_program)

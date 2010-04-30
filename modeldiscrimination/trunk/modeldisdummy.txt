@@ -2,18 +2,19 @@ ObjectiveSpecification-0.1
 
 globalsettingdefs
 transformation: none
+relexpression : log
 distance: correlation
 offset: 1e-18
 endglobalsettingdefs
 
 mappingdefs
-f0000 = 257221_at 
-f0001 = 257221_at 
-f0002 = 257221_at 
-f0003 = 257221_at 
-f0004 = 257221_at 
-f0005 = 257221_at 
-f0006 = 257221_at 
+f0000 = 257221
+f0001 = 257221
+f0002 = 257221
+f0003 = 257221
+f0004 = 257221
+f0005 = 257221
+f0006 = 257221
 endmappingdefs
 
 procedure equilibration
@@ -77,10 +78,10 @@ timepoint030min
 endarray
 
 ratiodefs
-wt_treatment15 : wt
-wt_treatment30 : wt
-g0000_treatment15 : g0000
-g0000_treatment30 : g0000
+wt_treatment15 : reference wt
+wt_treatment30 : reference wt
+g0000_treatment15 : reference g0000
+g0000_treatment30 : reference g0000
 endratiodefs
 
 
