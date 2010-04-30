@@ -45,9 +45,9 @@ array_header ::= "array" WHITESPACE identifier NEWLINE
 array_body ::= (identifier NEWLINE)+
 array_footer ::= "endarray" NEWLINE
 
-mapping_header ::= "mappingdefs" NEWLINE
+mapping_header ::= "mapping" NEWLINE
 mapping_body ::= (factor_def NEWLINE)+   
-mapping_footer ::= "endmappingdefs" NEWLINE 
+mapping_footer ::= "endmapping" NEWLINE 
 
 ratio_header ::= "ratiodefs" NEWLINE
 ratio_body ::= (ratio_spec)+
