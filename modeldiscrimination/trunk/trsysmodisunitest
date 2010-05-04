@@ -5,54 +5,66 @@ import unittest
 import trsysmodis
 import transsys
 import sys
+import os
 
 class TestSequenceFunctions(unittest.TestCase):
 
   def setUp(self):
-    # testko.sh is used to generate data: nodes=6, edges=12, noise=0.0
-    # sys.stderr.write('setup\n')
-    self.e = open('test_target_expr.txt', 'r')
-    self.p = open('test_target_pheno.txt', 'r')
-    self.f = open('test_target_feature.txt', 'r')
-    self.model = open('test_targettopology.tra', 'r')
-    self.modelkt = open('test_target.tra', 'r')
     self.transformerfile = open('transformerfile.dat', 'r')
     self.optimiserfile = open('optspec.dat', 'r')
     self.specfile = open('modeldisdummy.txt', 'r')
-    self.expression_set = trsysmodis.ExpressionSet()
-    self.expression_set.read(self.e, self.p, self.f)
-    self.equilibration_length = 100
-    self.logratio_mode = True
-    self.f_distance = 'correlation'
-    self.logratio_offset = 0.01
-    self.transsys_program = transsys.TranssysProgramParser(self.model).parse()
     self.rndseed = 1
+    self.cwd = os.getcwd()
+    # sys.stderr.write('setup\n')
 
 
   def test_make_expressionset(self) :
     # sys.stderr.write('expresssionset test\n')
-    self.expression_set.read(self.e, self.p, self.f)
+    self.get_data()
+    e = open('test_target_expr.txt', 'r')
+    p = open('test_target_pheno.txt', 'r')
+    f = open('test_target_feature.txt', 'r')
+    expression_set = trsysmodis.ExpressionSet()
+    expression_set.read(e, p, f)
     
 
   def test_make_expressionset_exp(self) :
     # sys.stderr.write('expressinset_exp\n')
-    self.expression_set.read_exp(self.e)
+    self.get_data()
+    e = open('test_target_expr.txt', 'r')
+    p = open('test_target_pheno.txt', 'r')
+    f = open('test_target_feature.txt', 'r')
+    expression_set = trsysmodis.ExpressionSet()
+    expression_set.read_exp(e)
 
 
   def test_knockout_objectivefunction(self) :
+    self.get_data()
+    e = open('test_target_expr.txt', 'r')
+    p = open('test_target_pheno.txt', 'r')
+    f = open('test_target_feature.txt', 'r')
+    model = open('test_targettopology.tra', 'r')
+    expression_set = trsysmodis.ExpressionSet()
+    expression_set.read(e, p, f)
+    equilibration_length = 100
+    logratio_mode = True
+    f_distance = 'correlation'
+    logratio_offset = 0.01
+    transsys_program = transsys.TranssysProgramParser(model).parse()
     # sys.stderr.write('knockout_objectivefunction\n')
-    objective_function = trsysmodis.KnockoutObjective(self.expression_set, self.equilibration_length, self.logratio_mode, self.f_distance, self.logratio_offset)
-    obj = objective_function(self.transsys_program)
-    self.assertEqual(round(obj.fitness), 2.0)
+    objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length, logratio_mode, f_distance, logratio_offset)
+    obj = objective_function(transsys_program)
 
 
   def test_objectivefunctionparser(self) :
+    self.get_data(1)
+    self.modelkt = open('test_targettopology.tra', 'r')
     # sys.stderr.write('objectivefunctionparser\n')
-    self.e = open('toy_target_expr.txt', 'r')
+    e = open('test_target_expr.txt', 'r')
     expression_set = trsysmodis.ExpressionSet()
-    expression_set.read(self.e, None, None)
+    expression_set.read(e, None, None)
     o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
-    objective_function = o.parse()
+    objective_function = o.parse_objectivespec()
     objective_function.set_expression_set(expression_set)
     optimiser = transsys.optim.parse_optimiser(self.optimiserfile)
     optimiser.transformer = transsys.optim.parse_parameter_transformer(self.transformerfile)
@@ -61,10 +73,21 @@ class TestSequenceFunctions(unittest.TestCase):
     optimiser.randomInitRange = 1.0
     transsys_program = transsys.TranssysProgramParser(self.modelkt).parse()
     obj = objective_function(transsys_program)
-    self.assertEqual(round(obj.fitness), 6.0)
     opt_result = optimiser.optimise(transsys_program, objective_function)
-    self.assertEqual(round(objective_function(opt_result.optimised_transsys_program).fitness), 6.0)
 
+
+  def get_data(self, type=None) :
+    # Generate data: nodes=7, edges=14, noise=0.0
+    os.system('python transsysrandomprogram -n test -m 1 -p rtptest.dat')
+    os.system('python transsysrandomprogram -n test -m 1 -p rtptest.dat')
+    os.system('mv test01.tra test_targettopology.tra')
+    os.system('python transsysreparam -T transformerfile.dat -s 1 -p 1 -n test test_targettopology.tra')
+    os.system('mv test01.tra test_target.tra')
+    if type is None :
+      os.system('python transsyswritesimset -s 2 -e 100 -N 0.0 test_target.tra test_target')
+    else :
+      os.system('python transsyswritesimsetOF -o modeldisdummy.txt -s 2 -e 100 -N 0.0 test_target.tra test_target')
+  
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
 unittest.TextTestRunner(verbosity=2).run(suite)

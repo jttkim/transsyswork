@@ -166,8 +166,6 @@ All expression values in the newly added array are initialised with C{None}.
       raise StandardError, '%s already in array list' % array_name
     self.array_name.append(array_name)
     i = self.array_name.index(array_name)
-    #for profile in self.expression_data.values() :
-    #  profile[i] = None
 
 
   def logratio(self, x, r) :
@@ -308,6 +306,27 @@ class PhenoData(object) :
     feature_list = []
     feature_list.append(self.pheno_data[array_name])
     return feature_list
+
+
+class ExpressionValue(object) :
+
+  def __init__(self, factor, array, value) :
+
+    self.factor = factor
+    self.array = array
+    self.value = value
+
+
+  def get_factor(self) :
+    return self.factor
+
+
+  def get_array(self) :
+    return self.array
+
+
+  def get_value(self) :
+    return self.value
 
 
 class ExpressionSet(object) :
@@ -456,6 +475,34 @@ gene in that array.
     return d
 
 
+  def ratioB(self, array_defs) :
+    """ Relative expression ratios 
+@param array_defs: array defs
+@type array_defs: L{Array}
+"""
+    data = []
+    for factor in self.expression_data.expression_data.keys() :
+      for ratio in array_defs :
+        array_name = ratio.get_perturbation() + ":" + ratio.get_reference()
+        p = self.expression_data.array_name.index(ratio.get_perturbation())
+        r = self.expression_data.array_name.index(ratio.get_reference())
+        value = self.expression_data.expression_data[factor][p] / self.expression_data.expression_data[factor][r]
+        data.append(ExpressionValue(factor, array_name, value))
+    return data
+
+  
+  def get_logratio(self, data) :
+    """ Log 2 transformation
+@param data: data to be transformed
+@type data: Array[]
+@return: data
+@rtype: Array
+"""
+    for factor in data :
+      factor.value = math.log(factor.get_value(), 2)
+    return data
+
+
   def logratio_divergence_treat(self, other, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
@@ -463,10 +510,6 @@ gene in that array.
 @return: divergence between this expression set and the other expression set
 @rtype: C{float}
 """
-    if self.feature_data == None :
-      raise StandardError, ' Empirical dataset does not exist'
-    if other == None :
-      raise StandardError, ' Simulated dataset does not exist'
     d = 0.0
     wt = self.get_wildtype_array_name()
     #for factor_name in self.feature_data.get_gene_name() :  old version
@@ -803,7 +846,6 @@ class SimulationOverexpression(SimulationRuleObjective) :
     return knockout_tp
 
 
-
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
   """Abstract base class for objective functions based on empirical
 expression sets.
@@ -933,32 +975,29 @@ of the gene expression levels for that genotype.
     return ti_wt
 
 
-# does KnockoutTreatmentObjective inherit anything useful from EmpiricalObjective anymore?
-class KnockoutTreatmentObjective(EmpiricalObjective) :
+class KnockoutTreatmentObjective(object) :
   """Objective function
-uses knockout objective function and adds treatment.
-
 For each genotype (wild type and knockouts), a transsys instance is
 created, equilibrated according to some C{equilibration_length} 
 time steps, added a treatment according to some rules C{String} 
 and finally equilibrated again. The instance at the end of this time 
 series is the simulation of the gene expression levels for that genotype.
-
-@ivar expression_set: expression set.
-@type expression_set: Object{expression_set}
-@ivar mapping_defs: gene mapping definition.
-@type mapping_defs: Object{mapping_defs}
-@ivar procedure_defs: procedure definition.
-@type procedure_defs: Object{procedure_defs}
-@ivar array_defs: array definition.
-@type array_defs: Object{array_defs}
 """ 
 
-
-  def __init__(self, expression_set, globalsettings_defs, mapping_defs, procedure_defs, array_defs, ratio_defs) :
-    """ Constructor """ 
-    super(KnockoutTreatmentObjective, self).__init__(expression_set)
-    self.expression_set = expression_set
+  def __init__(self, globalsettings_defs, mapping_defs, procedure_defs, array_defs, ratio_defs) :
+    """ Constructor 
+@param globalsettings_defs: global settings
+@type globalsettings_defs: L{Settings}
+@param mapping_defs: gene mapping definition.
+@type mapping_defs: L{mapping_defs}
+@param procedure_defs: procedure definition.
+@type procedure_defs: L{procedure_defs}
+@param array_defs: array definition.
+@type array_defs: L{array_defs}
+@param ratio_defs: ratio definitions
+@type ratio_defs: L{RatioDefs}
+"""
+    self.expression_set = None
     self.globalsettings_defs = globalsettings_defs
     self.mapping_defs = mapping_defs
     self.procedure_defs = procedure_defs
@@ -977,11 +1016,15 @@ series is the simulation of the gene expression levels for that genotype.
 """
    
     e = self.get_simulated_set(transsys_program)
-    self.transform_expression_set(e)
+    expression_set = self.transform_expression_set(e)
+    if self.relexpression == 'ratio' :
+      data = expression_set.ratioB(self.ratio_defs)
     if self.transformation == 'log' :
-      s = self.expression_set.logratio_divergence_treat(e, self.distance)
+      data = expression_set.get_logratio(data)
+    if self.transformation == 'log' :
+      s = expression_set.logratio_divergence_treat(e, self.distance)
     else :
-      s = self.expression_set.divergence(e, self.distance)
+      s = expression_set.divergence(e, self.distance)
     return ModelFitnessResult(s)
 
 
@@ -1018,7 +1061,7 @@ series is the simulation of the gene expression levels for that genotype.
       tp = copy.deepcopy(transsys_program)
       ti = transsys.TranssysInstance(tp)
       e.add_array(array.get_array_name())
-      for instruction in array.get_instruction_list() :
+      for instruction in array.get_object_list() :
         if instruction.magic == "knockout" or instruction.magic == "overexpress":
           tp = instruction.applytreatment(tp)
           ti = transsys.TranssysInstance(tp)
@@ -1063,6 +1106,7 @@ series is the simulation of the gene expression levels for that genotype.
     gene_name_spec = self.mapping_defs.get_factor_list()
     if (len(gene_name_spec) != len(self.expression_set.expression_data.get_gene_name())) :
       raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name()))
+
 
 def distance_sum_squares(array1, array2) :
   """ Calculates the Sum Square Distance of two arrays
@@ -1223,10 +1267,6 @@ class Mapping(object) :
     return(self.factor_list.keys())
 
 
-  def get_mapping_list(self) :
-    return(self.factor_list.keys())
-
-
 class Procedure(object) :
   """Object Procedure """
 
@@ -1255,7 +1295,7 @@ class Array(object) :
   """ Object Array """
 
 
-  def __init__(self, array_name, instruction_list) :
+  def __init__(self, array_name, instruction_list ) :
     """ Constructor
 @param array_name: array name
 @type array_name: C{String}
@@ -1264,6 +1304,7 @@ class Array(object) :
 """  
     self.array_name = array_name
     self.instruction_list = instruction_list
+    self.object_list = []
 
 
   def get_array_name(self) :
@@ -1274,20 +1315,31 @@ class Array(object) :
     return(self.instruction_list)
 
 
+  def get_object_list(self) :
+    return(self.object_list)
+
+
 class RatioDefs(object) :
   """ object RatioDefs """
 
 
-  def __init__(self, ratiodefs_list) :
+  def __init__(self, perturbation, reference) :
     """Constructor
-@param ratiodefs_list: ratio list list
-@type ratiodefs_list: Dictionary{S}
+@param perturbation: array perturbation
+@type perturbation: C{String}
+@param reference: array reference
+@type reference: C{String}
 """
-    self.ratiodefs_list = ratiodefs_list
-   
+    self.perturbation = perturbation
+    self.reference = reference
 
-  def get_ratiodefs_list(self) :
-    return(self.ratiodefs_list)
+
+  def get_perturbation(self) :
+    return(self.perturbation)
+
+
+  def get_reference(self) :
+    return(self.reference)
 
 
 class Scanner(object) :
@@ -1402,12 +1454,6 @@ class Scanner(object) :
 
 class EmpiricalObjectiveFunctionParser(object) :
   """ Object specification 
-@ivar procedure_defs: procedure definitions
-@type procedure_defs: Array[]
-@ivar mapping_defs: Mapping definitions
-@type mapping_defs: Array[]
-@ivar array_defs: Array definitions
-@type array_defs: Array[]
 """
 
   magic = "ObjectiveSpecification-0.1" 
@@ -1433,6 +1479,7 @@ class EmpiricalObjectiveFunctionParser(object) :
       raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
     return v
 
+##Ratio
   
   def parse_ratio_header(self) :
     """ Parse ratiodefs header
@@ -1450,39 +1497,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     return(self.scanner.lookahead())
 
 
-  def get_ratiodefsen(self) :
-    """Check ratiodefs compliance
-@return: array
-@rtype: array[]
-"""
-    perturbation = self.scanner.token()[1]
-    self.expect_token(':')
-    reference = self.scanner.token()[1]
-    self.validate_ratiodefs(perturbation, reference)
-    return(perturbation, reference)
-
-
-  def validate_ratiodefs(self, perturbation, reference) :
-    """ Validate transformation definition
-@param perturbation: perturbation
-@type perturbation: C{String}
-@param reference: reference
-@type reference: C{String}
-@return: String
-@rtype: C{String}
-"""
-    if perturbation == reference :
-      raise StandardError, "%s and %s are the same"%(perturbation, reference)
-    a = []
-    for i in self.array_defs :
-      a.append(i.get_array_name())
-    if perturbation in a and reference in a:
-      return True
-    else :
-      raise StandardError, "Arrays might not be declared in array session"
-
-
-  def parse_ratio_body(self):
+  def parse_ratio_bodi(self):
     """ Parse ratiodefs body
 @return: ratiodefs dictionary
 @rtype: dictionary{}
@@ -1497,6 +1512,21 @@ class EmpiricalObjectiveFunctionParser(object) :
     return(ratiodefs_dict)
 
 
+  def parse_ratio_body(self):
+    """ Parse ratiodefs body
+@return: ratiodefs dictionary
+@rtype: dictionary{}
+"""
+    ratiodefs_dict = []
+    while self.scanner.lookahead() != 'endratiodefs' :
+      perturbation = self.expect_token('identifier')
+      self.expect_token(':')
+      self.expect_token('identifier')
+      reference = self.expect_token(['identifier', 'realvalue'])
+      ratiodefs_dict.append(RatioDefs(perturbation, reference))
+    return(ratiodefs_dict)
+
+
   def parse_ratio_def(self) :
     """Parse ratio defs object
 @return: RatioDefs object
@@ -1505,7 +1535,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.parse_ratio_header()
     ratiodefs_list = self.parse_ratio_body()
     self.parse_ratio_footer()
-    return RatioDefs(ratiodefs_list) 
+    return ratiodefs_list 
 
 
   def parse_ratio_defs(self) :
@@ -1547,19 +1577,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     return(procedure)
 
 
-  def search_procedure(self, procedure_name) :
-    """Search procedure_defs 
-@param procedure_name: procedure name
-@type procedure_name: C{String}
-@return: object
-@rtype: Array[]
-"""
-    for procedure in self.procedure_defs :
-      if procedure.get_procedure_name() == procedure_name :
-        break
-    return procedure.get_instruction_list()[0]
-
-
   def parse_array_def(self) :
     """Parser array 
 @return: Object
@@ -1569,17 +1586,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     instruction_list = self.parse_array_body()
     self.parse_array_footer()
     return Array(array_name, instruction_list)
-
-
-  def parse_array_def(self) :
-    """ Parse object array
-@return: Object
-@rtype: L{Array}
-"""
-    array_name = self.parse_array_header()
-    instruction = self.parse_array_body()
-    self.parse_array_footer()
-    return Array(array_name, instruction)
 
 
   def parse_array_defs(self) :
@@ -1854,17 +1860,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     return(globalsettings_dict)
 
 
-  def parse_globalsettings_def(self) :
-    """Parse globalsettings object
-@return: Globalsettings object
-@rtype: L{GlobalSettings}
-"""
-    self.parse_globalsettings_header()
-    globalsettings_list = self.parse_globalsettings_body()
-    self.parse_globalsettings_footer()
-    return GlobalSettings(globalsettings_list) 
-
-
   def parse_globalsettings(self) :
     """ Parse objective function settings """
     
@@ -1877,18 +1872,61 @@ class EmpiricalObjectiveFunctionParser(object) :
     return GlobalSettings(globalsettings_list) 
 
 
-    def resolve_spec(self, globalsettings, mapping, procedure_defs, array_defs, ratio_defs) :
-      """ Resolve spec """
-      pass
-    """
-    while self.scanner.lookahead == 'globalsettingdefs' :
-      self.globalsettings_defs = self.parse_globalsettings_def()
-      if 'transformation' and 'distance' and 'offset' in self.globalsettings_defs.get_globalsettings_list().keys() :
-        self.scanner.token()
-        self.expect_token('\n')
-      else :
-        raise StandardError, 'complete list of settings was not provided'
+  def resolve_spec(self, globalsettings, mapping, procedure_defs, array_defs, ratio_defs) :
+    """ Resolve spec """
+    self.resolve_spec_array(array_defs, procedure_defs)
+    self.resolve_spec_ratiodefs(array_defs, ratio_defs)
+
+
+  def resolve_spec_array(self, array_defs, procedure_defs) :
+    """ Validate transformation definition
+@param array_defs: array_defs
+@type array_defs: L{Array}
+@param procedure_defs: ratio defs
+@type procedure_defs: L{RatioDefs}
 """
+    procedure_name_list = []
+    for procedure in procedure_defs :
+      procedure_name_list.append(procedure.get_procedure_name()) 
+
+    for array in array_defs :
+      for instruction in array.get_instruction_list() :
+        if instruction in procedure_name_list :
+	  array.object_list.append(self.search_procedure(instruction, procedure_defs))
+	else :
+	  raise StandardError, 'Unrecognisable instruction %s' %instruction
+
+
+  def search_procedure(self, procedure_name, procedure_defs) :
+    """Search procedure_defs 
+@param procedure_name: procedure name
+@type procedure_name: C{String}
+@return: object
+@rtype: Array[]
+"""
+    for procedure in procedure_defs :
+      if procedure.get_procedure_name() == procedure_name :
+        break
+    return procedure.get_instruction_list()[0]
+
+
+  def resolve_spec_ratiodefs(self, array_defs, ratio_defs) :
+    """ Validate transformation definition
+@param ratio_defs: ratio defs
+@type ratio_defs: L{RatioDefs}
+@param array_defs: array_defs
+@type array_defs: L{Array}
+"""
+    a = []
+    for i in array_defs :
+      a.append(i.get_array_name())
+
+    for ratio in ratio_defs :
+     if ratio.get_perturbation() == ratio.get_reference() :
+       raise StandardError, "%s and %s are the same"%(ratio.get_perturbation(), ratio.get_reference())
+     if ratio.get_perturbation() not in a or ratio.get_reference() not in a:
+       raise StandardError, "Either %s or %s might not be declared in array session" %(ratio.get_perturbation(), ratio.get_reference())
+
 
   def parse_knockout_treatment_objectivespec(self) :
     """ Parse specification file 
@@ -1901,7 +1939,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     array_defs = self.parse_array_defs()
     ratio_defs = self.parse_ratio_defs()
     self.resolve_spec(globalsettings, mapping, procedure_defs, array_defs, ratio_defs)
-    return KnockoutTreatmentObjective(None, globalsettings, mapping, procedure_defs, array_defs, ratio_defs)
+    return KnockoutTreatmentObjective(globalsettings, mapping, procedure_defs, array_defs, ratio_defs)
 
 
   def parse_objectivespec(self) :
@@ -1911,6 +1949,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     if self.scanner.check_magic(self.magic) :
       self.expect_token('\n')
-      f = self.parse_knockout_treatment_objectivespec()
+      return(self.parse_knockout_treatment_objectivespec())
     else :
       raise StandardError, 'bad magic'
