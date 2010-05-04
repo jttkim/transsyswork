@@ -975,6 +975,9 @@ of the gene expression levels for that genotype.
     return ti_wt
 
 
+# EmpiricalObjective should be refactored to separate specification
+# of experimentation from specification of data
+# KnockoutTreatmentObjective should be a subclass of EmpiricalObjective
 class KnockoutTreatmentObjective(object) :
   """Objective function
 For each genotype (wild type and knockouts), a transsys instance is

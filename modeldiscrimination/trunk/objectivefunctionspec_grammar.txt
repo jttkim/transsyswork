@@ -1,24 +1,23 @@
 objectivespec ::= knockout_treatment_magic knockout_treatment_objectivespec
 
-knockout_treatment_objectivespec ::= globalsettings mapping procedure_defs (array_def)* (ratio_def)?
+knockout_treatment_objectivespec ::= globalsettings genemapping_def procedure_defs simexpression_defs arraymapping_def
 
 procedure_defs ::= (procedure_def)*
+simexpression_defs ::= (simexpression_def)*
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
-mapping ::= mapping_header mapping_body mapping_footer NEWLINE
+genemapping_def ::= genemapping_header genemapping_body genemapping_footer NEWLINE
 procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
-array_def ::= array_header array_body array_footer NEWLINE
-ratio_def ::= ratio_header ratio_body ratio_footer
+simexpression_def ::= simexpression_header simexpression_body simexpression_footer NEWLINE
+arraymapping_def ::= arraymapping_header arraymapping_body arraymapping_footer
 
 globalsettings_header ::= "globasettingdefs" NEWLINE
-globalsettings_body ::= transformation_def relative_expression_def distancemeasure_def offset_def
+globalsettings_body ::= transformation_def distancemeasure_def offset_def
 globalsettings_footer ::= "endglobalsettingdefs" NEWLINE
 
 transformation_def ::= "transformation:" WHITESPACE transformation_type NEWLINE
 transformation_type ::= "log" | "none"
-relative_expression_def ::= "relexpression:" WHITESPACE relative_expression_type NEWLINE
-relative_expression_type ::= "ratio" | "none"
 
 distancemeasure_def ::= "distance:" WHITESPACE distance_type NEWLINE
 distance_type ::= "correlation" | "euclidean" | "sum_squares" 
@@ -41,18 +40,20 @@ primary_instruction ::= "knockout:" WHITESPACE gene_identifier NEWLINE
 procedure_footer ::= "endprocedure" NEWLINE
 procedure_identifier ::= identifier
 
-array_header ::= "array" WHITESPACE identifier NEWLINE
-array_body ::= (identifier NEWLINE)+
-array_footer ::= "endarray" NEWLINE
+simexpression_header ::= "simexpression" WHITESPACE identifier NEWLINE
+simexpression_body ::= (identifier NEWLINE)+
+simexpression_footer ::= "endsimexpression" NEWLINE
 
-mapping_header ::= "mapping" NEWLINE
-mapping_body ::= (factor_def NEWLINE)+   
-mapping_footer ::= "endmapping" NEWLINE 
+genemapping_header ::= "genemapping" NEWLINE
+genemapping_body ::= (factor_def NEWLINE)+   
+genemapping_footer ::= "endgenemapping" NEWLINE 
 
-ratio_header ::= "ratiodefs" NEWLINE
-ratio_body ::= (ratio_spec)+
-# identifiers identify arrays
-ratio_spec ::= identifier ":" "reference" identifier NEWLINE
+arraymapping_header ::= "arraymapping" NEWLINE
+arraymapping_body ::= (arraymapping_spec)+
+# identifier following "array" identifies an array in the empirical data set
+# identifier following ":" identifies a simexpression
+# identifier following "/" identifies a simexpression to be used as a ratio reference
+arraymapping_spec ::= "array" identifier ":" identifier ( "/" identifier)? NEWLINE
 ratio_footer ::= "endratiodefs" NEWLINE
 
 
