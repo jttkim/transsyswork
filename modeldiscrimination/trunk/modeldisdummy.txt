@@ -1,8 +1,8 @@
 ObjectiveSpecification-0.1
 
 globalsettingdefs
-transformation: none
-relexpression : log
+transformation: log
+relexpression : ratio
 distance: correlation
 offset: 1e-18
 endglobalsettingdefs
