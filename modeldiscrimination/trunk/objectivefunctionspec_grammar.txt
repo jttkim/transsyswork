@@ -54,7 +54,7 @@ arraymapping_body ::= (arraymapping_spec)+
 # identifier following ":" identifies a simexpression
 # identifier following "/" identifies a simexpression to be used as a ratio reference
 arraymapping_spec ::= "array" identifier ":" identifier ( "/" identifier)? NEWLINE
-ratio_footer ::= "endratiodefs" NEWLINE
+arraymapping_footer ::= "endarraymapping" NEWLINE
 
 
 factor_def ::= factor_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_identifier NEWLINE
