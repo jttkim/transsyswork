@@ -1957,11 +1957,24 @@ class EmpiricalObjectiveFunctionParser(object) :
     for i in simexpression_defs :
       a.append(i.get_simexpression_name())
 
+    
     for arraymapping in arraymapping_defs :
-     if arraymapping.get_perturbation() == arraymapping.get_reference() :
-       raise StandardError, "%s and %s are the same"%(arraymapping.get_perturbation(), arraymapping.get_reference())
-     if arraymapping.get_perturbation() not in a or arraymapping.get_reference() not in a and arraymapping.get_reference() != None:
-       raise StandardError, "Either %s or %s might not be declared in simexpression session" %(arraymapping.get_perturbation(), arraymapping.get_reference())
+      if arraymapping.get_perturbation() not in a or arraymapping.get_reference() not in a and arraymapping.get_reference() != None:
+        raise StandardError, "Either %s or %s might not be declared in simexpression session" %(arraymapping.get_perturbation(), arraymapping.get_reference())
+      arraymapping.perturbation = self.search_simexpression(arraymapping.get_perturbation, simexpression_defs)
+      if 
+
+        arraymapping.perturbation = self.search_simexpression(arraymapping.get_perturbation, simexpression_defs) 
+      print arraymapping.perturbation
+      sys.exit()
+
+
+  def search_simexpression(self, array_name, simexpression_defs) :
+    """ Search array """
+    for array in simexpression_defs :
+      if array.get_simexpression_name() == array_name :
+        break
+    return array
 
 
   def parse_knockout_treatment_objectivespec(self) :
