@@ -117,6 +117,29 @@ expression levels across the data set.
     return profile
 
 
+  def get_ratioprofile(self, arraymapping, factor_name) :
+    """ Retrieve expression profile of factor_name
+@param factor_name: factor name
+@type factor_name: C{String}
+@param arraymapping: arraymapping_defs
+@type arraymapping: L{ArrayMapping}
+@return: dictionary
+@rtype: C{dictionary}
+"""
+    profile = {}
+    profile2 = {}
+    profile = self.get_profile(factor_name)
+    for array in arraymapping :
+      perturbation = array.get_perturbation()
+      reference = array.get_reference()
+      if reference is not None :
+	value =  profile[perturbation] / profile[reference]
+      else :
+	value =  profile[perturbation]
+      profile2[array.get_array_name()] = value
+    return profile2
+      
+
   def get_logratioprofile(self, wt, gene_name) :
     """ Retrieve gene_name logratio expression vector
 @param gene_name: gene name
@@ -426,6 +449,22 @@ gene in that array.
     return profile
 
 
+  def get_ratioprofile(self, arraymapping_defs, gene_name) :
+    """Retrieve the gene expression profile of a specific gene in this set.
+The profile is represented as a dictionary with keys being the
+array identifiers and values being the expression levels of the
+gene in that array.
+
+@param gene_name: gene name
+@type gene_name: C{String}
+@return: dictionary
+@rtype: C{dictionary}
+"""
+    profile = {}
+    profile = self.expression_data.get_ratioprofile(arraymapping_defs, gene_name)
+    return profile
+
+
   def shift_data(self, offset) :
     """Shift expression data by offset.
 @param offset: the offset
@@ -441,7 +480,6 @@ gene in that array.
 @return: divergence between this expression set and the other expression set
 @rtype: C{float}
 """
-    # FIXME: consider checking compatibility of self and other...?
     if self.feature_data == None :
       raise StandardError, ' Empirical data does not exist'
     if other == None :
@@ -467,7 +505,6 @@ gene in that array.
       raise StandardError, ' Simulated dataset does not exist'
     d = 0.0
     wt = self.get_wildtype_array_name()
-    #for factor_name in self.feature_data.get_gene_name() :  old version
     for factor_name in self.expression_data.expression_data.keys() :
       selfProfile = self.get_logratioprofile(wt, factor_name)
       otherProfile = other.get_logratioprofile(wt, factor_name)
@@ -475,49 +512,46 @@ gene in that array.
     return d
 
 
-  def ratioB(self, array_defs) :
-    """ Relative expression ratios 
-@param array_defs: array defs
-@type array_defs: L{Array}
-"""
-    data = []
-    for factor in self.expression_data.expression_data.keys() :
-      for ratio in array_defs :
-        array_name = ratio.get_perturbation() + ":" + ratio.get_reference()
-        p = self.expression_data.array_name.index(ratio.get_perturbation())
-        r = self.expression_data.array_name.index(ratio.get_reference())
-        value = self.expression_data.expression_data[factor][p] / self.expression_data.expression_data[factor][r]
-        data.append(ExpressionValue(factor, array_name, value))
-    return data
-
-  
-  def get_logratio(self, data) :
-    """ Log 2 transformation
-@param data: data to be transformed
-@type data: Array[]
-@return: data
-@rtype: Array
-"""
-    for factor in data :
-      factor.value = math.log(factor.get_value(), 2)
-    return data
-
-
-  def logratio_divergence_treat(self, other, distance_function) :
+  def logratio_divergence_treat(self, other, arraymapping_defs, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
 @type other: ExpressionSet
+@param arraymapping_defs: arraymapping_defs
+@type arraymapping_defs: L{ArrayMapping}
+@param distance_function: specification to calculate distance
+@type distance_function: C{String}
 @return: divergence between this expression set and the other expression set
 @rtype: C{float}
 """
     d = 0.0
-    wt = self.get_wildtype_array_name()
-    #for factor_name in self.feature_data.get_gene_name() :  old version
     for factor_name in self.expression_data.expression_data.keys() :
-      selfProfile = self.get_logratioprofile(wt, factor_name)
-      otherProfile = other.get_logratioprofile(wt, factor_name)
+      selfProfile = self.get_ratioprofile(arraymapping_defs, factor_name)
+      otherProfile = other.get_ratioprofile(arraymapping_defs, factor_name)
+      for array in selfProfile :
+        selfProfile[array] = math.log(selfProfile[array], 2)
+        otherProfile[array] = math.log(otherProfile[array], 2)
       d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
     return d
+
+
+  def divergence_treat(self, other, arraymapping_defs, distance_function) :
+    """Divergence measurement.
+@param other: the other expression set
+@type other: ExpressionSet
+@param arraymapping_defs: arraymapping_defs
+@type arraymapping_defs: L{ArrayMapping}
+@param distance_function: specification to calculate distance
+@type distance_function: C{String}
+@return: divergence between this expression set and the other expression set
+@rtype: C{float}
+"""
+    d = 0.0
+    for factor_name in self.expression_data.expression_data.keys() :
+      selfProfile = self.get_ratioprofile(arraymapping_defs, factor_name)
+      otherProfile = other.get_ratioprofile(arraymapping_defs, factor_name)
+      d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
+    return d
+
 
   def distance_divergence(self, selfProfile, otherProfile, distance_function) :
     """ Divergence distance
@@ -978,7 +1012,8 @@ of the gene expression levels for that genotype.
 # EmpiricalObjective should be refactored to separate specification
 # of experimentation from specification of data
 # KnockoutTreatmentObjective should be a subclass of EmpiricalObjective
-class KnockoutTreatmentObjective(object) :
+
+class KnockoutTreatmentObjective(transsys.optim.AbstractObjectiveFunction) :
   """Objective function
 For each genotype (wild type and knockouts), a transsys instance is
 created, equilibrated according to some C{equilibration_length} 
@@ -987,27 +1022,26 @@ and finally equilibrated again. The instance at the end of this time
 series is the simulation of the gene expression levels for that genotype.
 """ 
 
-  def __init__(self, globalsettings_defs, mapping_defs, procedure_defs, array_defs, ratio_defs) :
+  def __init__(self, globalsettings_defs, genemapping_defs, procedure_defs, simexpression_defs, arraymapping_defs) :
     """ Constructor 
 @param globalsettings_defs: global settings
-@type globalsettings_defs: L{Settings}
-@param mapping_defs: gene mapping definition.
-@type mapping_defs: L{mapping_defs}
+@type globalsettings_defs: L{GlobalSettings}
+@param genemapping_defs: gene mapping definition.
+@type genemapping_defs: L{GeneMapping}
 @param procedure_defs: procedure definition.
-@type procedure_defs: L{procedure_defs}
-@param array_defs: array definition.
-@type array_defs: L{array_defs}
-@param ratio_defs: ratio definitions
-@type ratio_defs: L{RatioDefs}
+@type procedure_defs: L{Procedure}
+@param simexpression_defs: array definition.
+@type simexpression_defs: L{SimExpression}
+@param arraymapping_defs: ratio definitions
+@type arraymapping_defs: L{ArrayMapping}
 """
     self.expression_set = None
     self.globalsettings_defs = globalsettings_defs
-    self.mapping_defs = mapping_defs
+    self.genemapping_defs = genemapping_defs
     self.procedure_defs = procedure_defs
-    self.array_defs = array_defs
-    self.ratio_defs = ratio_defs
+    self.simexpression_defs = simexpression_defs
+    self.arraymapping_defs = arraymapping_defs
     self.transformation = globalsettings_defs.get_globalsettings_list()['transformation']
-    self.relexpression = globalsettings_defs.get_globalsettings_list()['relexpression']
     self.offset = globalsettings_defs.get_globalsettings_list()['offset']
     self.distance = globalsettings_defs.get_globalsettings_list()['distance']
 
@@ -1020,18 +1054,20 @@ series is the simulation of the gene expression levels for that genotype.
    
     e = self.get_simulated_set(transsys_program)
     expression_set = self.transform_expression_set(e)
-    if self.relexpression == 'ratio' :
-      data = expression_set.ratioB(self.ratio_defs)
     if self.transformation == 'log' :
-      data = expression_set.get_logratio(data)
-    if self.transformation == 'log' :
-      s = expression_set.logratio_divergence_treat(e, self.distance)
+      s = expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
     else :
-      s = expression_set.divergence(e, self.distance)
+      s = expression_set.divergence_treat(e, self.distance)
     return ModelFitnessResult(s)
 
 
   def transform_expression_set(self, expression_set) :
+    """ Transform ExpressionSet 
+@param expression_set: expression_set
+@type expression_set: L{ExpressionSet}
+@return: expression_set
+@rtype: L{ExpressionSet}
+"""
     if expression_set == None :
       raise StandardError, 'Expression set is %s' %expression_set
     expression_set.expression_data.shift_to_stddev(self.offset)
@@ -1046,8 +1082,8 @@ series is the simulation of the gene expression levels for that genotype.
     self.expression_set = expression_set
     if self.expression_set == None :
       raise StandardError, 'None expression set %s' %self.expression_set
-    self.validate_spec_array()
-    self.validate_spec_mapping()
+    self.validate_spec_simexpression()
+    self.validate_spec_genemapping()
     self.expression_set = self.transform_expression_set(expression_set)
 
 
@@ -1060,17 +1096,17 @@ series is the simulation of the gene expression levels for that genotype.
 """
 
     e = self.createTemplate()
-    for array in self.array_defs :
+    for array in self.simexpression_defs :
       tp = copy.deepcopy(transsys_program)
       ti = transsys.TranssysInstance(tp)
-      e.add_array(array.get_array_name())
+      e.add_array(array.get_simexpression_name())
       for instruction in array.get_object_list() :
         if instruction.magic == "knockout" or instruction.magic == "overexpress":
           tp = instruction.applytreatment(tp)
           ti = transsys.TranssysInstance(tp)
 	else :
           instruction.applytreatment(ti)
-      map(lambda t: e.set_expression_value(array.get_array_name(), t, ti.get_factor_concentration(t)),e.expression_data.expression_data.keys())
+      map(lambda t: e.set_expression_value(array.get_simexpression_name(), t, ti.get_factor_concentration(t)),e.expression_data.expression_data.keys())
     return e
 
    
@@ -1081,32 +1117,32 @@ series is the simulation of the gene expression levels for that genotype.
 """
     e = ExpressionSet()
     e.expression_data.array_name = []
-    for i in self.mapping_defs.get_factor_list() :
+    for i in self.genemapping_defs.get_factor_list() :
       values = []
-      for j in range(0, len(self.array_defs)) :
+      for j in range(0, len(self.simexpression_defs)) :
         values.append('None')
       e.expression_data.expression_data[i] = values
     return e
 
 
-  def validate_spec_array(self) :
-    """ Validate spec file array consistency """
-    array_name_spec = []
-    for array in self.array_defs :
-      array_name_spec.append(array.get_array_name())
+  def validate_spec_simexpression(self) :
+    """ Validate spec file simexpression consistency """
+    simexpression_name_spec = []
+    for array in self.simexpression_defs :
+      simexpression_name_spec.append(array.get_simexpression_name())
     array_name_eset = self.expression_set.expression_data.array_name
-    if (len(array_name_spec) != len(array_name_eset)) :
-      raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(array_name_spec), len(array_name_eset))
+    if (len(simexpression_name_spec) != len(array_name_eset)) :
+      raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(simexpression_name_spec), len(array_name_eset))
 
-    for name in array_name_spec :
+    for name in simexpression_name_spec :
       if name not in array_name_eset :
         raise StandardError, 'Array %s in spec is not present in eset' %name
 
   
-  def validate_spec_mapping(self) :
-    """ Validate spec file mapping consistency """
+  def validate_spec_genemapping(self) :
+    """ Validate spec file genemapping consistency """
 
-    gene_name_spec = self.mapping_defs.get_factor_list()
+    gene_name_spec = self.genemapping_defs.get_factor_list()
     if (len(gene_name_spec) != len(self.expression_set.expression_data.get_gene_name())) :
       raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name()))
 
@@ -1254,8 +1290,8 @@ class GlobalSettings(object) :
     return(self.globalsettings_list)
 
 
-class Mapping(object) :
-  """  Object Mapping """
+class GeneMapping(object) :
+  """  Object GeneMapping """
 
 
   def __init__(self, factor_list):
@@ -1294,24 +1330,24 @@ class Procedure(object) :
 
 
 
-class Array(object) :
-  """ Object Array """
+class SimExpression(object) :
+  """ Object SimExpression """
 
 
-  def __init__(self, array_name, instruction_list ) :
+  def __init__(self, simexpression_name, instruction_list ) :
     """ Constructor
-@param array_name: array name
-@type array_name: C{String}
+@param simexpression_name: simexpression name
+@type simexpression_name: C{String}
 @param instruction_list: instruction list
 @type instruction_list: Array[]
 """  
-    self.array_name = array_name
+    self.simexpression_name = simexpression_name
     self.instruction_list = instruction_list
     self.object_list = []
 
 
-  def get_array_name(self) :
-   return(self.array_name)
+  def get_simexpression_name(self) :
+   return(self.simexpression_name)
 
   
   def get_instruction_list(self) :
@@ -1322,20 +1358,26 @@ class Array(object) :
     return(self.object_list)
 
 
-class RatioDefs(object) :
-  """ object RatioDefs """
+class ArrayMapping(object) :
+  """ object ArrayMapping """
 
 
-  def __init__(self, perturbation, reference) :
+  def __init__(self, array_name, perturbation, reference) :
     """Constructor
+@param array_name: array_name
+@type array_name: C{String}
 @param perturbation: array perturbation
 @type perturbation: C{String}
 @param reference: array reference
 @type reference: C{String}
 """
+    self.array_name = array_name
     self.perturbation = perturbation
     self.reference = reference
 
+
+  def get_array_name(self) :
+    return(self.array_name)
 
   def get_perturbation(self) :
     return(self.perturbation)
@@ -1353,7 +1395,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['globalsettingdefs', 'endglobalsettingdefs', 'mappingdefs', 'endmappingdefs', 'procedure', 'endprocedure','array','endarray', 'ratiodefs', 'endratiodefs', 'endspec']
+    self.keywords = ['globalsettingdefs', 'endglobalsettingdefs', 'genemapping', 'endgenemapping', 'procedure', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -1482,123 +1524,114 @@ class EmpiricalObjectiveFunctionParser(object) :
       raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
     return v
 
-##Ratio
+##ArrayMapping
   
-  def parse_ratio_header(self) :
-    """ Parse ratiodefs header
-@return: ratiodefs header
+  def parse_arraymapping_header(self) :
+    """ Parse arraymapping header
+@return: arraymapping header
 @rtype: C{String}
 """
-    self.expect_token('ratiodefs')
+    self.expect_token('arraymapping')
 
 
-  def parse_ratio_footer(self):
-    """ Parse ratiodefs footer
+  def parse_arraymapping_footer(self):
+    """ Parse arraymapping footer
 @return: Footer
 @rtype: C{String}
 """
     return(self.scanner.lookahead())
 
 
-  def parse_ratio_bodi(self):
-    """ Parse ratiodefs body
-@return: ratiodefs dictionary
+  def parse_arraymapping_body(self):
+    """ Parse arraymapping body
+@return: arraymapping dictionary
 @rtype: dictionary{}
 """
-    ratiodefs_dict = {}
-    while self.scanner.lookahead() != 'endratiodefs' :
-      m = self.expect_token('identifier')
-      self.expect_token(':')
+    arraymapping_dict = []
+    reference = None
+    while self.scanner.lookahead() != 'endarraymapping' :
       self.expect_token('identifier')
-      d = self.expect_token(['identifier', 'realvalue'])
-      ratiodefs_dict[m] = d
-    return(ratiodefs_dict)
-
-
-  def parse_ratio_body(self):
-    """ Parse ratiodefs body
-@return: ratiodefs dictionary
-@rtype: dictionary{}
-"""
-    ratiodefs_dict = []
-    while self.scanner.lookahead() != 'endratiodefs' :
+      array_name = self.expect_token('identifier')
+      self.expect_token(':')
       perturbation = self.expect_token('identifier')
-      self.expect_token(':')
-      self.expect_token('identifier')
-      reference = self.expect_token(['identifier', 'realvalue'])
-      ratiodefs_dict.append(RatioDefs(perturbation, reference))
-    return(ratiodefs_dict)
+      if self.scanner.lookahead() == '/' :
+        self.expect_token('/') 
+        reference = self.expect_token('identifier')
+      else :
+        reference = None
+      arraymapping_dict.append(ArrayMapping(array_name, perturbation, reference))
+    return(arraymapping_dict)
 
 
-  def parse_ratio_def(self) :
-    """Parse ratio defs object
-@return: RatioDefs object
-@rtype: L{RatioDefs}
+  def parse_arraymapping_def(self) :
+    """Parse arraymappingo defs object
+@return: ArrayMapping object
+@rtype: L{ArrayMapping}
 """
-    self.parse_ratio_header()
-    ratiodefs_list = self.parse_ratio_body()
-    self.parse_ratio_footer()
-    return ratiodefs_list 
+    self.parse_arraymapping_header()
+    arraymapping_list = self.parse_arraymapping_body()
+    self.parse_arraymapping_footer()
+    return arraymapping_list 
 
 
-  def parse_ratio_defs(self) :
-    """ Parse objective function ratio defs"""
-    if self.scanner.lookahead() == 'ratiodefs' :
-      ratio_defs = self.parse_ratio_def()
-      self.expect_token('endratiodefs')
+  def parse_arraymapping_defs(self) :
+    """ Parse objective function arraymapping defs"""
+    if self.scanner.lookahead() == 'arraymapping' :
+      arraymapping_defs = self.parse_arraymapping_def()
+      self.expect_token('endarraymapping')
       self.expect_token('\n')
-    return ratio_defs
+    return arraymapping_defs
 
-## Array
+##SimExpression
 
-  def parse_array_header(self) :
-    """Parse array header
+  def parse_simexpression_header(self) :
+    """Parse simexpression header
 @return: v
 @rtype: string
 """
-    self.expect_token('array')
-    array_name = self.expect_token('identifier')
-    return array_name
+    self.expect_token('simexpression')
+    simexpression_name = self.expect_token('identifier')
+    return simexpression_name
 
 
-  def parse_array_footer(self) :
-    """ Parse array footer
+  def parse_simexpression_footer(self) :
+    """ Parse simexpression footer
 @return: Footer
 @rtype: C{String}
 """
     return(self.scanner.lookahead())
 
 
-  def parse_array_body(self) :
+  def parse_simexpression_body(self) :
     """Comment
-@return: procedure array
+@return: procedure simexpression
 @rtype: array[]
 """
     procedure = []
-    while self.scanner.lookahead() != 'endarray' :
+    while self.scanner.lookahead() != 'endsimexpression' :
       procedure.append(self.expect_token('identifier'))
     return(procedure)
 
 
-  def parse_array_def(self) :
-    """Parser array 
+  def parse_simexpression_def(self) :
+    """Parser simexpression
 @return: Object
-@rtype: L{Array}
+@rtype: L{SimExpression}
 """
-    array_name = self.parse_array_header()
-    instruction_list = self.parse_array_body()
-    self.parse_array_footer()
-    return Array(array_name, instruction_list)
+    simexpression_name = self.parse_simexpression_header()
+    instruction_list = self.parse_simexpression_body()
+    self.parse_simexpression_footer()
+    return SimExpression(simexpression_name, instruction_list)
 
 
-  def parse_array_defs(self) :
-    """ Parse array blocks """
-    array_list = []
-    while self.scanner.lookahead() == 'array' :
-      array_list.append(self.parse_array_def())
-      self.expect_token('endarray')
+  def parse_simexpression_defs(self) :
+    """ Parse simexpression blocks """
+    simexpression_list = []
+    while self.scanner.lookahead() == 'simexpression' :
+      simexpression_list.append(self.parse_simexpression_def())
+      self.expect_token('endsimexpression')
       self.expect_token('\n')
-    return array_list
+    return simexpression_list
 
 
 ### Procedure
@@ -1727,49 +1760,49 @@ class EmpiricalObjectiveFunctionParser(object) :
     return procedure_list
 
 
-### Mapping
+### GeneMapping
 
 
-  def parse_mapping_header(self) :
-    """ Parse mapping header
-@return: mapping header
+  def parse_genemapping_header(self) :
+    """ Parse genemapping header
+@return: genemapping header
 @rtype: C{String}
 """
-    self.expect_token('mappingdefs')
+    self.expect_token('genemapping')
 
 
-  def parse_mapping_footer(self):
-    """ Parse mapping footer
+  def parse_genemapping_footer(self):
+    """ Parse genemapping footer
 @return: Footer
 @rtype: C{String}
 """
     return(self.scanner.lookahead())
  
 
-  def parse_mapping_body(self):
-    """ Parse mapping body
-@return: mapping dictionary
+  def parse_genemapping_body(self):
+    """ Parse genemapping body
+@return: genemapping dictionary
 @rtype: dictionary{}
 """
-    mapping_dict = {}
-    while self.scanner.lookahead() != 'endmappingdefs' :
+    genemapping_dict = {}
+    while self.scanner.lookahead() != 'endgenemapping' :
       m = self.expect_token('identifier')
       self.expect_token('=')
       d = self.expect_token(['identifier', 'realvalue'])
-      mapping_dict[m] = d
-    return(mapping_dict)
+      genemapping_dict[m] = d
+    return(genemapping_dict)
 
 
-  def parse_mapping(self) :
-    """ Parse objective function mapping """
+  def parse_genemapping(self) :
+    """ Parse objective function genemapping """
      
-    if self.scanner.lookahead() == 'mappingdefs' :
-      self.parse_mapping_header()
-      mapping_list = self.parse_mapping_body()
-      self.parse_mapping_footer()
-      self.expect_token('endmappingdefs')
+    if self.scanner.lookahead() == 'genemapping' :
+      self.parse_genemapping_header()
+      genemapping_list = self.parse_genemapping_body()
+      self.parse_genemapping_footer()
+      self.expect_token('endgenemapping')
       self.expect_token('\n')
-    return Mapping(mapping_list) 
+    return GeneMapping(genemapping_list) 
 
 
 ### Global settings 
@@ -1875,27 +1908,27 @@ class EmpiricalObjectiveFunctionParser(object) :
     return GlobalSettings(globalsettings_list) 
 
 
-  def resolve_spec(self, globalsettings, mapping, procedure_defs, array_defs, ratio_defs) :
+  def resolve_spec(self, globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs) :
     """ Resolve spec """
-    self.resolve_spec_array(array_defs, procedure_defs)
-    self.resolve_spec_ratiodefs(array_defs, ratio_defs)
+    self.resolve_spec_simexpression(simexpression_defs, procedure_defs)
+    self.resolve_spec_arraymapping(simexpression_defs, arraymapping_defs)
 
 
-  def resolve_spec_array(self, array_defs, procedure_defs) :
+  def resolve_spec_simexpression(self, simexpression_defs, procedure_defs) :
     """ Validate transformation definition
-@param array_defs: array_defs
-@type array_defs: L{Array}
-@param procedure_defs: ratio defs
-@type procedure_defs: L{RatioDefs}
+@param simexpression_defs: simexpression_defs
+@type simexpression_defs: L{SimExpression}
+@param procedure_defs: procedure defs
+@type procedure_defs: L{Procedure}
 """
     procedure_name_list = []
     for procedure in procedure_defs :
       procedure_name_list.append(procedure.get_procedure_name()) 
 
-    for array in array_defs :
-      for instruction in array.get_instruction_list() :
+    for simexpression in simexpression_defs :
+      for instruction in simexpression.get_instruction_list() :
         if instruction in procedure_name_list :
-	  array.object_list.append(self.search_procedure(instruction, procedure_defs))
+	  simexpression.object_list.append(self.search_procedure(instruction, procedure_defs))
 	else :
 	  raise StandardError, 'Unrecognisable instruction %s' %instruction
 
@@ -1913,22 +1946,22 @@ class EmpiricalObjectiveFunctionParser(object) :
     return procedure.get_instruction_list()[0]
 
 
-  def resolve_spec_ratiodefs(self, array_defs, ratio_defs) :
+  def resolve_spec_arraymapping(self, simexpression_defs, arraymapping_defs) :
     """ Validate transformation definition
-@param ratio_defs: ratio defs
-@type ratio_defs: L{RatioDefs}
-@param array_defs: array_defs
-@type array_defs: L{Array}
+@param arraymapping_defs: arraymapping defs
+@type arraymapping_defs: L{ArrayMapping}
+@param simexpression_defs: smexpression_defs
+@type simexpression_defs: L{SimExpression}
 """
     a = []
-    for i in array_defs :
-      a.append(i.get_array_name())
+    for i in simexpression_defs :
+      a.append(i.get_simexpression_name())
 
-    for ratio in ratio_defs :
-     if ratio.get_perturbation() == ratio.get_reference() :
-       raise StandardError, "%s and %s are the same"%(ratio.get_perturbation(), ratio.get_reference())
-     if ratio.get_perturbation() not in a or ratio.get_reference() not in a:
-       raise StandardError, "Either %s or %s might not be declared in array session" %(ratio.get_perturbation(), ratio.get_reference())
+    for arraymapping in arraymapping_defs :
+     if arraymapping.get_perturbation() == arraymapping.get_reference() :
+       raise StandardError, "%s and %s are the same"%(arraymapping.get_perturbation(), arraymapping.get_reference())
+     if arraymapping.get_perturbation() not in a or arraymapping.get_reference() not in a and arraymapping.get_reference() != None:
+       raise StandardError, "Either %s or %s might not be declared in simexpression session" %(arraymapping.get_perturbation(), arraymapping.get_reference())
 
 
   def parse_knockout_treatment_objectivespec(self) :
@@ -1937,12 +1970,12 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{KnockoutTreatmentObjective}
 """
     globalsettings = self.parse_globalsettings()
-    mapping = self.parse_mapping()
+    genemapping = self.parse_genemapping()
     procedure_defs = self.parse_procedure_defs()
-    array_defs = self.parse_array_defs()
-    ratio_defs = self.parse_ratio_defs()
-    self.resolve_spec(globalsettings, mapping, procedure_defs, array_defs, ratio_defs)
-    return KnockoutTreatmentObjective(globalsettings, mapping, procedure_defs, array_defs, ratio_defs)
+    simexpression_defs = self.parse_simexpression_defs()
+    arraymapping_defs = self.parse_arraymapping_defs()
+    self.resolve_spec(globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
+    return KnockoutTreatmentObjective(globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
 
 
   def parse_objectivespec(self) :

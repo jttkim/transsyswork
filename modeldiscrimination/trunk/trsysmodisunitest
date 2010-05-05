@@ -60,7 +60,7 @@ class TestSequenceFunctions(unittest.TestCase):
     self.get_data(1)
     self.modelkt = open('test_targettopology.tra', 'r')
     # sys.stderr.write('objectivefunctionparser\n')
-    e = open('test_target_expr.txt', 'r')
+    e = open('toy_target_expr.txt', 'r')
     expression_set = trsysmodis.ExpressionSet()
     expression_set.read(e, None, None)
     o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
@@ -86,7 +86,7 @@ class TestSequenceFunctions(unittest.TestCase):
     if type is None :
       os.system('python transsyswritesimset -s 2 -e 100 -N 0.0 test_target.tra test_target')
     else :
-      os.system('python transsyswritesimsetOF -o modeldisdummy.txt -s 2 -e 100 -N 0.0 test_target.tra test_target')
+      os.system('python transsyswritesimsetOF -o modeldisdummy.txt -s 2 -e 100 -N 0.0 test_target.tra toy_target')
   
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
