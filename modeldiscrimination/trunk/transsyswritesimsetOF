@@ -53,17 +53,15 @@ def get_feature_data() :
   return f
 
 
-equilibration_length = 100
-spec = 'modeldisdummy.txt' 
+spec = None
 rndseed = 1
 noise = 0.0
 
-optlist, args = getopt.getopt(sys.argv[1:], 's:e:o:N:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 's:o:N:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
     print '-s <int>: Random seed'
-    print '-e <int>: Equilibration length'
     print '-N <int>: Noise'
     print '-o <str>: specify spec file'
     print '-h: print this help and exit'

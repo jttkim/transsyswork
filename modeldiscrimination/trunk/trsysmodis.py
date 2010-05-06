@@ -15,6 +15,7 @@ import transsys.utils
 import string
 import types
 import Numeric
+import StringIO
 
 
 class ExpressionData(object) :
@@ -130,9 +131,9 @@ expression levels across the data set.
     profile2 = {}
     profile = self.get_profile(factor_name)
     for array in arraymapping :
-      perturbation = array.get_perturbation()
-      reference = array.get_reference()
-      if reference is not None :
+      perturbation = array.get_resolve_perturbation().get_simexpression_name()
+      if array.get_resolve_reference() is not None :
+        reference = array.get_resolve_reference().get_simexpression_name()
 	value =  profile[perturbation] / profile[reference]
       else :
 	value =  profile[perturbation]
@@ -838,7 +839,7 @@ class SimulationTimeSteps(SimulationRuleObjective) :
     self.time_steps = time_steps
 
 
-  def applytreatment(self, transsys_instance) :
+  def applytreatment(self, transsys_instance, factor_names, file) :
     """Equilibrate and output gene expression
 @param transsys_instance: transsys instance
 @type transsys_instance: Instace
@@ -847,6 +848,10 @@ class SimulationTimeSteps(SimulationRuleObjective) :
 """
     ts = transsys_instance.time_series(int(self.time_steps))
     ti_wt = ts[-1]
+    for ti in ts :
+      for factor in factor_names :
+        file.write("%02f\t" %ti.get_factor_concentration(factor))
+      file.write("\n")
     return ti_wt
 
 
@@ -873,11 +878,11 @@ class SimulationOverexpression(SimulationRuleObjective) :
 @param transsys_program: transsys program
 @type transsys_program: Object{transsys_program}
 """
-    knockout_tp = copy.deepcopy(transsys_program)
-    i = knockout_tp.find_gene_index(self.gene_name)
-    knockout_tp.gene_list.append(transsys.Gene('dummy', knockout_tp.gene_list[i].product_name(), [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
-    knockout_tp = transsys.TranssysProgram(knockout_tp.name, knockout_tp.factor_list, knockout_tp.gene_list)
-    return knockout_tp
+    tp = copy.deepcopy(transsys_program)
+    i = tp.find_gene_index(self.gene_name)
+    tp.gene_list.append(transsys.Gene('dummy', tp.gene_list[i].product_name(), [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
+    tp = transsys.TranssysProgram(tp.name, tp.factor_list, tp.gene_list)
+    return tp
 
 
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
@@ -1044,6 +1049,7 @@ series is the simulation of the gene expression levels for that genotype.
     self.transformation = globalsettings_defs.get_globalsettings_list()['transformation']
     self.offset = globalsettings_defs.get_globalsettings_list()['offset']
     self.distance = globalsettings_defs.get_globalsettings_list()['distance']
+    self.file = StringIO.StringIO('Hello')
 
 
   def __call__(self, transsys_program) :
@@ -1053,11 +1059,11 @@ series is the simulation of the gene expression levels for that genotype.
 """
    
     e = self.get_simulated_set(transsys_program)
-    expression_set = self.transform_expression_set(e)
+    e = self.transform_expression_set(e)
     if self.transformation == 'log' :
-      s = expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
+      s = self.expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
     else :
-      s = expression_set.divergence_treat(e, self.distance)
+      s = self.eexpression_set.divergence_treat(e, self.distance)
     return ModelFitnessResult(s)
 
 
@@ -1084,7 +1090,7 @@ series is the simulation of the gene expression levels for that genotype.
       raise StandardError, 'None expression set %s' %self.expression_set
     self.validate_spec_simexpression()
     self.validate_spec_genemapping()
-    self.expression_set = self.transform_expression_set(expression_set)
+    self.expression_set = self.transform_expression_set(self.expression_set)
 
 
   def get_simulated_set(self, transsys_program) :
@@ -1094,22 +1100,39 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: object
 """
+    self.debug_interface(transsys_program)
 
     e = self.createTemplate()
     for array in self.simexpression_defs :
       tp = copy.deepcopy(transsys_program)
       ti = transsys.TranssysInstance(tp)
       e.add_array(array.get_simexpression_name())
-      for instruction in array.get_object_list() :
+      for instruction in array.get_resolve_instruction_list() :
         if instruction.magic == "knockout" or instruction.magic == "overexpress":
           tp = instruction.applytreatment(tp)
           ti = transsys.TranssysInstance(tp)
-	else :
+	elif instruction.magic == "treatment" :
           instruction.applytreatment(ti)
+	else :
+          ti = instruction.applytreatment(ti, transsys_program.factor_names(), self.file)
       map(lambda t: e.set_expression_value(array.get_simexpression_name(), t, ti.get_factor_concentration(t)),e.expression_data.expression_data.keys())
     return e
 
-   
+
+  def debug_interface(self, transsys_program) :
+    """Debug interface 
+@param transsys_program: transsys program
+@rtype transsys_program: transsys program
+"""
+    for factor in transsys_program.factor_list :
+      self.file.write("%s\t" %factor.name)
+    self.file.write("\n")
+
+
+  def get_debug_file(self) :
+    return self.file
+
+
   def createTemplate(self) :
     """ Create expression set according to spec file 
 @return: Expression set
@@ -1334,7 +1357,7 @@ class SimExpression(object) :
   """ Object SimExpression """
 
 
-  def __init__(self, simexpression_name, instruction_list ) :
+  def __init__(self, simexpression_name, unresolve_instruction_list ) :
     """ Constructor
 @param simexpression_name: simexpression name
 @type simexpression_name: C{String}
@@ -1342,49 +1365,64 @@ class SimExpression(object) :
 @type instruction_list: Array[]
 """  
     self.simexpression_name = simexpression_name
-    self.instruction_list = instruction_list
-    self.object_list = []
+    self.unresolve_instruction_list = unresolve_instruction_list
+    self.resolve_instruction_list = []
 
 
   def get_simexpression_name(self) :
    return(self.simexpression_name)
 
   
-  def get_instruction_list(self) :
-    return(self.instruction_list)
+  def get_unresolve_instruction_list(self) :
+    return(self.unresolve_instruction_list)
 
 
-  def get_object_list(self) :
-    return(self.object_list)
+  def get_resolve_instruction_list(self) :
+    return(self.resolve_instruction_list)
 
 
 class ArrayMapping(object) :
   """ object ArrayMapping """
 
 
-  def __init__(self, array_name, perturbation, reference) :
+  def __init__(self, array_name, unresolve_perturbation, unresolve_reference) :
     """Constructor
 @param array_name: array_name
 @type array_name: C{String}
-@param perturbation: array perturbation
-@type perturbation: C{String}
-@param reference: array reference
-@type reference: C{String}
+@param unresolve_perturbation: array unresolve_perturbation
+@type unresolve_perturbation: C{String}
+@param unresolve_reference: array unresolve_reference
+@type unresolve_reference: C{String}
+@ivar resolve_perturbation: resolve perturbation
+@itype resolve_perturbation: L{SimExpression}
+@ivar resolve_reference: resolve reference
+@itype resolve_reference: L{SimExpression}
 """
     self.array_name = array_name
-    self.perturbation = perturbation
-    self.reference = reference
+    self.unresolve_perturbation = unresolve_perturbation
+    self.unresolve_reference = unresolve_reference
+    self.resolve_perturbation = None
+    self.resolve_reference = None
 
 
   def get_array_name(self) :
     return(self.array_name)
 
-  def get_perturbation(self) :
-    return(self.perturbation)
+
+  def get_unresolve_perturbation(self) :
+    return(self.unresolve_perturbation)
 
 
-  def get_reference(self) :
-    return(self.reference)
+  def get_unresolve_reference(self) :
+    return(self.unresolve_reference)
+
+
+  def get_resolve_perturbation(self) :
+    return(self.resolve_perturbation)
+
+
+  def get_resolve_reference(self) :
+    return(self.resolve_reference)
 
 
 class Scanner(object) :
@@ -1553,13 +1591,13 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.expect_token('identifier')
       array_name = self.expect_token('identifier')
       self.expect_token(':')
-      perturbation = self.expect_token('identifier')
+      unresolve_perturbation = self.expect_token('identifier')
       if self.scanner.lookahead() == '/' :
         self.expect_token('/') 
-        reference = self.expect_token('identifier')
+        unresolve_reference = self.expect_token('identifier')
       else :
-        reference = None
-      arraymapping_dict.append(ArrayMapping(array_name, perturbation, reference))
+        unresolve_reference = None
+      arraymapping_dict.append(ArrayMapping(array_name, unresolve_perturbation, unresolve_reference))
     return(arraymapping_dict)
 
 
@@ -1619,9 +1657,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{SimExpression}
 """
     simexpression_name = self.parse_simexpression_header()
-    instruction_list = self.parse_simexpression_body()
+    unresolve_instruction_list = self.parse_simexpression_body()
     self.parse_simexpression_footer()
-    return SimExpression(simexpression_name, instruction_list)
+    return SimExpression(simexpression_name, unresolve_instruction_list)
 
 
   def parse_simexpression_defs(self) :
@@ -1926,9 +1964,9 @@ class EmpiricalObjectiveFunctionParser(object) :
       procedure_name_list.append(procedure.get_procedure_name()) 
 
     for simexpression in simexpression_defs :
-      for instruction in simexpression.get_instruction_list() :
+      for instruction in simexpression.get_unresolve_instruction_list() :
         if instruction in procedure_name_list :
-	  simexpression.object_list.append(self.search_procedure(instruction, procedure_defs))
+	  simexpression.resolve_instruction_list.append(self.search_procedure(instruction, procedure_defs))
 	else :
 	  raise StandardError, 'Unrecognisable instruction %s' %instruction
 
@@ -1938,7 +1976,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param procedure_name: procedure name
 @type procedure_name: C{String}
 @return: object
-@rtype: Array[]
+@rtype: C{Array}
 """
     for procedure in procedure_defs :
       if procedure.get_procedure_name() == procedure_name :
@@ -1957,20 +1995,25 @@ class EmpiricalObjectiveFunctionParser(object) :
     for i in simexpression_defs :
       a.append(i.get_simexpression_name())
 
-    
     for arraymapping in arraymapping_defs :
-      if arraymapping.get_perturbation() not in a or arraymapping.get_reference() not in a and arraymapping.get_reference() != None:
-        raise StandardError, "Either %s or %s might not be declared in simexpression session" %(arraymapping.get_perturbation(), arraymapping.get_reference())
-      arraymapping.perturbation = self.search_simexpression(arraymapping.get_perturbation, simexpression_defs)
-      if 
-
-        arraymapping.perturbation = self.search_simexpression(arraymapping.get_perturbation, simexpression_defs) 
-      print arraymapping.perturbation
-      sys.exit()
+      if arraymapping.get_unresolve_perturbation() not in a :
+        raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_perturbation()
+      if arraymapping.get_unresolve_reference() not in a and arraymapping.get_unresolve_reference() != None :
+        raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_reference()
+      arraymapping.resolve_perturbation = self.search_simexpression(arraymapping.get_unresolve_perturbation(), simexpression_defs)
+      if arraymapping.get_unresolve_reference() != None: 
+        arraymapping.resolve_reference = self.search_simexpression(arraymapping.get_unresolve_reference(), simexpression_defs)
 
 
   def search_simexpression(self, array_name, simexpression_defs) :
-    """ Search array """
+    """ Search array 
+@param array_name: array name
+@type array_name: C{String}
+@param simexpression_defs: simexpression
+@type simexpression_defs: L{SimExpression}
+@return: array
+@rtype: C{Array}
+"""
     for array in simexpression_defs :
       if array.get_simexpression_name() == array_name :
         break
