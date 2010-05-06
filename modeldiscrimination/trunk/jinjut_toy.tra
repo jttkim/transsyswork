@@ -1,0 +1,207 @@
+transsys jinjut_toy
+{
+  factor dummy
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor nonfunc
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor COI1
+  {
+    decay: 0.5;
+    diffusibility: 0.0;
+  }
+
+  factor jasmonate
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor JIN1
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor JUT
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  // regulator of target genes independently of JIN1 or JUT
+  factor r_other
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor f_jin1
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor f_jut
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor f_jin1jut
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor f_other
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor JAZ
+  {
+    // accelerated decay in presence of COI1 and jasmonate
+    decay: 0.1 + 0.3 * COI1 * jasmonate;
+    diffusibility: 0.0;
+  }
+
+  gene coi1_gene
+  {
+    promoter
+    {
+      constitutive: 1.0;
+    }
+    product
+    {
+      default: COI1;
+      // default: nonfunc;
+    }
+  }
+
+  gene jaz_gene
+  {
+    promoter
+    {
+      constitutive: 0.1;
+      JIN1: activate(0.1, 1.0);
+    }
+    product
+    {
+      default: JAZ;
+    }
+  }
+
+  gene at1g32640_gene
+  {
+    promoter
+    {
+      constitutive: 0.1;
+      JIN1: activate(0.1, 1.0 * (JAZ < 6));
+    }
+    product
+    {
+      default: JIN1;
+    }
+  }
+
+  gene at2g46510_gene
+  {
+    promoter
+    {
+      // what are the presumed regulatory mechanisms of the jut gene?
+      constitutive: 0.1;
+      JIN1: activate(0.1, 1.0 * (JAZ < 6));
+    }
+    product
+    {
+      default: JUT;
+    }
+  }
+
+  // dummy reporter gene
+  gene dummy_gene
+  {
+    promoter
+    {
+      JIN1: activate(0.1, 1.0 * (JAZ < 6));
+    }
+    product
+    {
+      default: dummy;
+    }
+  }
+
+  gene gr_other
+  {
+    promoter
+    {
+      COI1: activate(0.1, 1.0 * jasmonate);
+    }
+    product
+    {
+      default: r_other;
+    }
+  }
+
+  gene g_jin1
+  {
+    promoter
+    {
+      constitutive: -0.3;
+      JIN1: activate(10.0, 1.0);
+    }
+    product
+    {
+      default: f_jin1;
+    }
+  }
+
+  gene g_jut
+  {
+    promoter
+    {
+      constitutive: -0.3;
+      JUT: activate(10.0, 1.0);
+    }
+    product
+    {
+      default: f_jut;
+    }
+  }
+
+  gene g_jin1jut
+  {
+    promoter
+    {
+      constitutive: -0.3;
+      JIN1 + JUT: activate(10.0, 1.0);
+    }
+    product
+    {
+      default: f_jin1jut;
+    }
+  }
+
+  gene g_other
+  {
+    promoter
+    {
+      constitutive: -0.3;
+      r_other: activate(10.0, 1.0);
+    }
+    product
+    {
+      default: f_other;
+    }
+  }
+}
+
