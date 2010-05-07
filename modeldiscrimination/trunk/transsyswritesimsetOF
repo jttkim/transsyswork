@@ -85,6 +85,7 @@ else :
   infile = sys.stdin
 outfile_basename = args[1]
 
+m = open("dummy.txt", 'w')
 
 specfile = open(spec, 'r')
 o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
@@ -92,6 +93,7 @@ objective_function = o.parse_objectivespec()
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
 e = objective_function.get_simulated_set(transsys_program)
+
 
 if noise > 0.0 :
   if rndseed is not None :
