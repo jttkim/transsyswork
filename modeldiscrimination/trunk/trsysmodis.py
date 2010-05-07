@@ -31,11 +31,13 @@ class ExpressionData(object) :
     self.expression_data = {}
 
 
-  def read(self, x) :
+  def read(self, x = None) :
     """  Load gene expression data
 @param x: Input file
 @type x: C{file}
 """
+    if x is None :
+      raise StandardError, 'No file provided'
     l = x.readline()
     self.array_name = l.strip().split()
     l = x.readline()
@@ -330,27 +332,6 @@ class PhenoData(object) :
     feature_list = []
     feature_list.append(self.pheno_data[array_name])
     return feature_list
-
-
-class ExpressionValue(object) :
-
-  def __init__(self, factor, array, value) :
-
-    self.factor = factor
-    self.array = array
-    self.value = value
-
-
-  def get_factor(self) :
-    return self.factor
-
-
-  def get_array(self) :
-    return self.array
-
-
-  def get_value(self) :
-    return self.value
 
 
 class ExpressionSet(object) :
@@ -780,7 +761,11 @@ class SimulationKnockout(SimulationRuleObjective) :
 @type gene_name: C{String}
 """
     super(SimulationKnockout, self).__init__()
-    self.gene_name = gene_name
+    if (isinstance(gene_name, types.StringType)) :
+      self.gene_name = gene_name
+    else :
+      raise StandardError, '%s is not a string' %gene_name
+    
 
 
   def applytreatment(self, transsys_program) :
@@ -807,8 +792,14 @@ class SimulationTreatment(SimulationRuleObjective) :
 @type factor_concentration: double
 """
     super(SimulationTreatment, self).__init__()
-    self.factor_name = factor_name
-    self.factor_concentration = float(factor_concentration)
+    if isinstance(factor_name, types.StringType) :
+      self.factor_name = factor_name
+    else :
+      raise StandardError, '%s is not a string' %factor_name
+    if isinstance(factor_concentration, types.FloatType) :
+      self.factor_concentration = float(factor_concentration)
+    else :
+      raise StandardError, '%s is not a numeric expression' %factor_concentration
 
 
   def applytreatment(self, transsys_instance) :
@@ -836,7 +827,10 @@ class SimulationTimeSteps(SimulationRuleObjective) :
 @type time_steps: Int
 """
     super(SimulationTimeSteps, self).__init__()
-    self.time_steps = time_steps
+    if isinstance(time_steps, types.FloatType) :
+      self.time_steps = time_steps
+    else :
+      raise StandardError, '%s is not a numeric expression' %time_steps
 
 
   def applytreatment(self, transsys_instance, factor_names, file) :
@@ -869,8 +863,14 @@ class SimulationOverexpression(SimulationRuleObjective) :
 @type constitute_value: c{float}
 """
     super(SimulationOverexpression, self).__init__()
-    self.gene_name = gene_name
-    self.constitute_value = float(constitute_value)
+    if isinstance(gene_name, types.StringType) :
+      self.gene_name = gene_name
+    else :
+      raise StandardError, '%s is not a string' %gene_name
+    if isinstance(constitute_value, types.FloatType) :
+      self.constitute_value = float(constitute_value)
+    else :
+      raise StandardError, '%s is not a numeric expression' %constitute_value
 
 
   def applytreatment(self, transsys_program) :
@@ -1547,7 +1547,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param f: Spec file
 @type f: file
 """
-    self.scanner = Scanner(f)
+    if isinstance(f, types.FileType) :
+      self.scanner = Scanner(f)
+    else :
+      raise StandardError, '%s is not a file' %f
 
 
   def expect_token(self, expected_token) :

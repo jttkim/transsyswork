@@ -56,6 +56,30 @@ class TestSequenceFunctions(unittest.TestCase):
     obj = objective_function(transsys_program)
 
 
+  def test_SimulationOverexpression(self) :
+    self.assertRaises(myExcTwo, trsysmodis.SimulationOverexpression(1.0, 'g0000'))
+
+  
+  def test_SimulationKnockOut(self) :
+    self.assertRaises(myExcTwo, trsysmodis.SimulationKnockout(1.0))
+
+
+  def test_SimulationTreatment(self) :
+    self.assertRaises(myExcTwo, trsysmodis.SimulationTreatment(1.0, 'g0000'))
+
+
+  def test_SimulationTimeSteps(self) :
+    self.assertRaises(myExcTwo, trsysmodis.SimulationTimeSteps())
+
+
+  def test_read_data(self) :
+    o = trsysmodis.ExpressionData()
+    self.assertRaises(myExcTwo, o.read())
+
+  def test_read_specparser(self) :
+    self.asserrtRaises(myExcTwo, trsysmodis.EmpiricalObjectiveFunctionParser())
+
+
   def test_objectivefunctionparser(self) :
     self.get_data(1)
     self.modelkt = open('test_targettopology.tra', 'r')
@@ -84,9 +108,13 @@ class TestSequenceFunctions(unittest.TestCase):
     os.system('python transsysreparam -T transformerfile.dat -s 1 -p 1 -n test test_targettopology.tra')
     os.system('mv test01.tra test_target.tra')
     if type is None :
-      os.system('python transsyswritesimset -s 2 -e 100 -N 0.0 test_target.tra test_target')
+      os.system('python transsyswritesimset -s 2 -N 0.0 -e 100 test_target.tra test_target')
     else :
-      os.system('python transsyswritesimsetOF -o modeldisdummy.txt -s 2 -e 100 -N 0.0 test_target.tra toy_target')
+      os.system('python transsyswritesimsetOF -o modeldisdummy.txt -s 2 -N 0.0 test_target.tra toy_target')
+  
+
+class myExcTwo(Exception):
+   "exception two"
   
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
