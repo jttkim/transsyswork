@@ -833,16 +833,23 @@ class SimulationTimeSteps(SimulationRuleObjective) :
       raise StandardError, '%s is not a numeric expression' %time_steps
 
 
-  def applytreatment(self, transsys_instance, factor_names, file) :
+  def applytreatment(self, transsys_instance, factor_names, file, array_name) :
     """Equilibrate and output gene expression
 @param transsys_instance: transsys instance
 @type transsys_instance: Instace
+@param factor_names: factor names
+@type factor_names: Array
+@param file: file
+@type: File{}
+@param array_name: array name
+@type array_name: array name
 @return: gene_expression
 @rtype: array
 """
     ts = transsys_instance.time_series(int(self.time_steps))
     ti_wt = ts[-1]
     for ti in ts :
+      file.write("%s\t" %array_name)
       for factor in factor_names :
         file.write("%02f\t" %ti.get_factor_concentration(factor))
       file.write("\n")
@@ -1114,7 +1121,7 @@ series is the simulation of the gene expression levels for that genotype.
 	elif instruction.magic == "treatment" :
           instruction.applytreatment(ti)
 	else :
-          ti = instruction.applytreatment(ti, transsys_program.factor_names(), self.file)
+          ti = instruction.applytreatment(ti, transsys_program.factor_names(), self.file, array.get_simexpression_name())
       map(lambda t: e.set_expression_value(array.get_simexpression_name(), t, ti.get_factor_concentration(t)),e.expression_data.expression_data.keys())
     return e
 
@@ -1124,6 +1131,7 @@ series is the simulation of the gene expression levels for that genotype.
 @param transsys_program: transsys program
 @type transsys_program: transsys program
 """
+    self.file.write("Array\t")
     for factor in transsys_program.factor_list :
       self.file.write("%s\t" %factor.name)
     self.file.write("\n")
