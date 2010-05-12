@@ -16,31 +16,31 @@ globalsettings_header ::= "globasettingdefs" NEWLINE
 globalsettings_body ::= transformation_def distancemeasure_def offset_def
 globalsettings_footer ::= "endglobalsettingdefs" NEWLINE
 
-transformation_def ::= "transformation:" WHITESPACE transformation_type NEWLINE
+transformation_def ::= "transformation:" transformation_type NEWLINE
 transformation_type ::= "log" | "none"
 
-distancemeasure_def ::= "distance:" WHITESPACE distance_type NEWLINE
+distancemeasure_def ::= "distance:" distance_type NEWLINE
 distance_type ::= "correlation" | "euclidean" | "sum_squares" 
 
-offset_def ::= "offset:" WHITESPACE realnumber
-	| "offset:" WHITESPACE realnumber "data_sd"
+offset_def ::= "offset:" realnumber
+	| "offset:" realnumber "data_sd"
 
-procedure_header ::= "procedure" WHITESPACE identifier NEWLINE 
+procedure_header ::= "procedure" identifier NEWLINE 
 procedure_body ::= (instruction)+
 
 instruction ::= procedure_identifier
 	| primary_instruction
 
-primary_instruction ::= "knockout:" WHITESPACE gene_identifier NEWLINE
-	| "runtimesteps:" WHITESPACE integer NEWLINE
-	| "treatment:" WHITESPACE factor_identifier WHITESPACE "=" WHITESPACE realnumber NEWLINE
-	| "overexpress:" WHITESPACE gene_identifier WHITESPACE "=" WHITESPACE realnumber NEWLINE 
+primary_instruction ::= "knockout:" gene_identifier NEWLINE
+	| "runtimesteps:" integer NEWLINE
+	| "treatment:" factor_identifier "=" realnumber NEWLINE
+	| "overexpress:" gene_identifier "=" realnumber NEWLINE 
 
 
 procedure_footer ::= "endprocedure" NEWLINE
 procedure_identifier ::= identifier
 
-simexpression_header ::= "simexpression" WHITESPACE identifier NEWLINE
+simexpression_header ::= "simexpression" identifier NEWLINE
 simexpression_body ::= (identifier NEWLINE)+
 simexpression_footer ::= "endsimexpression" NEWLINE
 
@@ -57,7 +57,7 @@ arraymapping_spec ::= "array" identifier ":" identifier ( "/" identifier)? NEWLI
 arraymapping_footer ::= "endarraymapping" NEWLINE
 
 
-factor_def ::= factor_identifier WHITESPACE "=" WHITESPACE gene_manufacturer_identifier NEWLINE
+factor_def ::= 'factor' factor_identifier "=" (gene_manufacturer_identifier)* NEWLINE
 gene_identifier ::= identifier
 factor_identifier ::= identifier
 gene_manufacturer_identifier ::= identifier

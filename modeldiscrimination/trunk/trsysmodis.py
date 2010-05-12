@@ -1433,7 +1433,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['globalsettingdefs', 'endglobalsettingdefs', 'genemapping', 'endgenemapping', 'procedure', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
+    self.keywords = ['factor', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'genemapping', 'endgenemapping', 'procedure', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -1506,7 +1506,6 @@ class Scanner(object) :
 
 
   def get_lines(self) :
-    # obsolete?
     """Comment"""
     if self.next_token[0] == 'identifier' :
       l = self.next_token[1]
@@ -1591,7 +1590,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     arraymapping_dict = []
     reference = None
     while self.scanner.lookahead() != 'endarraymapping' :
-      self.expect_token('identifier')
+      self.expect_token('array')
       array_name = self.expect_token('identifier')
       self.expect_token(':')
       unresolve_perturbation = self.expect_token('identifier')
@@ -1616,7 +1615,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_arraymapping_defs(self) :
-    """ Parse objective function arraymapping defs"""
+    """ Parse objective function arraymapping defs
+@return: arraymapping_defs
+@rtype: dict{}
+"""
     if self.scanner.lookahead() == 'arraymapping' :
       arraymapping_defs = self.parse_arraymapping_def()
       self.expect_token('endarraymapping')
@@ -1628,7 +1630,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_simexpression_header(self) :
     """Parse simexpression header
 @return: v
-@rtype: string
+@rtype: C{String}
 """
     self.expect_token('simexpression')
     simexpression_name = self.expect_token('identifier')
@@ -1827,10 +1829,21 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     genemapping_dict = {}
     while self.scanner.lookahead() != 'endgenemapping' :
+      mapping = []
+      self.expect_token('factor')
       m = self.expect_token('identifier')
       self.expect_token('=')
-      d = self.expect_token(['identifier', 'realvalue'])
-      genemapping_dict[m] = d
+      while self.scanner.lookahead() != 'factor' and self.scanner.lookahead() != 'endgenemapping':
+        d = self.expect_token(['identifier', 'realvalue'])
+	if len(genemapping_dict.values()) > 0 :
+	  for i in genemapping_dict.values() :
+	    if d not in i : 
+              mapping.append(d)
+	    else :
+	      raise StandardError, '%s is already used as mapping key' %d
+	else :
+          mapping.append(d)
+        genemapping_dict[m] = mapping
     return(genemapping_dict)
 
 

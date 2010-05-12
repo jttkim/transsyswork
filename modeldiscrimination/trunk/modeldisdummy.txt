@@ -7,13 +7,13 @@ offset: 1e-18
 endglobalsettingdefs
 
 genemapping
-f0000 = 257221
-f0001 = 257221
-f0002 = 257221
-f0003 = 257221
-f0004 = 257221
-f0005 = 257221
-f0006 = 257221
+factor f0000 = 257221 257222 257223
+factor f0001 = 257224
+factor f0002 = 257225
+factor f0003 = 257226
+factor f0004 = 257227
+factor f0005 = 257228
+factor f0006 = 257229
 endgenemapping
 
 procedure equilibration
