@@ -7,17 +7,17 @@ offset: 1e-18
 endglobalsettingdefs
 
 genemapping
-dummy = 261713
-nonfunc = 261713
-COI1 = 261713
-JIN1 = 261713
-JUT = 261713
-r_other = 261713
-f_jin1 = 261713
-f_jut = 261713
-f_jin1jut = 261713
-f_other = 261713
-JAZ = 261713
+factor dummy = 261711
+factor nonfunc = 261712
+factor COI1 = 261713
+factor JIN1 = 261714
+factor JUT = 261715
+factor r_other = 261716
+factor f_jin1 = 261717
+factor f_jut = 261718
+factor f_jin1jut = 261719
+factor f_other = 261710
+factor JAZ = 261700
 endgenemapping
 
 procedure equilibration

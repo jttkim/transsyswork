@@ -86,12 +86,8 @@ else :
   infile = sys.stdin
 if len(args) > 1 :
   outfile = args[1]
-else :
-  outfile = sys.stdin
 if len(args) > 2 :
   debugfile = open(args[2], 'w')
-else :
-  debugfile = sys.stdin
 
 
 specfile = open(spec, 'r')
