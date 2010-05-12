@@ -1122,7 +1122,7 @@ series is the simulation of the gene expression levels for that genotype.
   def debug_interface(self, transsys_program) :
     """Debug interface 
 @param transsys_program: transsys program
-@rtype transsys_program: transsys program
+@type transsys_program: transsys program
 """
     for factor in transsys_program.factor_list :
       self.file.write("%s\t" %factor.name)
@@ -1361,8 +1361,8 @@ class SimExpression(object) :
     """ Constructor
 @param simexpression_name: simexpression name
 @type simexpression_name: C{String}
-@param instruction_list: instruction list
-@type instruction_list: Array[]
+@param unresolve_instruction_list: instruction list
+@type unresolve_instruction_list: Array[]
 """  
     self.simexpression_name = simexpression_name
     self.unresolve_instruction_list = unresolve_instruction_list
@@ -1382,11 +1382,7 @@ class SimExpression(object) :
 
 
 class ArrayMapping(object) :
-  """ object ArrayMapping """
-
-
-  def __init__(self, array_name, unresolve_perturbation, unresolve_reference) :
-    """Constructor
+  """ object ArrayMapping
 @param array_name: array_name
 @type array_name: C{String}
 @param unresolve_perturbation: array unresolve_perturbation
@@ -1394,10 +1390,13 @@ class ArrayMapping(object) :
 @param unresolve_reference: array unresolve_reference
 @type unresolve_reference: C{String}
 @ivar resolve_perturbation: resolve perturbation
-@itype resolve_perturbation: L{SimExpression}
+@type resolve_perturbation: L{SimExpression}
 @ivar resolve_reference: resolve reference
-@itype resolve_reference: L{SimExpression}
+@type resolve_reference: L{SimExpression}
 """
+
+  def __init__(self, array_name, unresolve_perturbation, unresolve_reference) :
+    """Constructor"""
     self.array_name = array_name
     self.unresolve_perturbation = unresolve_perturbation
     self.unresolve_reference = unresolve_reference
