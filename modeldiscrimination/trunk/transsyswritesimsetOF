@@ -56,12 +56,13 @@ def get_feature_data() :
 spec = None
 rndseed = 1
 noise = 0.0
-debugfile = None
+tracefile = None
 
 optlist, args = getopt.getopt(sys.argv[1:], 's:o:N:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
+    print 'Usage: transsyswritesimsetOF [options] transsys_program expr_data_prefix track_file '
     print '-s <int>: Random seed'
     print '-N <int>: Noise'
     print '-o <str>: specify spec file'
@@ -87,7 +88,7 @@ else :
 if len(args) > 1 :
   outfile = args[1]
 if len(args) > 2 :
-  debugfile = open(args[2], 'w')
+  tracefile = open(args[2], 'w')
 
 
 specfile = open(spec, 'r')
@@ -98,8 +99,8 @@ objective_function = o.parse_objectivespec()
 transsys_program = transsys.TranssysProgramParser(infile).parse()
 e = objective_function.get_simulated_set(transsys_program)
 
-if debugfile is not None :
-  debugfile.write(objective_function.get_debug_file().getvalue())
+if tracefile is not None :
+  tracefile.write(objective_function.get_trace_file().getvalue())
 
 if noise > 0.0 :
   if rndseed is not None :
