@@ -1107,7 +1107,7 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: object
 """
-    self.debug_interface(transsys_program)
+    self.trace_interface(transsys_program)
 
     e = self.createTemplate()
     for array in self.simexpression_defs :
@@ -1126,8 +1126,8 @@ series is the simulation of the gene expression levels for that genotype.
     return e
 
 
-  def debug_interface(self, transsys_program) :
-    """Debug interface 
+  def trace_interface(self, transsys_program) :
+    """Trace interface 
 @param transsys_program: transsys program
 @type transsys_program: transsys program
 """
@@ -1137,7 +1137,11 @@ series is the simulation of the gene expression levels for that genotype.
     self.file.write("\n")
 
 
-  def get_debug_file(self) :
+  def get_trace_file(self) :
+    """ Get trace file
+@return: trace file
+@rtype: StringIO
+"""
     return self.file
 
 
