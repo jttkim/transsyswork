@@ -1441,7 +1441,7 @@ class Scanner(object) :
     self.buffer = ''
     self.lineno = 0
     self.keywords = ['factor', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'genemapping', 'endgenemapping', 'procedure', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
-    self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
+    self.identifier_re = re.compile('["A-Za-z_]["A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
     self.next_token = self.get_token()
