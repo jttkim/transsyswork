@@ -31,10 +31,10 @@ procedure_body ::= (instruction)+
 instruction ::= procedure_identifier
 	| primary_instruction
 
-primary_instruction ::= "knockout:" gene_identifier NEWLINE
+primary_instruction ::= "knockout:" identifier NEWLINE
 	| "runtimesteps:" integer NEWLINE
-	| "treatment:" factor_identifier "=" realnumber NEWLINE
-	| "overexpress:" gene_identifier "=" realnumber NEWLINE 
+	| "treatment:" identifier "=" realnumber NEWLINE
+	| "overexpress:" identifier "=" realnumber NEWLINE 
 
 
 procedure_footer ::= "endprocedure" NEWLINE
@@ -57,17 +57,18 @@ arraymapping_spec ::= "array" identifier ":" identifier ( "/" identifier)? NEWLI
 arraymapping_footer ::= "endarraymapping" NEWLINE
 
 
-factor_def ::= "factor" factor_identifier "=" (gene_manufacturer_identifier)+ NEWLINE
-gene_identifier ::= identifier
-factor_identifier ::= identifier
-gene_manufacturer_identifier ::= "identifier"
+factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ NEWLINE
+
+----- terminals ----------------------------------------------------
+
+gene_manufacturer_identifier ::= doublequote charcter_but_not_doublequote+ doublequote
 
 realnumber ::= digit_sequence "." unsigned_digit_sequence+ scale_factor+
                 | digit_sequence scale_factor
 
 digit_sequence ::= sign+ unsigned_digit_sequence
 
-unsigned_digit_sequence ::= digit*
+unsigned_digit_sequence ::= digit+
 
 
 scale_factor ::= ("E" | "e") digit_sequence
@@ -76,6 +77,9 @@ sign ::=  "+" | "-"
 
 digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
-identifier ::= (letter | digit | "_")+
+identifier ::= (letter | "_") (letter | digit | "_")+
 
 letter ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+
+doublequote ::= the doublequote character (chr(34))
+
