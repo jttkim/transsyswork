@@ -5,52 +5,8 @@ import getopt
 import sys
 import os
 import transsys
-import transsys.optim 
-from math import sqrt
 import trsysmodis
 import random
-
-
-#./modelopt -r 2 -e 1000 -n 2 -m 'model_transsys' exp_data.txt pheno_data.txt grad.txt outfile.txt
-
-
-def get_expr_data() :
-  e = StringIO.StringIO()
-  e.write('wt')
-  for gene in gene_list :
-     e.write('\t%s'%gene.name)
-  e.write('\n')
-  for factor in factor_list :
-    e.write('%s'%factor.name)
-    for array in range(len(gene_list)+1) :
-      e.write('\t%d.2'%0.00)
-    e.write('\n')
-  e.seek(0)
-  return e
-
-
-def get_pheno_data() :
-  p = StringIO.StringIO()
-  list = 'MeJA'
-  p.write('mutant\tgene\ttreatment')
-  p.write('\n')
-  p.write('wt\twildtype\tnone\t%s'%list)
-  p.write('\n')
-  for gene in gene_list :
-    p.write('a%s\tknockout\t%s\t%s'%(gene.name,gene.name,list))
-    p.write('\n')
-  p.seek(0)
-  return p
-
-
-def get_feature_data() :
-  f = StringIO.StringIO()
-  f.write('\n')
-  for factor in factor_list :
-    f.write('%s'%factor.name)
-    f.write('\n')
-  f.seek(0)
-  return f
 
 
 spec = None

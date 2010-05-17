@@ -755,6 +755,7 @@ class SimulationKnockout(SimulationRuleObjective) :
 
   magic = 'knockout'
 
+
   def __init__(self, gene_name) :
     """Constructor
 @param gene_name: gene name
@@ -767,7 +768,6 @@ class SimulationKnockout(SimulationRuleObjective) :
       raise StandardError, '%s is not a string' %gene_name
     
 
-
   def applytreatment(self, transsys_program) :
     """ Knock gene name out
 @param transsys_program: transsys program
@@ -776,6 +776,11 @@ class SimulationKnockout(SimulationRuleObjective) :
     knockout_tp = copy.deepcopy(transsys_program)
     knockout_tp = knockout_tp.get_knockout_copy(self.gene_name)
     return knockout_tp
+
+
+  def __str__(self) :
+    s = self.magic + ": " + self.gene_name  
+    return s
 
 
 class SimulationTreatment(SimulationRuleObjective) :
@@ -814,11 +819,16 @@ class SimulationTreatment(SimulationRuleObjective) :
     transsys_instance.factor_concentration[factor_index] = self.factor_concentration
 
 
+  def __str__(self) :
+    s = self.magic + ": " + self.factor_name + " = " + ("%s" %self.factor_concentration)  
+    return s
+
+
 class SimulationTimeSteps(SimulationRuleObjective) :
   """ Class to simulate timesteps """
 
 
-  magic = 'timesteps'
+  magic = 'runtimesteps'
 
 
   def __init__(self, time_steps) :
@@ -831,6 +841,11 @@ class SimulationTimeSteps(SimulationRuleObjective) :
       self.time_steps = time_steps
     else :
       raise StandardError, '%s is not a numeric expression' %time_steps
+
+
+  def __str__(self) :
+    s = self.magic + ": " + ("%s" %self.time_steps)
+    return s
 
 
   def applytreatment(self, transsys_instance, factor_names, file, array_name) :
@@ -890,6 +905,11 @@ class SimulationOverexpression(SimulationRuleObjective) :
     tp.gene_list.append(transsys.Gene('dummy', tp.gene_list[i].product_name(), [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
     tp = transsys.TranssysProgram(tp.name, tp.factor_list, tp.gene_list)
     return tp
+
+
+  def __str__(self) :
+    s = self.magic + ": " + self.gene_name + " = " + ("%s" %self.constitute_value)  
+    return s
 
 
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
@@ -1325,6 +1345,18 @@ class GlobalSettings(object) :
     return(self.globalsettings_list)
 
 
+  def __str__(self) :
+    """Return string of GlobalSettings
+@return: s
+@rtype: C{String}
+"""    
+    s = 'globalsettingdefs\n'
+    for name, value in self.globalsettings_list.iteritems() :
+      s = s + (name + ': ' + ("%s"%value) + '\n')
+    s = s + 'endglobalsettingdefs\n'
+    return s
+
+
 class GeneMapping(object) :
   """  Object GeneMapping """
 
@@ -1339,6 +1371,21 @@ class GeneMapping(object) :
 
   def get_factor_list(self) :
     return(self.factor_list.keys())
+
+
+  def __str__(self) :
+    """Return string of GeneMapping
+@return: s
+@rtype: C{String}
+"""    
+    s = 'genemapping\n'
+    for name, value in self.factor_list.iteritems() :
+      w = ''
+      for u in value :
+	w = w + u + " "
+      s = s + ('factor ' + name + " = " + w + "\n")
+    s = s + 'endgenemapping\n\n'
+    return s
 
 
 class Procedure(object) :
@@ -1362,6 +1409,14 @@ class Procedure(object) :
   
   def get_instruction_list(self) :
     return(self.instruction_list)
+
+  
+  def __str__(self) :
+    """ Return string of Procedure """
+    for o in self.instruction_list :
+      w = o
+    s = 'procedure ' + self.procedure_name + '\n' + ("%s" %w) + '\n' + 'endprocedure' + '\n\n'
+    return s
 
 
 
@@ -1391,6 +1446,15 @@ class SimExpression(object) :
 
   def get_resolve_instruction_list(self) :
     return(self.resolve_instruction_list)
+
+
+  def __str__(self) :
+    """ Return string of SimExpression """
+    s = 'simexpression ' + self.simexpression_name + '\n' 
+    for p in self.unresolve_instruction_list :
+      s = s + ("%s\n" %p)
+    s = s + 'endprocedure' + '\n\n'
+    return s
 
 
 class ArrayMapping(object) :
@@ -1434,6 +1498,15 @@ class ArrayMapping(object) :
 
   def get_resolve_reference(self) :
     return(self.resolve_reference)
+
+
+  def __str__(self) :
+    """ Return string of ArrayMapping """
+    s = 'array ' + self.array_name + " " + " : " + self.unresolve_perturbation 
+    if self.resolve_reference is not None :
+      s = s + " / " + self.unresolve_reference
+    s = s + '\n'
+    return s
 
 
 class Scanner(object) :
@@ -1839,22 +1912,23 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: dictionary{}
 """
     genemapping_dict = {}
+    values = []
     while self.scanner.lookahead() != 'endgenemapping' :
       mapping = []
       self.expect_token('factor')
       m = self.expect_token('identifier')
       self.expect_token('=')
       while self.scanner.lookahead() != 'factor' and self.scanner.lookahead() != 'endgenemapping':
-        d = self.expect_token(['identifier', 'realvalue'])
-	if len(genemapping_dict.values()) > 0 :
-	  for i in genemapping_dict.values() :
-	    if d not in i : 
-              mapping.append(d)
-	    else :
-	      raise StandardError, '%s is already used as mapping key' %d
+        d = self.expect_token('identifier')
+	if len(values) > 1 :
+	  if d not in values :
+             mapping.append(d)
+	  else :
+	    raise StandardError, '%s is already used as mapping key' %d
 	else :
           mapping.append(d)
-        genemapping_dict[m] = mapping
+	values.append(d)
+      genemapping_dict[m] = mapping
     return(genemapping_dict)
 
 
