@@ -2,8 +2,8 @@ objectivespec ::= knockout_treatment_magic knockout_treatment_objectivespec
 
 knockout_treatment_objectivespec ::= globalsettings genemapping_def procedure_defs simexpression_defs arraymapping_def
 
-procedure_defs ::= (procedure_def)*
-simexpression_defs ::= (simexpression_def)*
+procedure_defs ::= (procedure_def)+
+simexpression_defs ::= (simexpression_def)+
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
@@ -61,7 +61,7 @@ factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ NEWLINE
 
 ----- terminals ----------------------------------------------------
 
-gene_manufacturer_identifier ::= doublequote charcter_but_not_doublequote+ doublequote
+gene_manufacturer_identifier ::= doublequote character_but_not_doublequote+ doublequote
 
 realnumber ::= digit_sequence "." unsigned_digit_sequence+ scale_factor+
                 | digit_sequence scale_factor

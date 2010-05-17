@@ -1,7 +1,7 @@
 RandomTranssysParameters-1.1
 topology: random_uniform
-n: 7
-num_edges: 14
+n: 2
+num_edges: 2
 topology: end
 constitutive: 0.1
 km_activation: 0.2
