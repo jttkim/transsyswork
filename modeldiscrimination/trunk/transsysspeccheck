@@ -1,0 +1,43 @@
+#!/usr/bin/python
+
+import copy
+import getopt
+import sys
+import os
+import transsys
+import trsysmodis
+
+optlist, args = getopt.getopt(sys.argv[1:], 't:h')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print 'Usage: transsysspeccheck [options] spec_filename'
+    print '-t: <Dummy>: Dummy parameter'
+    print '-h: print this help and exit'
+    sys.exit()
+  if opt == '-n' :
+    dummy = par
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+if len(args) > 0 :
+  specfile = open(args[0], 'r')
+if len(args) > 1 :
+  outfile = open(args[1], 'w')
+else :
+  outfile = sys.stdout
+
+o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
+objective_function = o.parse_objectivespec()
+
+outfile.write("%s\n\n" %o.magic)
+outfile.write("%s\n" %objective_function.globalsettings_defs.__str__())
+outfile.write("%s" %objective_function.genemapping_defs.__str__())
+for o in objective_function.procedure_defs :
+  outfile.write("%s" %o.__str__())
+for o in objective_function.simexpression_defs :
+  outfile.write("%s" %o.__str__())
+outfile.write("arraymapping\n")
+for o in objective_function.arraymapping_defs :
+  outfile.write("%s" %o.__str__())
+outfile.write("endarraymapping\n")
