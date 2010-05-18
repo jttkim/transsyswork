@@ -1,0 +1,61 @@
+ObjectiveSpecification-0.1
+
+globalsettingdefs
+transformation: log
+distance: correlation
+offset: 1e-18
+endglobalsettingdefs
+
+genemapping
+factor f0000 = "257221_at" "257222_at" "257223_at"
+factor f0001 = "257224_at"
+endgenemapping
+
+procedure equilibration
+runtimesteps: 100
+endprocedure
+
+procedure MeJA
+treatment: jasmonate = 1.0
+endprocedure
+
+procedure t15m
+runtimesteps: 100
+endprocedure
+
+procedure ko_g0000
+knockout: g0000
+endprocedure
+
+procedure ko_g0000
+knockout: g0000
+endprocedure
+
+procedure ko_g0001
+knockout: g0001
+endprocedure
+
+simexpression wt
+equilibration
+endsimexpression
+
+simexpression g0000
+ko_g0000
+equilibration
+MeJA
+t15m
+endsimexpression
+
+simexpression g0001
+ko_g0001
+equilibration
+MeJA
+t15m
+endsimexpression
+
+arraymapping
+array g0000ko : g0000 / wt
+array g0001ko : g0001 / wt
+endarraymapping
+
+
