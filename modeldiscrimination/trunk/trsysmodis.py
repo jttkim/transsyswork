@@ -1201,6 +1201,25 @@ series is the simulation of the gene expression levels for that genotype.
     if (len(gene_name_spec) != len(self.expression_set.expression_data.get_gene_name())) :
       raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name()))
 
+  
+  def __str__(self) :
+    """Return String of Object Specification 
+@return: Object spec string
+@rtype: C{String}
+"""
+    s = ("%s\n\n" %EmpiricalObjectiveFunctionParser.magic)
+    s = s + ("%s\n" %self.globalsettings_defs.__str__())
+    s = s + ("%s" %self.genemapping_defs.__str__())
+    for o in self.procedure_defs :
+      s = s + ("%s" %o.__str__())
+    for o in self.simexpression_defs :
+      s = s + ("%s" %o.__str__())
+    s = s + ("arraymapping\n")
+    for o in self.arraymapping_defs :
+      s = s + ("%s" %o.__str__())
+    s = s + ("endarraymapping\n")
+    return s
+
 
 def distance_sum_squares(array1, array2) :
   """ Calculates the Sum Square Distance of two arrays
@@ -2062,7 +2081,14 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     procedure_name_list = []
     for procedure in procedure_defs :
-      procedure_name_list.append(procedure.get_procedure_name()) 
+      if len(procedure_name_list) == 0 :
+        procedure_name_list.append(procedure.get_procedure_name()) 
+      else :
+        if procedure.get_procedure_name() not in procedure_name_list :
+          procedure_name_list.append(procedure.get_procedure_name())
+	else :
+	  raise StandardError, "%s Procedure already declared" %procedure.get_procedure_name()
+
 
     for simexpression in simexpression_defs :
       for instruction in simexpression.get_unresolve_instruction_list() :
@@ -2094,7 +2120,13 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     a = []
     for i in simexpression_defs :
-      a.append(i.get_simexpression_name())
+      if len(a) == 0 :
+        a.append(i.get_simexpression_name())
+      else : 
+        if i.get_simexpression_name() not in a:
+          a.append(i.get_simexpression_name())
+	else :
+	  raise StandardError, "The array %s is already declared" %i.get_simexpression_name()
 
     for arraymapping in arraymapping_defs :
       if arraymapping.get_unresolve_perturbation() not in a :

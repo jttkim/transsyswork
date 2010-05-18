@@ -29,15 +29,5 @@ else :
 
 o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
+s = objective_function.__str__()
 
-outfile.write("%s\n\n" %o.magic)
-outfile.write("%s\n" %objective_function.globalsettings_defs.__str__())
-outfile.write("%s" %objective_function.genemapping_defs.__str__())
-for o in objective_function.procedure_defs :
-  outfile.write("%s" %o.__str__())
-for o in objective_function.simexpression_defs :
-  outfile.write("%s" %o.__str__())
-outfile.write("arraymapping\n")
-for o in objective_function.arraymapping_defs :
-  outfile.write("%s" %o.__str__())
-outfile.write("endarraymapping\n")

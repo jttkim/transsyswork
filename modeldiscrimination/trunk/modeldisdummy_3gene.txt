@@ -19,10 +19,6 @@ procedure ko_g0000
 knockout: g0000
 endprocedure
 
-procedure ko_g0000
-knockout: g0000
-endprocedure
-
 procedure ko_g0001
 knockout: g0001
 endprocedure
