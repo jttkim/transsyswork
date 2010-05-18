@@ -1,0 +1,46 @@
+transsys Transsys_Model1
+{
+  factor jasmonate
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor f0000
+  {
+    decay: 0.369115294273;
+    diffusibility: 0.654521410205;
+  }
+
+  factor f0001
+  {
+    decay: 0.723970900624;
+    diffusibility: 0.355008470383;
+  }
+
+  gene g0000
+  {
+    promoter
+    {
+      constitutive: 0.502123027255 * jasmonate;
+      f0001: activate(5.94109441608, 6.70022790534);
+    }
+    product
+    {
+      default: f0000;
+    }
+  }
+
+  gene g0001
+  {
+    promoter
+    {
+      constitutive: 0.473274187442;
+      f0000: repress(2.83571068879, 2.66691059379);
+    }
+    product
+    {
+      default: f0001;
+    }
+  }
+}
