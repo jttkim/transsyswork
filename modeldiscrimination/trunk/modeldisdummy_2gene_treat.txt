@@ -33,6 +33,8 @@ endprocedure
 
 simexpression wt
 equilibration
+MeJA
+t15m
 endsimexpression
 
 simexpression g0000
