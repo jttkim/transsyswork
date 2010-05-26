@@ -7,7 +7,7 @@
 
 \newcommand{\computercode}[1]{\texttt{#1}}
 \newcommand{\newterm}[1]{\emph{#1}}
-\newcommand{\todo}[1]{\rule{0pt}{0pt}\marginpar{\rule{1ex}{1ex}}\textbf{\textsl{[#1]}}}
+\newcommand{\todo}[1]{\rule{0pt}{0pt}\marginpar{\rule{1ex}{1ex}}\textbf{\emph{[#1]}}}
 \newcommand{\otherlang}[1]{\textit{#1}}
 
 \newenvironment{ebnfrule}{\begin{footnotesize}\begin{quote}\begin{alltt}}{\end{alltt}\end{quote}\end{footnotesize}}
@@ -108,7 +108,9 @@ can be freely chosen.
   matrix, \ldots}
 
 
-\subsection{Objective Function Specification}
+\section{Objective Function Specification}
+
+\subsection{Language Structure}
 
 \subsubsection{The Top Level}
 
@@ -151,6 +153,13 @@ distance_type ::= "correlation" | "euclidean" | "sum_squares"
 offset_def ::= "offset:" realnumber
 	| "offset:" realnumber "data_sd"
 \end{ebnfrule}
+
+\todo{the order of applying offsets and log transformation matters,
+  and this order bears no relation to the order specified for the
+  language. The language spec should be updated; the offset and
+  transformation specs should perhaps go into the array block (see
+  comment below).}
+
 The \computercode{globalsettings} contain the parameteters
 \begin{itemize}
 \item \computercode{transformation} sets the transformation of the
@@ -188,7 +197,8 @@ one factor, these may be specified as a whitespace separated list. In
 this case, the average profile is used for comparison.
 
 
-\subsection{Procedures}
+\subsubsection{Procedures}
+\label{section_procedures}
 
 \todo{is it necessary that at least one procedure is required?}
 
@@ -210,9 +220,10 @@ primary_instruction ::= "knockout:" identifier NEWLINE
 procedure_footer ::= "endprocedure" NEWLINE
 procedure_identifier ::= identifier
 \end{ebnfrule}
-Procedures specify operations performed on a transsys instance.
-Primary instructions specify elementary operations that the simulator
-knows to perform. These are:
+A procedure specifies a sequence of operations to be performed on a
+transsys instance. Operations are specified either by primary
+instructions or by other procedures. Primary instructions specify
+elementary operations that the simulator knows to perform. These are:
 \begin{itemize}
 \item \computercode{runtimesteps} runs the specified number of time
   steps to create a new transsys instance.
@@ -236,11 +247,14 @@ knows to perform. These are:
   \computercode{constitutive} element, expressing the gene at the
   specified rate.
 \end{itemize}
-An identifier in a procedure body refers to another procedure.
-
-It is an error for a procedure to refer to itself, or any procedure
-that eventually invokes itself, as infinite recursion would occur in
-this case. \todo{is this ensured and is there a unit test for this?}
+An identifier in a procedure body identifies another procedure to be
+invoked. Invoking another procedure results in execution of the
+instruction in the other procedure's body. By recursively applying
+this rule, a procedure ultimately reduces to a sequence of primary
+instructions.  It is an error for a procedure to refer to itself, or
+to any procedure that eventually invokes itself, as infinite recursion
+would occur in this case. \todo{is this ensured and is there a unit
+  test for this?}
 
 It is an error if an identifier does not reference an existing
 procedure. Procedures may be listed in any order, so it is legal to
@@ -257,6 +271,43 @@ simexpression_body ::= (identifier NEWLINE)+
 simexpression_footer ::= "endsimexpression" NEWLINE
 \end{ebnfrule}
 
+\todo{is there a reason to only allow procedures in the simexpression
+  body? I think that simexpressions should also be allowed to contain
+  primary instructions. This would mean that the bodies of procedures
+  and simexpressions are specified in the same way (i.e.\ by the same
+  rule). This would also make sense from an object oriented angle, as
+  indeed a simexpression \emph{is a} (subclass of a) procedure, with
+  the added feature that it results in the simulation of a column in
+  the empirical matrix.}
+
+\todo{On further pursuing this line of thought, it seems to me that
+  the introduction of arrays has, from a formal / minimalist
+  perspective, made simexpressions obsolete: Arrays could also be
+  expressed in terms of procedures. It may however be worthwhile from
+  the semantic perspective of distinguishing between procedures as
+  partial instruction sequences that are to be used as building
+  blocks, and simexpressions as complete sequences that model the life
+  of a biological object.}
+
+Simulations of gene expression, or ``simexpressions'' for short,
+describe a simulation procedure to produce a transsys instance. The
+idea is that the simulation procedure models the genetic makeup and
+the relevant conditions and (possibly) experimental manipulations
+experienced by a biological object. If the candidate program is a good
+model of the gene regulatory network in the biological object, the
+expression levels in the transsys instance are expected to be similar
+to those measured in the biological object.
+
+The sequence of identifiers in the body of a simexpression is resolved
+to a sequence of primary instructions, as described for procedures in
+section \ref{section_procedures}. The sequence of primary operations
+is applied to a transsys instance of the unmodified candidate program,
+with all expression levels starting at $0$. (Note: Future extensions
+may provide mechanisms for specifying the initial state of the instance.)
+
+Identifiers in a simexpression body must identify
+procedures. Invocation of other simexpressions is an error.
+
 
 \subsubsection{Arrays}
 
@@ -271,8 +322,37 @@ arraymapping_spec ::= "array" identifier ":" identifier ( "/" identifier)? NEWLI
 arraymapping_footer ::= "endarraymapping" NEWLINE
 \end{ebnfrule}
 
+\todo{It seems to me that it was not ideal to call these things
+  arrays, because (1) gene expression can be measured by techniques
+  other than microarrays and (2) arrays really correspond to
+  simexpressions (perhaps with experimental noise added) -- one would
+  say that e.g.\ logratios are computed based on the measurements of
+  an array and the measurements of a reference array. Arrays should
+  rather be called expression matrix columns -- is that a good or at
+  least reasonable name?}
 
-\subsubsection{Terminal Tokens}
+Arrays are columns in the simulated expression matrix. They are
+computed by subjecting the expression levels in one or more
+simexpressions to mathematical operations, resulting in a column
+containing one value for each mapped factor of the candidate program.
+The idea is that the mathematical operations should be the same as
+those applied to the raw empirical data that have resulted in the
+empirical expression matrix.
+
+At this time, the only operations are copying a simexpression or
+computing the element-wise ratio of two simexpressions. The latter
+serves to realise logratios.
+
+Array mapping operations are applied to values that have already been
+subjected to offset adding and log transformation.
+
+\todo{Consider consolidating the language by offset and logratio
+  transformations into the arraymapping block? This would leave only
+  the distance function specification in the globalsettings, which
+  would be a step closer to separating the specification of the
+  simulation from that of the distance measure.}
+
+\subsection{Terminal Tokens (Lexical Structure)}
 
 \begin{ebnfrule}
 ----- terminals ----------------------------------------------------
