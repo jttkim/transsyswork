@@ -352,6 +352,7 @@ subjected to offset adding and log transformation.
   would be a step closer to separating the specification of the
   simulation from that of the distance measure.}
 
+
 \subsection{Terminal Tokens (Lexical Structure)}
 
 \begin{ebnfrule}
@@ -382,6 +383,40 @@ letter ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L"
 doublequote ::= the doublequote character (chr(34))
 \end{ebnfrule}
 
+
+\section{Future Perspectives}
+
+\subsection{Optimisation by Reusing Prefix Instruction Sequences}
+
+Simexpressions reduce to sequences of primary instructions. If two
+simexpressions share a prefix (i.e.\ they start with the same sequence
+of instructions) and the candidate program is deterministic (i.e.\ it
+does not use any of the random number generation functions provided by
+transsys), the two simexpressions that share a prefix sequence can be
+computed by first computing the prefix sequence and then using that as
+a starting point for computing both the first and the second
+simexpression. Depending on the execution time of the prefix, this can
+be a significant optimisation (e.g.\ where many time steps are used
+for equilibration of a transsys instance).
+
+As a special case, one simexpression may be a prefix of another.
+When a set of simexpressions simulates a time series, they will form
+nested prefixes.
+
+To fully exploit the optimisation potential especially for time series
+as described above, an optimiser must be able to break up a
+\computercode{runtimesteps} $t$ instruction into commands
+\computercode{runtimesteps} $n_1$ and \computercode{runtimesteps}
+$n_2$, where $n_1 + n_2 = n$, as appropriate.
+
+It is important to notice that the validity of this optimisation
+depends on the assumption that the candidate program is
+deterministic. This may not hold, therefore simulating all
+simexpressions independently must be retained.
+
+If the transsys program object provided a method to detect whether
+the program is deterministic, simulators could use that method to
+automatically activate the prefix optimisation as appropriate.
 
 \end{document}
 
