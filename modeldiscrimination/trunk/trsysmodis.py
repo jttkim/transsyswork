@@ -902,7 +902,9 @@ class SimulationOverexpression(SimulationRuleObjective) :
 """
     tp = copy.deepcopy(transsys_program)
     i = tp.find_gene_index(self.gene_name)
+    # FIXME: gene name must not clash with existing genes
     tp.gene_list.append(transsys.Gene('dummy', tp.gene_list[i].product_name(), [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
+    # FIXME: this constructor isn't meant to be used with lists from existing transsys programs
     tp = transsys.TranssysProgram(tp.name, tp.factor_list, tp.gene_list)
     return tp
 
@@ -1137,7 +1139,11 @@ series is the simulation of the gene expression levels for that genotype.
       for instruction in array.get_resolve_instruction_list() :
         if instruction.magic == "knockout" or instruction.magic == "overexpress":
           tp = instruction.applytreatment(tp)
-          ti = transsys.TranssysInstance(tp)
+          ti_new = transsys.TranssysInstance(tp)
+          # FIXME: shouldn't really interfere with instance's state like this
+          # FIXME: transplanting the factor_concentration list relies on factor order being preserved by the knockout operation
+          ti_new.factor_concentration = ti.factor_concentration
+          ti = ti_new
 	elif instruction.magic == "treatment" :
           instruction.applytreatment(ti)
 	else :
