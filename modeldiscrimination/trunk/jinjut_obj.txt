@@ -1,0 +1,75 @@
+ObjectiveSpecification-0.1
+
+globalsettingdefs
+transformation: log
+distance: correlation
+offset: 1e-18
+endglobalsettingdefs
+
+genemapping
+factor dummy = "261711_at" "261771_at" "261778_at"
+factor nonfunc = "261712_at"
+factor COI1 = "261713_at"
+factor JIN1 = "261714_at"
+factor JUT = "261715_at"
+factor r_other = "261716_at"
+factor f_jin1 = "261717_at"
+factor f_jut = "261718_at"
+factor f_jin1jut = "261719_at"
+factor f_other = "261710_at"
+factor JAZ = "261700_at"
+endgenemapping
+
+procedure equilibration
+runtimesteps: 100
+endprocedure
+
+procedure timepoint2hrs
+runtimesteps: 100 
+endprocedure
+
+procedure timepoint4hrs
+runtimesteps: 100 
+endprocedure
+
+procedure ko_jin1
+knockout: at1g32640_gene
+endprocedure
+
+procedure ko_jut
+knockout: at2g46510_gene
+endprocedure
+
+procedure ko_coi1
+knockout: coi1_gene
+endprocedure
+
+procedure ko_jaz
+knockout: jaz_gene
+endprocedure
+
+procedure ko_r_other
+knockout: gr_other
+endprocedure
+
+procedure ja_treatment
+treatment: jasmonate = 1.0
+endprocedure
+
+procedure ja_untreatment
+treatment: jasmonate = 0.0
+endprocedure
+
+simexpression wt_MeJA
+equilibration
+ja_treatment
+timepoint2hrs
+ja_untreatment
+timepoint2hrs
+endsimexpression
+
+arraymapping
+array wt_MeJA : wt_MeJA
+endarraymapping
+
+
