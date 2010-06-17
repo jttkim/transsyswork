@@ -26,7 +26,7 @@
 
 \title{Technical Report: \\
   Modelling Experimental Procedures Using Transsys}
-\author{Anyela V.\ Camargo-Rodriguez, Jan T.\ Kim}
+\author{Anyela \ Camargo, Jan T.\ Kim}
 \maketitle
 
 \section{Introduction}
@@ -123,7 +123,8 @@ identifies the file as an objective function specification. The
 objective function specification.
 
 \begin{ebnfrule}
-knockout_treatment_objectivespec ::= globalsettings genemapping_def procedure_defs simexpression_defs arraymapping_def
+knockout_treatment_objectivespec ::= globalsettings genemapping_def procedure_defs 
+simexpression_defs arraymapping_def 
 \end{ebnfrule}
 An objective function specification is comprised of a set of global
 settings, a gene mapping, procedures, definitions of simulated gene
@@ -139,7 +140,8 @@ simulated gene expression samples.
   not really a modular unit.}
 
 \begin{ebnfrule}
-globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
+globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer
+NEWLINE
 globalsettings_header ::= "globasettingdefs" NEWLINE
 globalsettings_body ::= transformation_def distancemeasure_def offset_def
 globalsettings_footer ::= "endglobalsettingdefs" NEWLINE
@@ -165,14 +167,14 @@ The \computercode{globalsettings} contain the parameteters
 \item \computercode{transformation} sets the transformation of the
   expression levels. The \computercode{log} transformation applies the
   $\log_2$ function to expression values. \todo{verify: is it the log
-    to base 2, or another log?}
+    to base 2, or another log?. AVC. It's log2}
 \item \computercode{distance} selects the method for computing
   distances between expression profiles.
 \item \computercode{offset} specifies an offset to be added to
   expression levels. The offset can either be specified as an absolute
   value, or as a multiple of the standard deviation of the set of all
   expression levels. \todo{confirm that this precisely defines the
-    implementation of the standard deviation variant.}
+    implementation of the standard deviation variant. AVC. Yes It does}
 \end{itemize}
 
 \begin{ebnfrule}
@@ -185,7 +187,7 @@ factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ NEWLINE
 The gene mapping maps transsys factor names (notice: not gene names)
 to identifiers that label the profiles in the empirical matrix, (the
 so-called gene manfacturer identifiers \todo{not really a fortunate
-  term}).
+  term. AVC. Can we not use a more generic name is case PCR or other technologies are use to measure gene expression. ie. other_identifier}).
 
 The identifiers of the right hand side must be names of factors in the
 candidate program.
@@ -265,7 +267,8 @@ reference a procedure before it is defined.
 
 \begin{ebnfrule}
 simexpression_defs ::= (simexpression_def)+
-simexpression_def ::= simexpression_header simexpression_body simexpression_footer NEWLINE
+simexpression_def ::= simexpression_header simexpression_body simexpression_footer 
+NEWLINE
 simexpression_header ::= "simexpression" identifier NEWLINE
 simexpression_body ::= (identifier NEWLINE)+
 simexpression_footer ::= "endsimexpression" NEWLINE
@@ -351,14 +354,15 @@ subjected to offset adding and log transformation.
   the distance function specification in the globalsettings, which
   would be a step closer to separating the specification of the
   simulation from that of the distance measure.}
-
+\cite{Parkinson2009}
 
 \subsection{Terminal Tokens (Lexical Structure)}
 
 \begin{ebnfrule}
------ terminals ----------------------------------------------------
+----- terminals --------------------------------------------------------------------
 
-knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
+knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE
+NEWLINE
 
 gene_manufacturer_identifier ::= doublequote character_but_not_doublequote+ doublequote
 
@@ -378,10 +382,15 @@ digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
 identifier ::= (letter | "_") (letter | digit | "_")+
 
-letter ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+letter ::= "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K"| "L" 
+| "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W"| "X" | "Y" 
+| "Z"| "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k"| "l" 
+| "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
 
 doublequote ::= the doublequote character (chr(34))
 \end{ebnfrule}
+\bibliographystyle{plain}
+\bibliography{bioinfo}
 
 
 \section{Future Perspectives}
