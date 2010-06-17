@@ -10,3 +10,17 @@ plotdata  <- function(filename)
       plot(data[which(data$Array == levels(data$Array)[i]),j], type='l', ylab=sprintf("%s",levels(data$Array)[i]), main=sprintf("%s",colnames(data)[j]), cex.lab=1.5, cex.main=1.5, col='red');
     }
 }
+
+plotjasmonate <- function(filename)
+{
+
+  label <- c("dummy","COI1","jasmonate","JIN1", "f_jin1", "JAZ"); 
+  data <- read.table(filename, header=TRUE, sep="\t")
+  v=length(colnames(label));
+  par(mfrow=c(3,2))
+  for(i in label)
+  {
+    plot(data[,i], type='l', ylab=sprintf("%s",i), main=sprintf("%s",i), cex.lab=1.5, cex.main=1.5, col='red');
+  }
+}
+
