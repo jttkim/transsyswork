@@ -872,23 +872,23 @@ class SimulationTimeSteps(SimulationRuleObjective) :
 
 
 class SimulationOverexpression(SimulationRuleObjective) :
-  """ Class simulate gene overexpression line """
+  """ Class simulate factor overexpression line """
 
   magic = 'overexpress'
 
 
-  def __init__(self, gene_name, constitute_value) :
+  def __init__(self, factor_name, constitute_value) :
     """Constructor
-@param gene_name: gene name
-@type gene_name: C{String}
+@param factor_name: factor name
+@type factor_name: C{String}
 @param constitute_value: constitute value
 @type constitute_value: c{float}
 """
     super(SimulationOverexpression, self).__init__()
-    if isinstance(gene_name, types.StringType) :
-      self.gene_name = gene_name
+    if isinstance(factor_name, types.StringType) :
+      self.factor_name = factor_name
     else :
-      raise StandardError, '%s is not a string' %gene_name
+      raise StandardError, '%s is not a string' %factor_name
     if isinstance(constitute_value, types.FloatType) :
       self.constitute_value = float(constitute_value)
     else :
@@ -896,22 +896,25 @@ class SimulationOverexpression(SimulationRuleObjective) :
 
 
   def applytreatment(self, transsys_program) :
-    """ Knock gene name out
+    """ Overexpress gene
 @param transsys_program: transsys program
 @type transsys_program: Object{transsys_program}
 """
     tp = copy.deepcopy(transsys_program)
-    i = tp.find_gene_index(self.gene_name)
-    # FIXME: gene name must not clash with existing genes
-    tp.gene_list.append(transsys.Gene('dummy', tp.gene_list[i].product_name(), [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
+    i = tp.find_factor_index(self.factor_name)
+    tp.gene_list.append(transsys.Gene(self.getrandomname(), tp.gene_list[i].product_name(), [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
     # FIXME: this constructor isn't meant to be used with lists from existing transsys programs
-    tp = transsys.TranssysProgram(tp.name, tp.factor_list, tp.gene_list)
     return tp
 
 
   def __str__(self) :
     s = self.magic + ": " + self.gene_name + " = " + ("%s" %self.constitute_value)  
     return s
+
+
+  def getrandomname(self) :
+    s = "dummy" + random.choice('papillon') + ('%s' %random.randint(100,999)) +  random.choice('mariposa')
+    return s 
 
 
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
@@ -1869,11 +1872,11 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{SimulationOverexpression}
 """
     self.expect_token(':')
-    gene = self.scanner.token()[1]
+    factor = self.scanner.token()[1]
     self.expect_token('=')
     value = self.expect_token('realvalue')
-    if isinstance(gene, types.StringType):
-      oso = SimulationOverexpression(gene, value)
+    if isinstance(factor, types.StringType):
+      oso = SimulationOverexpression(factor, value)
       return(oso)
     else :
       raise StandardError, "%s is not a correct string value"%s
