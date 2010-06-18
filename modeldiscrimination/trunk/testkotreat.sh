@@ -12,11 +12,11 @@ function do_run ()
 }
 
 
-do_run ./transsysrandomprogram -n test -m 1 -p rtptest.dat
-do_run mv test01.tra test_targettopology.tra
-do_run ./transsysreparam -T transformerfile.dat -s 1 -p 1 -n test test_targettopology.tra
-do_run mv test01.tra test_target.tra
-do_run ./transsyswritesimsetOF -o modeldisdummy_3gene.txt -s 2 -N 0.1 test_target.tra test_target dummy.txt
+#do_run ./transsysrandomprogram -n test -m 1 -p rtptest.dat
+#do_run mv test01.tra test_targettopology.tra
+#do_run ./transsysreparam -T transformerfile.dat -s 1 -p 1 -n test test_targettopology.tra
+#do_run mv test01.tra test_target.tra
+#do_run ./transsyswritesimsetOF -o modeldisdummy_3gene.txt -s 2 -N 0.1 test_target.tra test_target dummy.txt
 do_run ./transsyswritesimsetOF -o modeldisdummy_2gene_treat.txt -s 2 -N 0.1 test_target_treat.tra test_target dummy_treat.txt
 #do_run ./transsysrewire -w 1 -n test_candidate -r 1 -s 3 test_targettopology.tra
 #do_run ./transsysrewire -w 3 -n test_candidate -r 1 -s 3 test_targettopology.tra
