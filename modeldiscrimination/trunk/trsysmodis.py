@@ -901,9 +901,11 @@ class SimulationOverexpression(SimulationRuleObjective) :
 @type transsys_program: Object{transsys_program}
 """
     tp = copy.deepcopy(transsys_program)
-    i = tp.find_factor_index(self.factor_name)
-    tp.gene_list.append(transsys.Gene(self.getrandomname(), tp.gene_list[i].product_name(), [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
-    # FIXME: this constructor isn't meant to be used with lists from existing transsys programs
+    factor = tp.find_factor(self.factor_name)
+    newgene = self.factor_name + "_overexpress"
+    while newgene in tp.gene_list : 
+      newgene = self.getrandomname(self.factor_name) 
+    tp.gene_list.append(transsys.Gene(newgene, factor, [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
     return tp
 
 
@@ -912,8 +914,9 @@ class SimulationOverexpression(SimulationRuleObjective) :
     return s
 
 
-  def getrandomname(self) :
-    s = "dummy" + random.choice('papillon') + ('%s' %random.randint(100,999)) +  random.choice('mariposa')
+  def getrandomname(self, factor) :
+    s = factor + "_overexpress"
+    s = s + ('%s' %random.randint(100,999))
     return s 
 
 

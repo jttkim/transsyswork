@@ -32,7 +32,7 @@ knockout: g0001
 endprocedure
 
 procedure oe
-overexpress: g0001 = 0.7
+overexpress: f0001 = 0.7
 endprocedure
 
 simexpression wt
