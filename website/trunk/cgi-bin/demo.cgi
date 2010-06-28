@@ -1,8 +1,15 @@
 #!/usr/bin/python
 
 import sys
+import trsyslocal
+try :
+  import trsyslocal
+  trsys_syspath = trsyslocal.trsys_syspath
+except ImportError :
+  trsys_syspath = []
+sys.path = trsys_syspath + sys.path
 # sys.path = ['/jtkpc/home/jtk/lib/python'] + sys.path
-sys.path = ['/home/trsysweb/lib/python', '/home/trsysweb/lib/python/python_igraph-0.5.2-py2.4-linux-x86_64.egg'] + sys.path
+# sys.path = ['/home/trsysweb/lib/python', '/home/trsysweb/lib/python/python_igraph-0.5.2-py2.4-linux-x86_64.egg'] + sys.path
 import os
 import popen2
 import cgi
@@ -206,7 +213,7 @@ def transsysForm(f, tpString, numTimesteps, cgiScript) :
 
 def demoPage(f, tp, numTimesteps, cgiScript) :
   pageStart(f)
-  f.write('<h1><tt>transsys</tt> Web Tool for CMPC2B06</h1>\n\n')
+  f.write('<h1><tt>transsys</tt> Basic Web Demo</h1>\n\n')
   transsysForm(f, str(tp), numTimesteps, cgiScript)
   f.write('<img src="%s?transsys_program=%s&a=plot&num_timesteps=%d" alt="transsys dynamics plot"/>' % (cgiScript, urlString(str(tp)), numTimesteps))
   pageEnd(f)
@@ -214,7 +221,7 @@ def demoPage(f, tp, numTimesteps, cgiScript) :
 
 def formPage(f, tpString, cgiScript) :
   pageStart(f)
-  f.write('<h1><tt>transsys</tt> Web Tool for CMPC2B06</h1>\n\n')
+  f.write('<h1><tt>transsys</tt> Basic Web Demo</h1>\n\n')
   transsysForm(f, tpString, 100, cgiScript)
   pageEnd(f)
 
