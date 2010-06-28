@@ -1,10 +1,15 @@
 RSYNCEXCLUDES	= --exclude='.svn' --exclude=python --exclude=Makefile --exclude='*~'
 
-default : pythondist
+default : pythondist getapidocs
 	rsync -avuz $(RSYNCEXCLUDES) ./ trsysweb@bullseye.dreamhost.com:www.transsys.dreamhosters.com/
 
-install : pythondist
+install : pythondist getapidocs
 	rsync -avuz $(RSYNCEXCLUDES) ./ trsysweb@bullseye.dreamhost.com:www.transsys.net/
+
+getapidocs :
+	rm -rf apidocs
+	rsync -avu ../../../transsys/trunk/python/doc/html .
+	mv html apidocs
 
 # this will work only if you're jtk@jtkpc
 jtkinstall : pythondist
@@ -13,5 +18,5 @@ jtkinstall : pythondist
 pythondist :
 	cd python ; python setup.py sdist --formats=gztar
 
-.PHONY : default install pythondist
+.PHONY : default install pythondist getapidocs
 
