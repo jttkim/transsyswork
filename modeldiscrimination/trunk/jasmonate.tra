@@ -1,12 +1,12 @@
-transsys jinjut_toy
+transsys jasmonate
 {
-  factor dummy
+  factor nonfunc
   {
     decay: 0.1;
     diffusibility: 0.0;
   }
 
-  factor nonfunc
+  factor dummy
   {
     decay: 0.1;
     diffusibility: 0.0;
@@ -36,41 +36,46 @@ transsys jinjut_toy
     diffusibility: 0.0;
   }
 
-  // regulator of target genes independently of JIN1 or JUT
-  factor r_other
-  {
-    decay: 0.1;
-    diffusibility: 0.0;
-  }
-
-  factor f_jin1
-  {
-    decay: 0.1;
-    diffusibility: 0.0;
-  }
-
-  factor f_jut
-  {
-    decay: 0.1;
-    diffusibility: 0.0;
-  }
-
-  factor f_jin1jut
-  {
-    decay: 0.1;
-    diffusibility: 0.0;
-  }
-
-  factor f_other
-  {
-    decay: 0.1;
-    diffusibility: 0.0;
-  }
-
+  // accelerated decay in presence of COI1 and jasmonate
   factor JAZ
   {
-    // accelerated decay in presence of COI1 and jasmonate
     decay: 0.1 + 0.3 * COI1 * jasmonate;
+    diffusibility: 0.0;
+  }
+
+  factor JAZ10
+  {
+    decay: 0.1 + 0.3 * COI1 * jasmonate;
+    diffusibility: 0.0;
+  }
+
+  factor JAZ1
+  {
+    decay: 0.1 + 0.3 * COI1 * jasmonate;
+    diffusibility: 0.0;
+  }
+
+  factor DIN11
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor AT1G66690
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor AT1G53885
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+
+  factor PDF12B
+  {
+    decay: 0.1;
     diffusibility: 0.0;
   }
 
@@ -127,7 +132,6 @@ transsys jinjut_toy
     }
   }
 
-  // dummy reporter gene
   gene dummy_gene
   {
     promoter
@@ -142,68 +146,65 @@ transsys jinjut_toy
     }
   }
 
-  gene gr_other
+  gene jaz10_gene
   {
     promoter
     {
-      COI1: activate(0.1, 1.0 * jasmonate);
+      constitutive: 0.1;
+      JIN1: activate(0.1, 1.0);
     }
     product
     {
-      default: r_other;
+      default: JAZ10;
     }
   }
 
-  gene g_jin1
+  gene jaz1_gene
   {
     promoter
     {
-      constitutive: -0.3;
-      JIN1: activate(10.0, 1.0);
+      constitutive: 0.1;
+      JIN1: activate(0.1, 10.0 * (JIN1 > 1.5));
     }
     product
     {
-      default: f_jin1;
+      default: JAZ1;
     }
   }
 
-  gene g_jut
+  gene din11_gene
   {
     promoter
     {
-      constitutive: -0.3;
-      JUT: activate(10.0, 1.0);
+      constitutive: 0.1;
     }
     product
     {
-      default: f_jut;
+      default: DIN11;
     }
   }
 
-  gene g_jin1jut
+  gene at1g53885_gene
   {
     promoter
     {
-      constitutive: -0.3;
-      JIN1 + JUT: activate(10.0, 1.0);
+      constitutive: 0.1;
     }
     product
     {
-      default: f_jin1jut;
+      default: AT1G53885;
     }
   }
 
-  gene g_other
+  gene pdf12b_gene
   {
     promoter
     {
-      constitutive: -0.3;
-      r_other: activate(10.0, 1.0);
+      constitutive: 0.1;
     }
     product
     {
-      default: f_other;
+      default: PDF12B;
     }
   }
 }
-
