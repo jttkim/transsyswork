@@ -1,0 +1,249 @@
+ObjectiveSpecification-0.1
+
+globalsettingdefs
+transformation: log
+distance: correlation
+offset: 1e-18
+endglobalsettingdefs
+
+genemapping
+factor dummy = "261711_at"
+factor COI1 = "261713_at"
+factor JIN1 = "261714_at"
+factor JUT = "261715_at"
+factor JAZ = "261700_at"
+factor JAZ1 = "256017_at"
+factor JAZ10 = "250292_at" 
+factor DIN11 = "252265_at"
+factor AT1G66690 = "256376_s_at"
+factor AT1G53885 = "262226_at"
+factor PDF12B = "257365_x_at" 
+endgenemapping
+
+procedure equilibration
+runtimesteps: 100
+endprocedure
+
+procedure timepoint15min
+runtimesteps: 100
+endprocedure
+
+procedure timepoint30min
+runtimesteps: 100
+endprocedure
+
+procedure timepoint01h
+runtimesteps: 100
+endprocedure
+
+procedure timepoint03h
+runtimesteps: 100
+endprocedure
+
+procedure timepoint06h
+runtimesteps: 100
+endprocedure
+
+procedure ja_treatment
+treatment: jasmonate = 1.0
+endprocedure
+
+procedure ja_untreatment
+treatment: jasmonate = 0.0
+endprocedure
+
+procedure ko_jin1
+knockout: at1g32640_gene
+equilibration
+endprocedure
+
+procedure ko_jut
+knockout: at2g46510_gene
+equilibration
+endprocedure
+
+procedure ko_coi1
+knockout: coi1_gene
+equilibration
+endprocedure
+
+procedure ko_jaz
+knockout: jaz_gene
+equilibration
+endprocedure
+
+simexpression wt_mock
+equilibration
+endsimexpression
+
+simexpression wt_MeJA_allmin
+equilibration
+ja_treatment
+ja_untreatment
+timepoint30min
+timepoint01h
+timepoint03h
+timepoint06h
+endsimexpression
+
+simexpression wt_MeJA_15min
+equilibration
+ja_treatment
+timepoint15min
+endsimexpression
+
+simexpression wt_MeJA_30min
+equilibration
+ja_treatment
+timepoint30min
+endsimexpression
+
+simexpression wt_MeJA_01h
+equilibration
+ja_treatment
+timepoint01h
+endsimexpression
+
+simexpression wt_MeJA_03h
+equilibration
+ja_treatment
+timepoint03h
+endsimexpression
+
+simexpression wt_MeJA_06h
+equilibration
+ja_treatment
+timepoint06h
+endsimexpression
+
+simexpression jin1_mock
+ko_jin1
+equilibration
+endsimexpression
+
+simexpression ji1n_MeJA_15min
+ko_jin1
+equilibration
+ja_treatment
+timepoint15min
+endsimexpression
+
+simexpression jin1_MeJA_30min
+ko_jin1
+equilibration
+ja_treatment
+timepoint30min
+endsimexpression
+
+simexpression jin1_MeJA_01h
+ko_jin1
+equilibration
+ja_treatment
+timepoint01h
+endsimexpression
+
+simexpression jin1_MeJA_03h
+ko_jin1
+equilibration
+ja_treatment
+timepoint03h
+endsimexpression
+
+simexpression jin1_MeJA_06h
+ko_jin1
+equilibration
+ja_treatment
+timepoint06h
+endsimexpression
+
+simexpression jut_mock
+ko_jut
+equilibration
+endsimexpression
+
+simexpression jut_MeJA_15min
+ko_jut
+equilibration
+ja_treatment
+timepoint15min
+endsimexpression
+
+simexpression jut_MeJA_30min
+ko_jut
+equilibration
+ja_treatment
+timepoint30min
+endsimexpression
+
+simexpression jut_MeJA_01h
+ko_jut
+equilibration
+ja_treatment
+timepoint01h
+endsimexpression
+
+simexpression jut_MeJA_03h
+ko_jut
+equilibration
+ja_treatment
+timepoint03h
+endsimexpression
+
+simexpression jut_MeJA_06h
+ko_jut
+equilibration
+ja_treatment
+timepoint06h
+endsimexpression
+
+simexpression jin1jut_mock
+ko_jin1
+ko_jut
+equilibration
+endsimexpression
+
+simexpression jin1jut_MeJA_15min
+ko_jin1
+ko_jut
+equilibration
+ja_treatment
+timepoint15min
+endsimexpression
+
+simexpression jin1jut_MeJA_30min
+ko_jin1
+ko_jut
+equilibration
+ja_treatment
+timepoint30min
+endsimexpression
+
+simexpression jin1jut_MeJA_01h
+ko_jin1
+ko_jut
+equilibration
+ja_treatment
+timepoint01h
+endsimexpression
+
+simexpression jin1jut_MeJA_03h
+ko_jin1
+ko_jut
+equilibration
+ja_treatment
+timepoint03h
+endsimexpression
+
+simexpression jin1jut_MeJA_06h
+ko_jin1
+ko_jut
+equilibration
+ja_treatment
+timepoint06h
+endsimexpression
+
+arraymapping
+array wt_MeJA : wt_MeJA_15min / wt_mock
+endarraymapping
+
+
