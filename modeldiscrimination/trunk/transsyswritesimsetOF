@@ -53,10 +53,7 @@ objective_function = o.parse_objectivespec()
 
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
-e = objective_function.get_simulated_set(transsys_program)
-
-if tracefile is not None :
-  tracefile.write(objective_function.get_trace_file().getvalue())
+e = objective_function.get_simulated_set(transsys_program, tracefile)
 
 if noise > 0.0 :
   if rndseed is not None :
