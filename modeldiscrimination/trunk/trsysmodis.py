@@ -740,7 +740,7 @@ class SimulationRuleObjective(object) :
     pass
 
 
-  def __call__(self) :
+  def applytreatment(self, transsys_instance) :
     """Abstract method.
 """
     raise StandardError, 'abstract method called'
@@ -768,14 +768,15 @@ class SimulationKnockout(SimulationRuleObjective) :
       raise StandardError, '%s is not a string' %gene_name
     
 
-  def applytreatment(self, transsys_program) :
+  def applytreatment(self, transsys_instance) :
     """ Knock gene name out
 @param transsys_program: transsys program
 @type transsys_program: Object{transsys_program}
 """
-    knockout_tp = copy.deepcopy(transsys_program)
+    knockout_tp = copy.deepcopy(transsys_instance.transsys_program)
     knockout_tp = knockout_tp.get_knockout_copy(self.gene_name)
-    return knockout_tp
+    transsys_instance.transsys_program = knockout_tp
+    return [transsys_instance]
 
 
   def __str__(self) :
@@ -817,6 +818,7 @@ class SimulationTreatment(SimulationRuleObjective) :
     if factor_index == -1 :
       raise StandardError, 'factor "%s" not found' %self.factor_name
     transsys_instance.factor_concentration[factor_index] = self.factor_concentration
+    return [transsys_instance]
 
 
   def __str__(self) :
@@ -848,7 +850,7 @@ class SimulationTimeSteps(SimulationRuleObjective) :
     return s
 
 
-  def applytreatment(self, transsys_instance, factor_names, file, array_name) :
+  def applytreatment(self, transsys_instance) :
     """Equilibrate and output gene expression
 @param transsys_instance: transsys instance
 @type transsys_instance: Instace
@@ -861,14 +863,8 @@ class SimulationTimeSteps(SimulationRuleObjective) :
 @return: gene_expression
 @rtype: array
 """
-    ts = transsys_instance.time_series(int(self.time_steps))
-    ti_wt = ts[-1]
-    for ti in ts :
-      file.write("%s\t" %array_name)
-      for factor in factor_names :
-        file.write("%02f\t" %ti.get_factor_concentration(factor))
-      file.write("\n")
-    return ti_wt
+    ts = transsys_instance.time_series(int(self.time_steps + 1))
+    return ts
 
 
 class SimulationOverexpression(SimulationRuleObjective) :
@@ -895,29 +891,27 @@ class SimulationOverexpression(SimulationRuleObjective) :
       raise StandardError, '%s is not a numeric expression' %constitute_value
 
 
-  def applytreatment(self, transsys_program) :
+  def applytreatment(self, transsys_instance) :
     """ Overexpress gene
 @param transsys_program: transsys program
 @type transsys_program: Object{transsys_program}
 """
-    tp = copy.deepcopy(transsys_program)
+    tp = copy.deepcopy(transsys_instance.transsys_program)
     factor = tp.find_factor(self.factor_name)
     newgene = self.factor_name + "_overexpress"
-    while newgene in tp.gene_list : 
-      newgene = self.getrandomname(self.factor_name) 
+    gene_name_list = map(lambda gene: gene.name, tp.gene_list)
+    n = 0
+    while newgene in gene_name_list :
+      newgene = '%s_overexpress_%d' % (self.factor_name, n)
+      n = n + 1
     tp.gene_list.append(transsys.Gene(newgene, factor, [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
-    return tp
+    transsys_instance.transsys_program = tp
+    return [transsys_instance]
 
 
   def __str__(self) :
     s = self.magic + ": " + self.gene_name + " = " + ("%s" %self.constitute_value)  
     return s
-
-
-  def getrandomname(self, factor) :
-    s = factor + "_overexpress"
-    s = s + ('%s' %random.randint(100,999))
-    return s 
 
 
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
@@ -1084,7 +1078,6 @@ series is the simulation of the gene expression levels for that genotype.
     self.transformation = globalsettings_defs.get_globalsettings_list()['transformation']
     self.offset = globalsettings_defs.get_globalsettings_list()['offset']
     self.distance = globalsettings_defs.get_globalsettings_list()['distance']
-    self.file = StringIO.StringIO('Hello')
 
 
   def __call__(self, transsys_program) :
@@ -1128,45 +1121,49 @@ series is the simulation of the gene expression levels for that genotype.
     self.expression_set = self.transform_expression_set(self.expression_set)
 
 
-  def get_simulated_set(self, transsys_program) :
+  def get_simulated_set(self, transsys_program, tracefile = None) :
     """Produce simulated data
 @param transsys_program: transsys program
 @type transsys_program: transsys program
 @return: Expression set
 @rtype: object
 """
-    self.trace_interface(transsys_program)
-
     e = self.createTemplate()
+    self.write_trace_header(tracefile, transsys_program)
     for array in self.simexpression_defs :
       tp = copy.deepcopy(transsys_program)
       ti = transsys.TranssysInstance(tp)
       e.add_array(array.get_simexpression_name())
+      ti_trace = []
       for instruction in array.get_resolve_instruction_list() :
-        if instruction.magic == "knockout" or instruction.magic == "overexpress":
-          tp = instruction.applytreatment(tp)
-          ti_new = transsys.TranssysInstance(tp)
-          # FIXME: shouldn't really interfere with instance's state like this
-          # FIXME: transplanting the factor_concentration list relies on factor order being preserved by the knockout operation
-          ti_new.factor_concentration = ti.factor_concentration
-          ti = ti_new
-	elif instruction.magic == "treatment" :
-          instruction.applytreatment(ti)
-	else :
-          ti = instruction.applytreatment(ti, transsys_program.factor_names(), self.file, array.get_simexpression_name())
-      map(lambda t: e.set_expression_value(array.get_simexpression_name(), t, ti.get_factor_concentration(t)),e.expression_data.expression_data.keys())
+        ts = instruction.applytreatment(ti)
+        sys.stderr.write('applied instruction, got %d instances\n' % len(ts))
+        ti = ts[-1]
+        ti_trace = ti_trace + ts
+      map(lambda t: e.set_expression_value(array.get_simexpression_name(), t, ti.get_factor_concentration(t)), e.expression_data.expression_data.keys())
+      self.write_trace_simexpression(tracefile, array.get_simexpression_name(), ti_trace)
     return e
 
 
-  def trace_interface(self, transsys_program) :
+  def write_trace_header(self, tracefile, transsys_program) :
     """Trace interface 
 @param transsys_program: transsys program
 @type transsys_program: transsys program
 """
-    self.file.write("Array\t")
-    for factor in transsys_program.factor_list :
-      self.file.write("%s\t" %factor.name)
-    self.file.write("\n")
+    if tracefile is not None :
+      tracefile.write("Array\t")
+      for factor in transsys_program.factor_list :
+        tracefile.write("%s\t" %factor.name)
+      tracefile.write("\n")
+
+
+  def write_trace_simexpression(self, tracefile, array_name, ti_trace) :
+    if tracefile is not None :
+      for ti in ti_trace :
+        tracefile.write("%s\t" % array_name)
+        for factor in ti.transsys_program.factor_list :
+          tracefile.write("%02f\t" % ti.get_factor_concentration(factor.name))
+        tracefile.write("\n")
 
 
   def get_trace_file(self) :
