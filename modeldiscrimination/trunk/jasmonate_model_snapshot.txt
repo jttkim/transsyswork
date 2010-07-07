@@ -1,0 +1,101 @@
+ObjectiveSpecification-0.1
+
+globalsettingdefs
+transformation: log
+distance: correlation
+offset: 1e-18
+endglobalsettingdefs
+
+genemapping
+factor dummy = "261711_at"
+factor COI1 = "261713_at"
+factor JIN1 = "261714_at"
+factor JUT = "261715_at"
+factor JAZ = "261700_at"
+factor JAZ1 = "256017_at"
+factor JAZ10 = "250292_at" 
+factor DIN11 = "252265_at"
+factor AT1G66690 = "256376_s_at"
+factor AT1G53885 = "262226_at"
+factor PDF12B = "257365_x_at" 
+endgenemapping
+
+procedure equilibration
+runtimesteps: 100
+endprocedure
+
+procedure run15min
+runtimesteps: 15
+endprocedure
+
+procedure run30min
+runtimesteps: 30
+endprocedure
+
+procedure run1h
+runtimesteps: 60
+endprocedure
+
+procedure run3h
+runtimesteps: 180
+endprocedure
+
+procedure run6h
+runtimesteps: 360
+endprocedure
+
+procedure ja_treatment
+treatment: jasmonate = 1.0
+endprocedure
+
+procedure ja_untreatment
+treatment: jasmonate = 0.0
+endprocedure
+
+procedure ko_jin1
+knockout: at1g32640_gene
+endprocedure
+
+procedure ko_jut
+knockout: at2g46510_gene
+endprocedure
+
+procedure ko_coi1
+knockout: coi1_gene
+endprocedure
+
+procedure ko_jaz
+knockout: jaz_gene
+endprocedure
+
+simexpression wt_MeJA_allmin
+equilibration
+ja_treatment
+run30min
+run30min
+run1h
+run1h
+run1h
+run1h
+run1h
+endsimexpression
+
+simexpression jin1_MeJA_allmin
+ko_jin1
+equilibration
+ja_treatment
+run30min
+run30min
+run1h
+run1h
+run1h
+run1h
+run1h
+endsimexpression
+
+arraymapping
+array wt_MeJA : wt_MeJA_allmin
+array wt_MeJA : jin1_MeJA_allmin
+endarraymapping
+
+

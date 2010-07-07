@@ -1137,7 +1137,6 @@ series is the simulation of the gene expression levels for that genotype.
       ti_trace = []
       for instruction in array.get_resolve_instruction_list() :
         ts = instruction.applytreatment(ti)
-        sys.stderr.write('applied instruction, got %d instances\n' % len(ts))
         ti = ts[-1]
         ti_trace = ti_trace + ts
       map(lambda t: e.set_expression_value(array.get_simexpression_name(), t, ti.get_factor_concentration(t)), e.expression_data.expression_data.keys())
@@ -1810,6 +1809,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_instruction(self) :
+    # FIXME: primary instructions should be keywords, not identifiers
     """Check procedure lexicon
 @return: array
 @rtype: array[]
