@@ -37,6 +37,12 @@ transsys jasmonate
   }
 
   // accelerated decay in presence of COI1 and jasmonate
+  factor jaz_mrna
+  {
+    decay: 0.2;
+    diffusibility: 0.0;
+  }
+
   factor JAZ
   {
     decay: 0.1 + 0.3 * COI1 * jasmonate;
@@ -98,6 +104,20 @@ transsys jasmonate
     {
       constitutive: 0.1;
       JIN1: activate(0.1, 1.0);
+      JIN1 + JAZ: repress(0.1, 1.0);
+    }
+    product
+    {
+      default: jaz_mrna;
+    }
+  }
+
+
+  gene jaz_ribosome
+  {
+    promoter
+    {
+      constitutive: jaz_mrna;
     }
     product
     {
