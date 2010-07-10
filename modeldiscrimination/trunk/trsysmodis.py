@@ -753,8 +753,7 @@ class SimulationRuleObjective(object) :
 class SimulationKnockout(SimulationRuleObjective) :
   """Abstract function to simulate knockout, treatment"""
 
-  magic = 'knockout'
-
+  magic = "knockout"
 
   def __init__(self, gene_name) :
     """Constructor
@@ -787,8 +786,7 @@ class SimulationKnockout(SimulationRuleObjective) :
 class SimulationTreatment(SimulationRuleObjective) :
   """ Class to simulate treatment"""
 
-  magic = 'treatment'
-
+  magic = "treatment"
 
   def __init__(self, factor_name, factor_concentration) :
     """Constructor
@@ -829,9 +827,7 @@ class SimulationTreatment(SimulationRuleObjective) :
 class SimulationTimeSteps(SimulationRuleObjective) :
   """ Class to simulate timesteps """
 
-
-  magic = 'runtimesteps'
-
+  magic = "timesteps"
 
   def __init__(self, time_steps) :
     """Constructor
@@ -870,7 +866,7 @@ class SimulationTimeSteps(SimulationRuleObjective) :
 class SimulationOverexpression(SimulationRuleObjective) :
   """ Class simulate factor overexpression line """
 
-  magic = 'overexpress'
+  magic = "overexpress"
 
 
   def __init__(self, factor_name, constitute_value) :
@@ -1135,13 +1131,23 @@ series is the simulation of the gene expression levels for that genotype.
       ti = transsys.TranssysInstance(tp)
       e.add_array(array.get_simexpression_name())
       ti_trace = []
-      for instruction in array.get_resolve_instruction_list() :
+      inst = 1
+      while inst is not 'None':
+        inst, instruction = self.resolveInstruction(array.get_resolve_instruction_list())
         ts = instruction.applytreatment(ti)
         ti = ts[-1]
         ti_trace = ti_trace + ts
       map(lambda t: e.set_expression_value(array.get_simexpression_name(), t, ti.get_factor_concentration(t)), e.expression_data.expression_data.keys())
       self.write_trace_simexpression(tracefile, array.get_simexpression_name(), ti_trace)
     return e
+
+
+  def resolveInstruction(self, instr) :
+    if (type(instr).__name__== 'SimulationTimeSteps' or type(instr).__name__== 'SimulationKnockout' or type(instr).__name__== 'SimulationOverexpression' or type(instr).__name__== 'SimulationTreatment') :
+      return 'None', instr
+    else :
+      for i in instr :
+        self.resolveInstruction(i)
 
 
   def write_trace_header(self, tracefile, transsys_program) :
@@ -1427,6 +1433,7 @@ class Procedure(object) :
 @type instruction_list: Array[]
 """
     self.instruction_list = instruction_list
+    self.resolved_instruction_list = []
     self.procedure_name = procedure_name
 
 
@@ -1436,6 +1443,10 @@ class Procedure(object) :
   
   def get_instruction_list(self) :
     return(self.instruction_list)
+
+
+  def get_resolved_instruction_list(self) :
+    return(self.resolved_instruction_list)
 
   
   def __str__(self) :
@@ -1544,7 +1555,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'genemapping', 'endgenemapping', 'procedure', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
+    self.keywords = ['factor', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
     self.identifier_re = re.compile('["A-Za-z_]["A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -1587,6 +1598,9 @@ class Scanner(object) :
          self.buffer = ''
     while self.buffer == '' :
       self.buffer = self.infile.readline()
+      if len(self.buffer) > 0 :
+        if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
+          self.buffer = ''
       self.lineno = self.lineno + 1
     if self.buffer == '' :
       return None, None
@@ -1814,15 +1828,17 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: array
 @rtype: array[]
 """
-    t = self.expect_token('identifier')
-    if "treatment" in t :
+    t = self.scanner.token()
+    if "treatment" in t[0] :
       return(self.validate_treatment())
-    elif "knockout" in t :
+    elif "knockout" in t[0] :
       return(self.validate_knockout())
-    elif t == "runtimesteps" :
+    elif "runtimesteps" in t[0] :
       return(self.validate_runtimesteps())
-    elif t == "overexpress" :
+    elif "overexpress" in t[0]:
       return(self.validate_overexpression())
+    else :
+      return(t[1])
 
 
   def validate_treatment(self):
@@ -2077,37 +2093,23 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def resolve_spec(self, globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs) :
     """ Resolve spec """
-    self.resolve_spec_simexpression(simexpression_defs, procedure_defs)
-    self.resolve_spec_arraymapping(simexpression_defs, arraymapping_defs)
+    procedure_name_list = self.validateProcedureName(procedure_defs)
+    self.resolveSpecProcedure(procedure_defs)
+    self.resolveSpecSimexpression(procedure_name_list, simexpression_defs, procedure_defs)
+    self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
 
 
-  def resolve_spec_simexpression(self, simexpression_defs, procedure_defs) :
-    """ Validate transformation definition
-@param simexpression_defs: simexpression_defs
-@type simexpression_defs: L{SimExpression}
-@param procedure_defs: procedure defs
-@type procedure_defs: L{Procedure}
-"""
-    procedure_name_list = []
+  def resolveSpecProcedure(self, procedure_defs) :
+    """Resolve procedure """
     for procedure in procedure_defs :
-      if len(procedure_name_list) == 0 :
-        procedure_name_list.append(procedure.get_procedure_name()) 
-      else :
-        if procedure.get_procedure_name() not in procedure_name_list :
-          procedure_name_list.append(procedure.get_procedure_name())
+      for instruction in procedure.get_instruction_list() :
+        if (isinstance(instruction, SimulationKnockout) or isinstance(instruction, SimulationTreatment) or isinstance(instruction, SimulationOverexpression) or isinstance(instruction, SimulationTimeSteps)) :
+	  procedure.resolved_instruction_list = procedure.get_instruction_list()
 	else :
-	  raise StandardError, "%s Procedure already declared" %procedure.get_procedure_name()
+	  procedure.resolved_instruction_list.append(self.searchProcedure(instruction, procedure_defs))
 
 
-    for simexpression in simexpression_defs :
-      for instruction in simexpression.get_unresolve_instruction_list() :
-        if instruction in procedure_name_list :
-	  simexpression.resolve_instruction_list.append(self.search_procedure(instruction, procedure_defs))
-	else :
-	  raise StandardError, 'Unrecognisable instruction %s' %instruction
-
-
-  def search_procedure(self, procedure_name, procedure_defs) :
+  def searchProcedure(self, procedure_name, procedure_defs) :
     """Search procedure_defs 
 @param procedure_name: procedure name
 @type procedure_name: C{String}
@@ -2117,10 +2119,40 @@ class EmpiricalObjectiveFunctionParser(object) :
     for procedure in procedure_defs :
       if procedure.get_procedure_name() == procedure_name :
         break
-    return procedure.get_instruction_list()[0]
+    return procedure.get_resolved_instruction_list()
+
+  
+  def validateProcedureName(self, procedure_defs) :
+    """ Validate procedure """
+    procedure_name_list = []
+    for procedure in procedure_defs :
+      if len(procedure_name_list) == 0 :
+        procedure_name_list.append(procedure.get_procedure_name()) 
+      else :
+        if procedure.get_procedure_name() not in procedure_name_list :
+          procedure_name_list.append(procedure.get_procedure_name())
+	else :
+	  raise StandardError, "%s Procedure already declared" %procedure.get_procedure_name()
+    return procedure_name_list
 
 
-  def resolve_spec_arraymapping(self, simexpression_defs, arraymapping_defs) :
+  def resolveSpecSimexpression(self, procedure_name_list, simexpression_defs, procedure_defs) :
+    """ Validate transformation definition
+@param simexpression_defs: simexpression_defs
+@type simexpression_defs: L{SimExpression}
+@param procedure_defs: procedure defs
+@type procedure_defs: L{Procedure}
+"""
+
+    for simexpression in simexpression_defs :
+      for instruction in simexpression.get_unresolve_instruction_list() :
+        if instruction in procedure_name_list :
+	  simexpression.resolve_instruction_list.append(self.searchProcedure(instruction, procedure_defs))
+	else :
+	  raise StandardError, 'Unrecognisable instruction %s' %instruction
+
+
+  def resolveSpecArraymapping(self, simexpression_defs, arraymapping_defs) :
     """ Validate transformation definition
 @param arraymapping_defs: arraymapping defs
 @type arraymapping_defs: L{ArrayMapping}
@@ -2142,12 +2174,12 @@ class EmpiricalObjectiveFunctionParser(object) :
         raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_perturbation()
       if arraymapping.get_unresolve_reference() not in a and arraymapping.get_unresolve_reference() != None :
         raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_reference()
-      arraymapping.resolve_perturbation = self.search_simexpression(arraymapping.get_unresolve_perturbation(), simexpression_defs)
+      arraymapping.resolve_perturbation = self.searchSimExpression(arraymapping.get_unresolve_perturbation(), simexpression_defs)
       if arraymapping.get_unresolve_reference() != None: 
-        arraymapping.resolve_reference = self.search_simexpression(arraymapping.get_unresolve_reference(), simexpression_defs)
+        arraymapping.resolve_reference = self.searchSimExpression(arraymapping.get_unresolve_reference(), simexpression_defs)
 
 
-  def search_simexpression(self, array_name, simexpression_defs) :
+  def searchSimExpression(self, array_name, simexpression_defs) :
     """ Search array 
 @param array_name: array name
 @type array_name: C{String}
