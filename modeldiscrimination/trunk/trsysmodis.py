@@ -1964,15 +1964,10 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.expect_token('=')
       while self.scanner.lookahead() != 'factor' and self.scanner.lookahead() != 'endgenemapping':
         d = self.expect_token('identifier')
-	if len(values) > 1 :
-	  if d not in values :
-             mapping.append(d)
-	  else :
-	    raise StandardError, '%s is already used as mapping key' %d
-	else :
-          mapping.append(d)
+        mapping.append(d)
 	values.append(d)
       genemapping_dict[m] = mapping
+    print "d:  ", genemapping_dict
     return(genemapping_dict)
 
 
