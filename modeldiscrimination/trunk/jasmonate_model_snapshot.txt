@@ -21,7 +21,7 @@ factor PDF12B = "257365_x_at"
 endgenemapping
 
 procedure equilibration
-runtimesteps: 100
+runtimesteps: 1000
 endprocedure
 
 procedure run15min
