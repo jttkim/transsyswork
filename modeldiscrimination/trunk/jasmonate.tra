@@ -36,16 +36,16 @@ transsys jasmonate
     diffusibility: 0.0;
   }
 
-  // accelerated decay in presence of COI1 and jasmonate
   factor jaz_mrna
   {
-    decay: 0.2;
+    decay: 0.05;
     diffusibility: 0.0;
   }
 
+  // accelerated decay in presence of COI1 and jasmonate
   factor JAZ
   {
-    decay: 0.1 + 0.3 * COI1 * jasmonate;
+    decay: 0.005 + 0.05 * COI1 * jasmonate;
     diffusibility: 0.0;
   }
 
@@ -102,9 +102,9 @@ transsys jasmonate
   {
     promoter
     {
-      constitutive: 0.1;
-      JIN1: activate(0.1, 1.0);
-      JIN1 + JAZ: repress(0.1, 1.0);
+      constitutive: 0.01;
+      JIN1: activate(1.0, 0.1);
+      JIN1 + JAZ: repress(1.0, 0.1);
     }
     product
     {
@@ -117,7 +117,7 @@ transsys jasmonate
   {
     promoter
     {
-      constitutive: jaz_mrna;
+      constitutive: 0.07 * jaz_mrna;
     }
     product
     {
@@ -130,7 +130,8 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
-      JIN1: activate(0.1, 1.0 * (JAZ < 6));
+      JIN1: activate(0.1, 1.0);
+      JIN1 + JAZ: repress(0.1, 1.0);
     }
     product
     {
