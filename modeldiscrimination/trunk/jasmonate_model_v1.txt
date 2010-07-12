@@ -7,12 +7,13 @@ offset: 1e-18
 endglobalsettingdefs
 
 genemapping
-factor dummy = "261711_at"
+factor dummy = "261711_at" "261718_at"
 factor COI1 = "261713_at"
 factor JIN1 = "261714_at"
 factor JUT = "261715_at"
 factor JAZ = "261700_at"
-factor JAZ1 = "256017_at"
+#factor JAZ1 = "256017_at"
+factor JAZ1 = "261700_at"
 factor JAZ10 = "250292_at" 
 factor DIN11 = "252265_at"
 factor AT1G66690 = "256376_s_at"
