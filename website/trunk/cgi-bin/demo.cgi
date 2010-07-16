@@ -146,7 +146,12 @@ def pstopngmono(pslines) :
 def urlString(s) :
   u = ''
   for c in s :
-    u = u + ('%%%02x' % ord(c))
+    if c.isdigit() or c.isalpha() :
+      u = u + c
+    elif c == ' ' :
+      u = u + '+'
+    else :
+      u = u + ('%%%02x' % ord(c))
   return u
 
 
@@ -157,7 +162,7 @@ def pageStart(f) :
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<title>transsys demo: error</title>
+<title>transsys demo</title>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"/>
 </head>
 
