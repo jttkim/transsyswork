@@ -19,7 +19,7 @@ class webtool(object) :
   """Class to get information from webform
 """
 
-  def __init__(self, form) :
+  def __init__(self, form = None) :
     """Constructor
 @param form: webform
 @type form: object
@@ -28,8 +28,6 @@ class webtool(object) :
     self.equilibration_length = 50
     self.num_restarts = 5
     self.expr_data = {}
-    self.pheno_data = {}
-    self.feature_data = {}
 
 
   def printfitness(self, log) :
@@ -128,29 +126,6 @@ class webtool(object) :
       expr_dict[y[0]] = y[1:]
     expr = self.write_data(expr_dict)
     return expr
-
-
-  def get_pheno_data(self) :
-    """ Get pheno data
-@return: pheno
-@rtype: dict{}
-"""
-    list_type = []
-    list_nk = []
-    pheno_dict = {"":["mutant", "gene"]}
-  
-    for element in self.form.getvalue("dropdownType") :
-       list_type.append(element)
-    for element in self.form.getvalue("dropdownGeneKn") :
-       list_nk.append(element)
-
-    for i, gene in enumerate(self.form.getvalue("dropdownExperiment")):
-      pheno_values = []
-      pheno_values.append(list_type[i])   
-      pheno_values.append(list_nk[i])   
-      pheno_dict[gene] = pheno_values 
-    pheno = self.write_data(pheno_dict)
-    return pheno
 
 
   def get_transformer_data(self) :
@@ -273,21 +248,6 @@ class webtool(object) :
       p.write('\n')
     p.seek(0)
     return(p)
-
-
-  def get_feature_data(self) :
-    """ Get feature data
-@return: feature
-@rtype: dict{}
-"""
-    factor_list = self.form.getvalue('factor')
-    factor_list = factor_list.split('\r\n')
-    factor_list = self.validatearray(factor_list)
-    feature_dict = {"":[]}
-    for factor in factor_list :
-      feature_dict[factor] = []
-    feature = self.write_data(feature_dict)
-    return feature
 
 
   def validatearray(self, f) :

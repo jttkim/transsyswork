@@ -18,7 +18,7 @@ import cgitb
 import StringIO
 import trsysmodis
 import transsys
-
+import trsysweb
 
 def trsysplot(tp, numTimesteps) :
   rfuncs = """library(xpipe);
@@ -311,11 +311,22 @@ def validateModel(tp1, tp2) :
 def getSpec(tp) :
   p = StringIO.StringIO()
   s = ("%s\n\n" %trsysmodis.EmpiricalObjectiveFunctionParser.magic)
-  s = s + 'globalsettingdefs\ntransformation: log\ndistance: correlation\noffset: 1e-18\nendglobalsettingdefs'
+  s = s + 'globalsettingdefs\ntransformation: log\ndistance: correlation\noffset: 1e-18\nendglobalsettingdefs\n\n'
   s = s + 'genemapping\n'
   for factor in tp.factor_names() :
     s = s + ("factor %s = \"%sat\"\n" %(factor, factor))
-  s = s + 'endgenemapping\n'
+  s = s + 'endgenemapping\n\n'
+  s = s + 'procedure equilibration\nruntimesteps: 100\nendprocedure\n\n'
+  for gene in tp.gene_names() :
+    s = s + ("procedure ko%s\n" %gene)
+    s = s + ("knockout: %s\n" %gene)
+    s = s + 'endprocedure\n\n'
+  s = s + 'simexpression wt\nequilibration\nendsimexpression\n\n'
+  for gene in tp.gene_names() :
+    s = s + ("simexpression %s\n" %gene)
+    s = s + ("ko%s\n" %gene)
+    s = s + 'equilibration\n'
+    s = s + 'endsimexpression\n\n'
   s = s + '\n'
   p.write(s)
   p.seek(0)
@@ -326,11 +337,13 @@ def modelDiscrimination(tp1, tp2, expr):
   expression_set = trsysmodis.ExpressionSet()
   expression_set.read(expr, p = None, f = None)
   o = trsysmodis.EmpiricalObjectiveFunctionParser(getSpec(tp1))
+  objective_function = o.parse_objectivespec()
   objective_function.set_expression_set(expression_set)
+  optimiser = transsys.optim.GradientOptimiser()
   optimiser.randomInitRange = 1.0
-  model = open(candidate_name,'r')
-
-
+  optimiser.termination_relative_improvement = 0.5
+  wm = trsysweb.webtool(form = None)
+  opt_result = optimiser.optimise(tp1, objective_function)
 
 
 cgitb.enable()
