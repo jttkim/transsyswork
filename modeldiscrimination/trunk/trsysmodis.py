@@ -1687,10 +1687,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param f: Spec file
 @type f: file
 """
-    if isinstance(f, types.FileType) :
-      self.scanner = Scanner(f)
-    else :
-      raise StandardError, '%s is not a file' %f
+    self.scanner = Scanner(f)
 
 
   def expect_token(self, expected_token) :
@@ -1760,6 +1757,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: arraymapping_defs
 @rtype: dict{}
 """
+    arraymapping_defs = []
     if self.scanner.lookahead() == 'arraymapping' :
       arraymapping_defs = self.parse_arraymapping_def()
       self.expect_token('endarraymapping')
