@@ -252,28 +252,28 @@ def transsysPlotImage(f, tp, numTimesteps) :
   f.write(png)
 
 
-def get_expr_data(x):
+def getExprData(x):
   expr_dict = {}
   x = x.split('\r\n')
-  x = validatearray(x)
+  x = validateArray(x)
   for arrayval in x[:1]:
     y = arrayval.split()
     expr_dict[""] = y
   for arrayval in x[1:]:
     y = arrayval.split()
     expr_dict[y[0]] = y[1:]
-  expr = write_data(expr_dict)
+  expr = writeData(expr_dict)
   return expr
 
 
-def validatearray(f) :
+def validateArray(f) :
   for i, array in enumerate(f):
    if len(array) <= 0 :
      del f[i]
   return f
 
 
-def write_data(data_dict) :
+def writeData(data_dict) :
   p = StringIO.StringIO()
   for group, values in data_dict.iteritems() :
     p.write('%s'%group)
@@ -284,14 +284,14 @@ def write_data(data_dict) :
   return(p)
 
 
-def validate_tp(tp) :
+def validateTP(tp) :
   try :
     return transsys.TranssysProgramParser(tp).parse()
   except :
     return 0
 
 
-def validate_model(tp1, tp2) :
+def validateModel(tp1, tp2) :
   gene = 1
   factor = 1
   if (tp1 == 0 or tp2 == 0) :
@@ -308,10 +308,29 @@ def validate_model(tp1, tp2) :
   return factor
 
 
-def modeldiscrimination(tp1, tp2, expr):
+def getSpec(tp) :
+  p = StringIO.StringIO()
+  s = ("%s\n\n" %trsysmodis.EmpiricalObjectiveFunctionParser.magic)
+  s = s + 'globalsettingdefs\ntransformation: log\ndistance: correlation\noffset: 1e-18\nendglobalsettingdefs'
+  s = s + 'genemapping\n'
+  for factor in tp.factor_names() :
+    s = s + ("factor %s = \"%sat\"\n" %(factor, factor))
+  s = s + 'endgenemapping\n'
+  s = s + '\n'
+  p.write(s)
+  p.seek(0)
+  return p
+
+
+def modelDiscrimination(tp1, tp2, expr):
   expression_set = trsysmodis.ExpressionSet()
   expression_set.read(expr, p = None, f = None)
-  o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
+  o = trsysmodis.EmpiricalObjectiveFunctionParser(getSpec(tp1))
+  objective_function.set_expression_set(expression_set)
+  optimiser.randomInitRange = 1.0
+  model = open(candidate_name,'r')
+
+
 
 
 cgitb.enable()
@@ -337,12 +356,12 @@ if actionField in form :
   action = form[actionField].value
 if numTimestepsField in form :
   numTimesteps = int(form[numTimestepsField].value)
-tp = validate_tp(StringIO.StringIO(tpString))
-tpCand = validate_tp(StringIO.StringIO(tpCandString))
-exprData = get_expr_data(exprDataString)
+tp = validateTP(StringIO.StringIO(tpString))
+tpCand = validateTP(StringIO.StringIO(tpCandString))
+exprData = getExprData(exprDataString)
 
-if (validate_model(tp, tpCand) == 1) :
- modeldiscrimination(tp, tpCand, exprDataString)
+if (validateModel(tp, tpCand) == 1) :
+ modelDiscrimination(tp, tpCand, exprData)
 
 if action == 'plot' :
   transsysPlotImage(f, tp, numTimesteps)
