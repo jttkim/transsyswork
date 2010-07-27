@@ -18,5 +18,12 @@ jtkinstall : pythondist
 pythondist :
 	cd python ; python setup.py sdist --formats=gztar
 
-.PHONY : default install pythondist getapidocs
+tgz : clean
+	cd ../../ ; tar -zcvf website_trunk.tgz website/trunk
+	mv ../../website_trunk.tgz .
+
+clean :
+	rm -f website_trunk.tgz
+
+.PHONY : default install pythondist getapidocs tgz clean
 
