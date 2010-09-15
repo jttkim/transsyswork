@@ -358,6 +358,19 @@ subjected to offset adding and log transformation.
   simulation from that of the distance measure.}
 \cite{Parkinson2009}
 
+\subsection{ContantTerms}
+
+constantterms_header ::= "constanttermsdefs" NEWLINE
+constantterms_body ::= (constantterms_instruction)+
+constantterms_footer ::= "endconstanttermdefs" NEWLINE
+constanterms_instruction ::= "factor: " identifier | "gene: " identifier 
+
+constant terms are those factors or genes, in a transsys program, whose
+initial conditions must not be changed by the optimiser when performing
+model selection. There are a number of reasons why this option is available, 
+one of them is the use of mathematical expressions rather than single values
+to specify under which conditions a biochemical reaction might take place.
+
 \subsection{Terminal Tokens (Lexical Structure)}
 
 \begin{ebnfrule}
