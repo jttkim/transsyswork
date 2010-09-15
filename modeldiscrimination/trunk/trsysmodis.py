@@ -1987,7 +1987,6 @@ class EmpiricalObjectiveFunctionParser(object) :
         mapping.append(d)
 	values.append(d)
       genemapping_dict[m] = mapping
-    print "d:  ", genemapping_dict
     return(genemapping_dict)
 
 
