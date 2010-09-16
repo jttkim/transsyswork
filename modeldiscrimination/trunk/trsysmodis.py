@@ -1066,7 +1066,7 @@ and finally equilibrated again. The instance at the end of this time
 series is the simulation of the gene expression levels for that genotype.
 """ 
 
-  def __init__(self, globalsettings_defs, genemapping_defs, procedure_defs, simexpression_defs, arraymapping_defs) :
+  def __init__(self, globalsettings_defs, whitelist_defs, genemapping_defs, procedure_defs, simexpression_defs, arraymapping_defs) :
     """ Constructor 
 @param globalsettings_defs: global settings
 @type globalsettings_defs: L{GlobalSettings}
@@ -1081,6 +1081,7 @@ series is the simulation of the gene expression levels for that genotype.
 """
     self.expression_set = None
     self.globalsettings_defs = globalsettings_defs
+    self.whitelist_defs = whitelist_defs
     self.genemapping_defs = genemapping_defs
     self.procedure_defs = procedure_defs
     self.simexpression_defs = simexpression_defs
@@ -1129,6 +1130,10 @@ series is the simulation of the gene expression levels for that genotype.
     self.validate_spec_simexpression()
     self.validate_spec_genemapping()
     self.expression_set = self.transform_expression_set(self.expression_set)
+
+
+  def set_white_list(self) :
+    se    
 
 
   def get_simulated_set(self, transsys_program, tracefile = None) :
@@ -1389,6 +1394,47 @@ class GlobalSettings(object) :
     s = s + 'endglobalsettingdefs\n'
     return s
 
+##
+class WhiteList(object) :
+  """  Object WhiteList """
+
+
+  def __init__(self, whitelist_dict):
+    """ Constructor
+@param whitelist_dict: whitelist_dict
+@type whitelist_dict: Dictionary{S}
+"""
+    self.whitelist_dict = whitelist_dict
+   
+
+  def get_term_list(self) :
+    return(self.whitelist_dict)
+
+
+  def get_factorwhitelist(self) :
+    return(self.whitelist_dict['factor'])
+
+
+  def get_genewhitelist(self) :
+    return(self.whitelist_dict['gene'])
+
+
+  def __str__(self) :
+    """Return string of WhiteList
+@return: s
+@rtype: C{String}
+"""    
+    s = 'whitelistdefs\n'
+    for name, value in self.whitelist_dict.iteritems() :
+      w = ''
+      for u in value :
+	w = w + u + " "
+      s = s + ('term ' + name + " = " + w + "\n")
+    s = s + 'endwhitelistdefs\n\n'
+    return s
+
+
+##
 
 class GeneMapping(object) :
   """  Object GeneMapping """
@@ -1571,7 +1617,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
+    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
     self.identifier_re = re.compile('["A-Za-z_]["A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -1976,7 +2022,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: dictionary{}
 """
     genemapping_dict = {}
-    values = []
     while self.scanner.lookahead() != 'endgenemapping' :
       mapping = []
       self.expect_token('factor')
@@ -1985,7 +2030,6 @@ class EmpiricalObjectiveFunctionParser(object) :
       while self.scanner.lookahead() != 'factor' and self.scanner.lookahead() != 'endgenemapping':
         d = self.expect_token('identifier')
         mapping.append(d)
-	values.append(d)
       genemapping_dict[m] = mapping
     return(genemapping_dict)
 
@@ -2000,6 +2044,63 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.expect_token('endgenemapping')
       self.expect_token('\n')
     return GeneMapping(genemapping_list) 
+
+
+### Whitelist
+
+  def parse_whitelist_header(self) :
+    """ Parse whitelist header
+@return: whitelist header
+@rtype: C{String}
+"""
+    self.expect_token('whitelistdefs')
+
+
+  def parse_whitelist_footer(self):
+    """ Parse whitelist footer
+@return: Footer
+@rtype: C{String}
+"""
+    return(self.scanner.lookahead())
+ 
+
+  def parse_whitelist_body(self):
+    """ Parse whitelist body
+@return: whitelist dictionary
+@rtype: dictionary{}
+"""
+    whitelist_dict = {}
+    values = []
+    self.expect_token('factor')
+    self.expect_token(':')
+    while self.scanner.lookahead() != 'endwhitelistdefs' and self.scanner.lookahead() != 'gene' :
+      t = self.expect_token('identifier')
+      if t in values :
+	  raise StandardError, "%s already whitelisted" %t
+      values.append(t[1:(len(t)-1)])
+    whitelist_dict['factor'] = values
+    values = []
+    self.expect_token('gene')
+    self.expect_token(':')
+    while self.scanner.lookahead() != 'endwhitelistdefs' :
+      t = self.expect_token('identifier')
+      if t in values :
+	  raise StandardError, "%s already whitelisted" %t
+      values.append(t[1:(len(t)-1)])
+    whitelist_dict['gene'] = values
+    return(whitelist_dict)
+
+
+  def parse_whitelist(self) :
+    """ Parse objective function whitelist """
+
+    if self.scanner.lookahead() == 'whitelistdefs' :
+      self.parse_whitelist_header()
+      whitelist_dict = self.parse_whitelist_body()
+      self.parse_whitelist_footer()
+      self.expect_token('endwhitelistdefs')
+      self.expect_token('\n')
+    return WhiteList(whitelist_dict) 
 
 
 ### Global settings 
@@ -2220,12 +2321,13 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{KnockoutTreatmentObjective}
 """
     globalsettings = self.parse_globalsettings()
+    whitelist = self.parse_whitelist()
     genemapping = self.parse_genemapping()
     procedure_defs = self.parse_procedure_defs()
     simexpression_defs = self.parse_simexpression_defs()
     arraymapping_defs = self.parse_arraymapping_defs()
     self.resolve_spec(globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
-    return KnockoutTreatmentObjective(globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
+    return KnockoutTreatmentObjective(globalsettings, whitelist, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
 
 
   def parse_objectivespec(self) :
