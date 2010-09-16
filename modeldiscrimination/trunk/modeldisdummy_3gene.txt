@@ -3,8 +3,13 @@ ObjectiveSpecification-0.1
 globalsettingdefs
 transformation: log
 distance: correlation
-offset: 1e-18
+offset: 1e-1
 endglobalsettingdefs
+
+whitelistdefs
+factor: "f0000" "f0002"
+gene: "g0000" "g0002"
+endwhitelistdefs
 
 genemapping
 factor f0000 = "257221_at" "257222_at" "257223_at"

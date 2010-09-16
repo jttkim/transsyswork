@@ -6,7 +6,7 @@ procedure_defs ::= (procedure_def)+
 simexpression_defs ::= (simexpression_def)+
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
-constantterms ::= constantterms_header constantterms_body contantterms_footer
+blacklist ::= blacklist_header blacklist_body blacklist_footer
 NEWLINE
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
 genemapping_def ::= genemapping_header genemapping_body genemapping_footer NEWLINE
@@ -14,11 +14,11 @@ procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
 simexpression_def ::= simexpression_header simexpression_body simexpression_footer NEWLINE
 arraymapping_def ::= arraymapping_header arraymapping_body arraymapping_footer
 
-constantterms_header ::= "constanttermsdefs" NEWLINE
-constantterms_body ::= (constantterms_instruction)+
-constantterms_footer ::= "endconstanttermdefs" NEWLINE
+blacklist_header ::= "blacklistdefs" NEWLINE
+blacklist_body ::= (blacklist_instruction)+
+blacklist_footer ::= "endblacklistdefs" NEWLINE
 
-constanterms_instruction ::= "factor: " identifier | "gene: " identifier 
+blacklist_instruction ::= "factor: " (identifier)+ | "gene: " (identifier)+
 
 globalsettings_header ::= "globasettingdefs" NEWLINE
 globalsettings_body ::= transformation_def distancemeasure_def offset_def

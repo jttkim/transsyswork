@@ -358,14 +358,18 @@ subjected to offset adding and log transformation.
   simulation from that of the distance measure.}
 \cite{Parkinson2009}
 
-\subsection{ContantTerms}
+\subsection{WhiteList}
 
-constantterms_header ::= "constanttermsdefs" NEWLINE
-constantterms_body ::= (constantterms_instruction)+
-constantterms_footer ::= "endconstanttermdefs" NEWLINE
-constanterms_instruction ::= "factor: " identifier | "gene: " identifier 
+\begin{ebnfrule}
+whitelist ::= whitelist_header whitelist_body whitelist_footer
+NEWLINE
+whitelist_header ::= "whitelistdefs" NEWLINE
+whitelist_body ::= (whitelist_instruction)+
+whitelist_footer ::= "endwhitelistdefs" NEWLINE
+whitelist_instruction ::= "factor: " (identifier)+ | "gene: " (identifier)+ 
+\end{ebnfrule}
 
-constant terms are those factors or genes, in a transsys program, whose
+WhiteList terms are those factors or genes, in a transsys program, whose
 initial conditions must not be changed by the optimiser when performing
 model selection. There are a number of reasons why this option is available, 
 one of them is the use of mathematical expressions rather than single values
