@@ -6,6 +6,14 @@ distance: correlation
 offset: 1e-18
 endglobalsettingdefs
 
+whitelistdefs
+factor: "nonfunc" "dummy" "COI1" "jasmonate" "JIN1" "JUT" "jaz_mrna" "JAZ"
+"JAZ10" "JAZ1" "DIN11" "AT1G66690" "AT1G53885" "PDF12B"
+gene: "coi1_gene" "jaz_gene" "jaz_ribosome" "at1g32640_gene" "at2g46510_gene"
+"dummy_gene" "jaz10_gene" "jaz1_gene" "din11_gene" "at1g53885_gene"
+"pdf12b_gene"
+endwhitelistdefs
+
 genemapping
 factor dummy = "261711_at"
 factor COI1 = "261713_at"

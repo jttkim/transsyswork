@@ -40,7 +40,7 @@ def get_interaction_list(tp) :
     for pe in gene.promoter :
       if isinstance(pe, transsys.PromoterElementLink) :
         if len(pe.factor_list) != 1 :
-          raise StandardError, 'gene %s: promoter element with multiple reglators, not supported' % gene.name
+          raise StandardError, 'gene %s: promoter element with multiple regulators, not supported' % gene.name
         interaction_list.append(Interaction(pe, gene.name))
   return interaction_list
 
@@ -97,7 +97,6 @@ for r in xrange(replicate) :
     interaction_pair = rng.sample(interaction_list, 2)
     i1 = interaction_pair[0]
     i2 = interaction_pair[1]
-    # sys.stderr.write('swapping %s and %s\n' % (str(i1), str(i2)))
     f1 = i1.promoterElement.factor_list[0]
     i1.promoterElement.factor_list[0] = i2.promoterElement.factor_list[0]
     i2.promoterElement.factor_list[0] = f1
