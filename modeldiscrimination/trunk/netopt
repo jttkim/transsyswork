@@ -117,7 +117,6 @@ if evaluate_objective :
   print obj
   sys.exit(0)
 
-print objective_function.whitelist_defs.get_genewhitelist()
 for restart_index in xrange(num_restarts) :
   print 'Using %s'%(candidate_name)
   #opt_result = optimiser.optimise(transsys_program, objective_function, ['f0000'], ['g0000'])
