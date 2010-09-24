@@ -84,6 +84,9 @@ if len(args) > 0 :
   logfile = open(args[0], 'w')
 if len(args) > 1 :   
   finalparam = open(args[1], 'w')
+logo = file('%s_%s.txt'%(candidate_name, result_file),'w')
+logo.write('restart\tfitness\n')
+
 
 g = open(optimiserfile, 'r')
 optimiser = transsys.optim.parse_optimiser(g)
@@ -109,7 +112,7 @@ o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
 objective_function.set_expression_set(expression_set)
 optimiser.randomInitRange = 1.0
-model = open(candidate_name,'r')
+model = open('%s.tra'%(candidate_name),'r')
 
 transsys_program = transsys.TranssysProgramParser(model).parse()
 if evaluate_objective :
@@ -121,6 +124,7 @@ for restart_index in xrange(num_restarts) :
   print 'Using %s'%(candidate_name)
   #opt_result = optimiser.optimise(transsys_program, objective_function, ['f0000'], ['g0000'])
   opt_result = optimiser.optimise(transsys_program, objective_function, objective_function.whitelist_defs.get_factorwhitelist(), objective_function.whitelist_defs.get_genewhitelist())
+  logo.write('rst%d\t%f\n' % (restart_index, opt_result.objectiveOptimum.fitness))
   sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
   if finalparam is not None :
     write_result(finalparam, opt_result)

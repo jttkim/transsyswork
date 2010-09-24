@@ -109,7 +109,7 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.01;
-      JIN1: activate(1.0, 0.1);
+      //JIN1: activate(1.0, 0.1);
       JIN1 + JAZ: repress(1.0, 0.1);
     }
     product
