@@ -1,4 +1,4 @@
-pcrproc <- function(filename)
+pcrProc <- function(filename)
 {
   rawpcrdata <- data.frame(read.delim(filename, sep="\t", header=TRUE));
   pcrNorm <- sapply(colnames(rawpcrdata)[2:10], function(y) tapply(rawpcrdata[,y], rawpcrdata$X, function(x) mean(x)));
@@ -21,5 +21,22 @@ pcrproc <- function(filename)
       break;
     }
   }
+ 
+ return(pcrData);
+}
 
+
+epsdevice <- function(epsFilename)
+{
+  postscript(epsFilename, width = 8, height = 6, paper = "special", onefile = FALSE, horizontal = FALSE);
+}
+
+createPlot <- function(filename, noise=0)
+{
+  plotName <- sprintf("jasmonate%d.eps", noise);
+  d <- read.table(filename, sep="\t", header=T);
+  epsdevice(plotName);
+  par(cex.axis = 0.9);
+  boxplot(fitness ~ model, data = d, notch = TRUE, xlab = " models", ylab = "optimised divergence", main = sprintf("Jasmonate models, noise = %d%s", noise, "%"), ylim = c(0, 35));
+  dev.off()
 }

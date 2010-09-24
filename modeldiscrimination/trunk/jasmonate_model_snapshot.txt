@@ -3,15 +3,15 @@ ObjectiveSpecification-0.1
 globalsettingdefs
 transformation: log
 distance: correlation
-offset: 1e-18
+offset: 1e-7
 endglobalsettingdefs
 
 whitelistdefs
 factor: "nonfunc" "dummy" "COI1" "jasmonate" "JIN1" "JUT" "jaz_mrna" "JAZ"
-"JAZ10" "JAZ1" "DIN11" "AT1G66690" "AT1G53885" "PDF12B"
+"JAZ10" "JAZ1" "DIN11" "AT1G66690" "AT1G53885" "PDF12B" "TAT3"
 gene: "coi1_gene" "jaz_gene" "jaz_ribosome" "at1g32640_gene" "at2g46510_gene"
 "dummy_gene" "jaz10_gene" "jaz1_gene" "din11_gene" "at1g53885_gene"
-"pdf12b_gene"
+"pdf12b_gene" "tat3_gene"
 endwhitelistdefs
 
 genemapping
@@ -26,6 +26,7 @@ factor DIN11 = "252265_at"
 factor AT1G66690 = "256376_s_at"
 factor AT1G53885 = "262226_at"
 factor PDF12B = "257365_x_at" 
+factor TAT3 = "263539_at"
 endgenemapping
 
 procedure equilibration
@@ -103,7 +104,7 @@ endsimexpression
 
 arraymapping
 array wt_MeJA : wt_MeJA_allmin
-array wt_MeJA : jin1_MeJA_allmin
+array jin1_MeJA : jin1_MeJA_allmin
 endarraymapping
 
 
