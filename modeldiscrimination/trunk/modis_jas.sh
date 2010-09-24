@@ -66,11 +66,14 @@ function mergeFile()
     name=`printf '%s %s ' $name $candidate_topology_logo `
   done
   fitnessname=`printf 'fitnesstable' `
-  cat $name > 'tt.txt'
-  sed '/restart/d' 'tt.txt' > $fitnessname'.txt'
+  rm -fr $fitnessname'.txt'
   rm -f 'tt.txt'
-
-
+  label=`printf 'model\trestart\tfitness'`
+  cat $name > 'tt.txt'
+  echo $label >> $fitnessname'.txt'
+  sed '/restart/d' 'tt.txt' >> $fitnessname'.txt'
+  cat $fitnessname'.txt'
+  rm -f 'tt.txt'
 }
 
 
@@ -84,8 +87,6 @@ transformerfile=transformerfile.dat
 logfile=logo
 gradientfile=optspec.dat
 
-
-
-createEmpiricalData
-optimiseModel
+#createEmpiricalData
+#optimiseModel
 mergeFile
