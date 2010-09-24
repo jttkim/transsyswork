@@ -87,6 +87,6 @@ transformerfile=transformerfile.dat
 logfile=logo
 gradientfile=optspec.dat
 
-#createEmpiricalData
-#optimiseModel
+createEmpiricalData
+optimiseModel
 mergeFile
