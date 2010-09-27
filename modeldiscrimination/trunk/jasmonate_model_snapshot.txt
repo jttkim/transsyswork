@@ -77,6 +77,26 @@ procedure ko_jaz
 knockout: jaz_gene
 endprocedure
 
+procedure ko_tat3
+knockout: tat3
+endprocedure
+
+procedure ko_pdf12b
+knockout: pdf12b
+endprocedure
+
+procedure ko_At1g66690
+knockout: At1g66690
+endprocedure
+
+procedure ko_At1g53885
+knockout: At1g66690
+endprocedure
+
+procedure ko_din11
+knockout: din11
+endprocedure
+
 simexpression wt_MeJA_allmin
 equilibration
 ja_treatment
@@ -102,80 +122,334 @@ run1h
 run1h
 endsimexpression
 
+simexpression wt_MeJA
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression at1g32640_MeJA
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression coi1_16_MeJA_00h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression coi1_16_MeJA_30m
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression coi1_16_MeJA_1h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression coi1_16_MeJA_3h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression coi1_16_MeJA_6h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression coi1_16_mock_00h
+equilibration
+endsimexpression
+
+simexpression coi1_16_mock_30m
+equilibration
+endsimexpression
+
+simexpression coi1_16_mock_1h
+equilibration
+endsimexpression
+
+simexpression coi1_16_mock_3h
+equilibration
+endsimexpression
+
+simexpression coi1_16_mock_6h
+equilibration
+endsimexpression
+
+simexpression DM_MeJA_00h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression DM_MeJA_30m
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression DM_MeJA_1h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression DM_MeJA_3h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression DM_MeJA_6h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression DM_mock_00h
+equilibration
+endsimexpression
+
+simexpression DM_mock_30m
+equilibration
+endsimexpression
+
+simexpression DM_mock_1h
+equilibration
+endsimexpression
+
+simexpression DM_mock_3h
+equilibration
+endsimexpression
+
+simexpression DM_mock_6h
+equilibration
+endsimexpression
+
+simexpression jai3_1_MeJA_00h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jai3_1_MeJA_30m
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jai3_1_MeJA_1h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jai3_1_MeJA_3h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jai3_1_MeJA_6h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jai3_1_mock_00h
+equilibration
+endsimexpression
+
+simexpression jai3_1_mock_30m
+equilibration
+endsimexpression
+
+simexpression jai3_1_mock_1h
+equilibration
+endsimexpression
+
+simexpression jai3_1_mock_3h
+equilibration
+endsimexpression
+
+simexpression jai3_1_mock_6h
+equilibration
+endsimexpression
+
+simexpression jin1_MeJA_00h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jin1_MeJA_30m
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jin1_MeJA_1h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jin1_MeJA_3h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jin1_MeJA_6h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jin1_mock_00h
+equilibration
+endsimexpression
+
+simexpression jin1_mock_30m
+equilibration
+endsimexpression
+
+simexpression jin1_mock_1h
+equilibration
+endsimexpression
+
+simexpression jin1_mock_3h
+equilibration
+endsimexpression
+
+simexpression jin1_mock_6h
+equilibration
+endsimexpression
+
+simexpression jut_MeJA_00h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jut_MeJA_30m
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jut_MeJA_1h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jut_MeJA_3h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jut_MeJA_6h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jut_mock_00h
+equilibration
+endsimexpression
+
+simexpression jut_mock_30m
+equilibration
+endsimexpression
+
+simexpression jut_mock_1h
+equilibration
+endsimexpression
+
+simexpression jut_mock_3h
+equilibration
+endsimexpression
+
+simexpression jut_mock_6h
+equilibration
+endsimexpression
+
+simexpression jutOE_MeJA_00h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jutOE_MeJA_30m
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jutOE_MeJA_1h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jutOE_MeJA_3h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jutOE_MeJA_6h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression jutOE_mock_00h
+equilibration
+endsimexpression
+
+simexpression jutOE_mock_30m
+equilibration
+endsimexpression
+
+simexpression jutOE_mock_1h
+equilibration
+endsimexpression
+
+simexpression jutOE_mock_3h
+equilibration
+endsimexpression
+
+simexpression jutOE_mock_6h
+equilibration
+endsimexpression
+
+simexpression wt_MeJA_00h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression wt_MeJA_30m
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression wt_MeJA_1h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression wt_MeJA_3h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression wt_MeJA_6h
+equilibration
+ja_treatment
+endsimexpression
+
+simexpression wt_mock_00h
+equilibration
+endsimexpression
+
+simexpression wt_mock_30m
+equilibration
+endsimexpression
+
+simexpression wt_mock_1h
+equilibration
+endsimexpression
+
+simexpression wt_mock_3h
+equilibration
+endsimexpression
+
+simexpression wt_mock_6h
+equilibration
+endsimexpression
+
 arraymapping
 array wt_MeJA : wt_MeJA_allmin
 array at1g32640_MeJA : at1g32640_MeJA_allmin
-array coi1_16_MJ_00h : at1g32640_MeJA_allmin
-#array coi1_16_MJ_30m : at1g32640_MeJA_allmin
-array coi1_16_MJ_1h : at1g32640_MeJA_allmin
-array coi1_16_MJ_3h : at1g32640_MeJA_allmin
-array coi1_16_MJ_6h : at1g32640_MeJA_allmin
-#array coi1-16_mock_0h : at1g32640_MeJA_allmin
-#array coi1-16_mock_30m : at1g32640_MeJA_allmin
-array coi1_16_mock_1h : at1g32640_MeJA_allmin
-array coi1_16_mock_3h : at1g32640_MeJA_allmin
-array coi1_16_mock_6h : at1g32640_MeJA_allmin
-#array DM_MJ_0h : at1g32640_MeJA_allmin
-#array DM_MJ_30m : at1g32640_MeJA_allmin
-array DM_MJ_1h : at1g32640_MeJA_allmin
-array DM_MJ_3h : at1g32640_MeJA_allmin
-array DM_MJ_6h : at1g32640_MeJA_allmin
-#array DM_mock_0h : at1g32640_MeJA_allmin
-#array DM_mock_30m : at1g32640_MeJA_allmin
-array DM_mock_1h : at1g32640_MeJA_allmin
-array DM_mock_3h : at1g32640_MeJA_allmin
-array DM_mock_6h : at1g32640_MeJA_allmin
-#array jai3_1m_1h : at1g32640_MeJA_allmin
-#array jai3_1_MJ_0h : at1g32640_MeJA_allmin
-#array jai3_1_MJ_30m : at1g32640_MeJA_allmin
-array jai3_1_MJ_1h : at1g32640_MeJA_allmin
-array jai3_1_MJ_3h : at1g32640_MeJA_allmin
-array jai3_1_MJ_6h : at1g32640_MeJA_allmin
-#array jai3_1_mock_0h : at1g32640_MeJA_allmin
-#array jai3_1_mock_30m : at1g32640_MeJA_allmin
-array jai3_1_mock_1h : at1g32640_MeJA_allmin
-array jai3_1_mock_3h : at1g32640_MeJA_allmin
-array jai3_1_mock_6h : at1g32640_MeJA_allmin
-#array jin1_MJ_0h : at1g32640_MeJA_allmin
-#array jin1_MJ_30m : at1g32640_MeJA_allmin
-array jin1_MJ_1h : at1g32640_MeJA_allmin
-array jin1_MJ_3h : at1g32640_MeJA_allmin
-array jin1_MJ_6h : at1g32640_MeJA_allmin
-#array jin1_mock_0h : at1g32640_MeJA_allmin
-#array jin1_mock_30m : at1g32640_MeJA_allmin
-array jin1_mock_1h : at1g32640_MeJA_allmin
-array jin1_mock_3h : at1g32640_MeJA_allmin
-array jin1_mock_6h : at1g32640_MeJA_allmin
-#array jut_MJ_0h : at1g32640_MeJA_allmin
-#array jut_MJ_30m : at1g32640_MeJA_allmin
-array jut_MJ_1h : at1g32640_MeJA_allmin
-array jut_MJ_3h : at1g32640_MeJA_allmin
-array jut_MJ_6h : at1g32640_MeJA_allmin
-#array jut_mock_0h : at1g32640_MeJA_allmin
-#array jut_mock_30m : at1g32640_MeJA_allmin
-array jut_mock_1h : at1g32640_MeJA_allmin
-array jut_mock_3h : at1g32640_MeJA_allmin
-array jut_mock_6h : at1g32640_MeJA_allmin
-#array jutOE_MJ_0h : at1g32640_MeJA_allmin
-#array jutOE_MJ_30m : at1g32640_MeJA_allmin
-array jutOE_MJ_1h : at1g32640_MeJA_allmin
-array jutOE_MJ_3h : at1g32640_MeJA_allmin
-array jutOE_MJ_6h : at1g32640_MeJA_allmin
-#array jutOE_mock_0h : at1g32640_MeJA_allmin
-#array jutOE_mock_30m : at1g32640_MeJA_allmin
-array jutOE_mock_1h : at1g32640_MeJA_allmin
-array jutOE_mock_3h : at1g32640_MeJA_allmin
-array jutOE_mock_6h : at1g32640_MeJA_allmin
-#array wt_MJ_0h : at1g32640_MeJA_allmin
-#array wt_MJ_30m : at1g32640_MeJA_allmin
-array wt_MJ_1h : at1g32640_MeJA_allmin
-array wt_MJ_3h : at1g32640_MeJA_allmin
-array wt_MJ_6h : at1g32640_MeJA_allmin
-#array wt_mock_0h : at1g32640_MeJA_allmin
-#array wt_mock_30m : at1g32640_MeJA_allmin
-array wt_mock_1h : at1g32640_MeJA_allmin
-array wt_mock_3h : at1g32640_MeJA_allmin
-array wt_mock_6h : at1g32640_MeJA_allmin
 endarraymapping
 
 
