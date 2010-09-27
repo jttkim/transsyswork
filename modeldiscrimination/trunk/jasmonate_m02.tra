@@ -211,6 +211,18 @@ transsys jasmonate
     }
   }
 
+  gene at1g66690_gene
+  {
+    promoter
+    {
+      constitutive: 0.1;
+    }
+    product
+    {
+      default: At1g66690;
+    }
+  }
+
   gene at1g53885_gene
   {
     promoter

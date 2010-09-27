@@ -1102,7 +1102,7 @@ series is the simulation of the gene expression levels for that genotype.
     if self.transformation == 'log' :
       s = self.expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
     else :
-      s = self.eexpression_set.divergence_treat(e, self.distance)
+      s = self.expression_set.divergence_treat(e, self.distance) # eexpression set was written, why?
     return ModelFitnessResult(s)
 
 
