@@ -7,25 +7,25 @@ offset: 1e-7
 endglobalsettingdefs
 
 whitelistdefs
-factor: "nonfunc" "dummy" "COI1" "jasmonate" "JIN1" "JUT" "jaz_mrna" "JAZ"
-"JAZ10" "JAZ1" "DIN11" "AT1G66690" "AT1G53885" "PDF12B" "TAT3"
+factor: "nonfunc" "dummy" "COI1" "jasmonate" "MYC2" "AtAIB" "jaz_mrna" "JAZ"
+"JAZ10" "JAZ1" "DIN11" "At1g66690" "At1g53885" "PDF12b" "TAT3"
 gene: "coi1_gene" "jaz_gene" "jaz_ribosome" "at1g32640_gene" "at2g46510_gene"
 "dummy_gene" "jaz10_gene" "jaz1_gene" "din11_gene" "at1g53885_gene"
 "pdf12b_gene" "tat3_gene"
 endwhitelistdefs
 
 genemapping
-factor dummy = "261711_at"
-factor COI1 = "261713_at"
-factor JIN1 = "261714_at"
-factor JUT = "261715_at"
-factor JAZ = "261700_at"
+#factor dummy = "261711_at"
+#factor COI1 = "261713_at"
+factor MYC2 = "261714_at"
+factor AtAIB = "261715_at"
+#factor JAZ = "261700_at"
 factor JAZ1 = "256017_at"
 factor JAZ10 = "250292_at" 
 factor DIN11 = "252265_at"
-factor AT1G66690 = "256376_s_at"
-factor AT1G53885 = "262226_at"
-factor PDF12B = "257365_x_at" 
+factor At1g66690 = "256376_s_at"
+factor At1g53885 = "262226_at"
+factor PDF12b = "257365_x_at" 
 factor TAT3 = "263539_at"
 endgenemapping
 
@@ -61,11 +61,11 @@ procedure ja_untreatment
 treatment: jasmonate = 0.0
 endprocedure
 
-procedure ko_jin1
+procedure ko_at1g32640
 knockout: at1g32640_gene
 endprocedure
 
-procedure ko_jut
+procedure ko_at2g46510
 knockout: at2g46510_gene
 endprocedure
 
@@ -89,8 +89,8 @@ run1h
 run1h
 endsimexpression
 
-simexpression jin1_MeJA_allmin
-ko_jin1
+simexpression at1g32640_MeJA_allmin
+ko_at1g32640
 equilibration
 ja_treatment
 run30min
@@ -104,7 +104,78 @@ endsimexpression
 
 arraymapping
 array wt_MeJA : wt_MeJA_allmin
-array jin1_MeJA : jin1_MeJA_allmin
+array at1g32640_MeJA : at1g32640_MeJA_allmin
+array coi1_16_MJ_00h : at1g32640_MeJA_allmin
+#array coi1_16_MJ_30m : at1g32640_MeJA_allmin
+array coi1_16_MJ_1h : at1g32640_MeJA_allmin
+array coi1_16_MJ_3h : at1g32640_MeJA_allmin
+array coi1_16_MJ_6h : at1g32640_MeJA_allmin
+#array coi1-16_mock_0h : at1g32640_MeJA_allmin
+#array coi1-16_mock_30m : at1g32640_MeJA_allmin
+array coi1_16_mock_1h : at1g32640_MeJA_allmin
+array coi1_16_mock_3h : at1g32640_MeJA_allmin
+array coi1_16_mock_6h : at1g32640_MeJA_allmin
+#array DM_MJ_0h : at1g32640_MeJA_allmin
+#array DM_MJ_30m : at1g32640_MeJA_allmin
+array DM_MJ_1h : at1g32640_MeJA_allmin
+array DM_MJ_3h : at1g32640_MeJA_allmin
+array DM_MJ_6h : at1g32640_MeJA_allmin
+#array DM_mock_0h : at1g32640_MeJA_allmin
+#array DM_mock_30m : at1g32640_MeJA_allmin
+array DM_mock_1h : at1g32640_MeJA_allmin
+array DM_mock_3h : at1g32640_MeJA_allmin
+array DM_mock_6h : at1g32640_MeJA_allmin
+#array jai3_1m_1h : at1g32640_MeJA_allmin
+#array jai3_1_MJ_0h : at1g32640_MeJA_allmin
+#array jai3_1_MJ_30m : at1g32640_MeJA_allmin
+array jai3_1_MJ_1h : at1g32640_MeJA_allmin
+array jai3_1_MJ_3h : at1g32640_MeJA_allmin
+array jai3_1_MJ_6h : at1g32640_MeJA_allmin
+#array jai3_1_mock_0h : at1g32640_MeJA_allmin
+#array jai3_1_mock_30m : at1g32640_MeJA_allmin
+array jai3_1_mock_1h : at1g32640_MeJA_allmin
+array jai3_1_mock_3h : at1g32640_MeJA_allmin
+array jai3_1_mock_6h : at1g32640_MeJA_allmin
+#array jin1_MJ_0h : at1g32640_MeJA_allmin
+#array jin1_MJ_30m : at1g32640_MeJA_allmin
+array jin1_MJ_1h : at1g32640_MeJA_allmin
+array jin1_MJ_3h : at1g32640_MeJA_allmin
+array jin1_MJ_6h : at1g32640_MeJA_allmin
+#array jin1_mock_0h : at1g32640_MeJA_allmin
+#array jin1_mock_30m : at1g32640_MeJA_allmin
+array jin1_mock_1h : at1g32640_MeJA_allmin
+array jin1_mock_3h : at1g32640_MeJA_allmin
+array jin1_mock_6h : at1g32640_MeJA_allmin
+#array jut_MJ_0h : at1g32640_MeJA_allmin
+#array jut_MJ_30m : at1g32640_MeJA_allmin
+array jut_MJ_1h : at1g32640_MeJA_allmin
+array jut_MJ_3h : at1g32640_MeJA_allmin
+array jut_MJ_6h : at1g32640_MeJA_allmin
+#array jut_mock_0h : at1g32640_MeJA_allmin
+#array jut_mock_30m : at1g32640_MeJA_allmin
+array jut_mock_1h : at1g32640_MeJA_allmin
+array jut_mock_3h : at1g32640_MeJA_allmin
+array jut_mock_6h : at1g32640_MeJA_allmin
+#array jutOE_MJ_0h : at1g32640_MeJA_allmin
+#array jutOE_MJ_30m : at1g32640_MeJA_allmin
+array jutOE_MJ_1h : at1g32640_MeJA_allmin
+array jutOE_MJ_3h : at1g32640_MeJA_allmin
+array jutOE_MJ_6h : at1g32640_MeJA_allmin
+#array jutOE_mock_0h : at1g32640_MeJA_allmin
+#array jutOE_mock_30m : at1g32640_MeJA_allmin
+array jutOE_mock_1h : at1g32640_MeJA_allmin
+array jutOE_mock_3h : at1g32640_MeJA_allmin
+array jutOE_mock_6h : at1g32640_MeJA_allmin
+#array wt_MJ_0h : at1g32640_MeJA_allmin
+#array wt_MJ_30m : at1g32640_MeJA_allmin
+array wt_MJ_1h : at1g32640_MeJA_allmin
+array wt_MJ_3h : at1g32640_MeJA_allmin
+array wt_MJ_6h : at1g32640_MeJA_allmin
+#array wt_mock_0h : at1g32640_MeJA_allmin
+#array wt_mock_30m : at1g32640_MeJA_allmin
+array wt_mock_1h : at1g32640_MeJA_allmin
+array wt_mock_3h : at1g32640_MeJA_allmin
+array wt_mock_6h : at1g32640_MeJA_allmin
 endarraymapping
 
 
