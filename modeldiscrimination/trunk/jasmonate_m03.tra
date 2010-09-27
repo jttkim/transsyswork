@@ -24,13 +24,13 @@ transsys jasmonate
     diffusibility: 0.0;
   }
 
-  factor JIN1
+  factor MYC2
   {
     decay: 0.1;
     diffusibility: 0.0;
   }
 
-  factor JUT
+  factor AtAIB
   {
     decay: 0.1;
     diffusibility: 0.0;
@@ -67,19 +67,19 @@ transsys jasmonate
     diffusibility: 0.0;
   }
 
-  factor AT1G66690
+  factor At1g66690
   {
     decay: 0.1;
     diffusibility: 0.0;
   }
 
-  factor AT1G53885
+  factor At1g53885
   {
     decay: 0.1;
     diffusibility: 0.0;
   }
 
-  factor PDF12B
+  factor PDF12b
   {
     decay: 0.1;
     diffusibility: 0.0;
@@ -109,8 +109,8 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.01;
-      //JIN1: activate(1.0, 0.1);
-      JIN1 + JAZ: repress(1.0, 0.1);
+      //MYC2: activate(1.0, 0.1);
+      MYC2 + JAZ: repress(1.0, 0.1);
     }
     product
     {
@@ -136,12 +136,12 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
-      JIN1: activate(0.1, 1.0);
-      JIN1 + JAZ: repress(0.1, 1.0);
+      MYC2: activate(0.1, 1.0);
+      MYC2 + JAZ: repress(0.1, 1.0);
     }
     product
     {
-      default: JIN1;
+      default: MYC2;
     }
   }
 
@@ -151,11 +151,11 @@ transsys jasmonate
     {
       // what are the presumed regulatory mechanisms of the jut gene?
       constitutive: 0.1;
-      JIN1: activate(0.1, 1.0 * (JAZ < 6));
+      MYC2: activate(0.1, 1.0 * (JAZ < 6));
     }
     product
     {
-      default: JUT;
+      default: AtAIB;
     }
   }
 
@@ -163,9 +163,9 @@ transsys jasmonate
   {
     promoter
     {
-      //JIN1: activate(1.0, 1.0 * (JAZ < 6));
-      JIN1: activate(1.0, 1.0);
-      JIN1 + JAZ: repress(1.0, 1.0);
+      //MYC2: activate(1.0, 1.0 * (JAZ < 6));
+      MYC2: activate(1.0, 1.0);
+      MYC2 + JAZ: repress(1.0, 1.0);
     }
     product
     {
@@ -178,7 +178,7 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
-      JIN1: activate(0.1, 1.0);
+      MYC2: activate(0.1, 1.0);
     }
     product
     {
@@ -191,7 +191,7 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
-      JIN1: activate(0.1, 10.0 * (JIN1 > 1.5));
+      MYC2: activate(0.1, 10.0 * (MYC2 > 1.5));
     }
     product
     {
@@ -219,7 +219,7 @@ transsys jasmonate
     }
     product
     {
-      default: AT1G53885;
+      default: At1g53885;
     }
   }
 
@@ -231,7 +231,7 @@ transsys jasmonate
     }
     product
     {
-      default: PDF12B;
+      default: PDF12b;
     }
   }
 

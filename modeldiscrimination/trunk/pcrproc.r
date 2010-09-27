@@ -31,6 +31,7 @@ epsdevice <- function(epsFilename)
   postscript(epsFilename, width = 8, height = 6, paper = "special", onefile = FALSE, horizontal = FALSE);
 }
 
+
 createPlot <- function(filename, noise=0)
 {
   plotName <- sprintf("jasmonate%d.eps", noise);
