@@ -3,7 +3,7 @@ ObjectiveSpecification-0.1
 globalsettingdefs
 transformation: log
 distance: correlation
-offset: 1e-18
+offset: 1e-2
 endglobalsettingdefs
 
 genemapping
@@ -36,7 +36,6 @@ overexpress: f0001 = 0.7
 endprocedure
 
 simexpression wt
-oe
 equilibration
 MeJA
 t15m
