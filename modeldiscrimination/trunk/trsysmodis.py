@@ -99,6 +99,9 @@ expression levels across the data set.
     for values in self.expression_data.values() :
       intensities = intensities + values
     average, stdev = statistics(intensities)
+    if stdev == 0 :  # Contact value set went standar deviation across samples is 0 leading to exception
+      stdev = 1e-5
+
     min_after_shift = stdev * sd_multiplier
     m = min(intensities)
     offset = min_after_shift - m
