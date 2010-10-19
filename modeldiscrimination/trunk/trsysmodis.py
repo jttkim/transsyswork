@@ -99,9 +99,6 @@ expression levels across the data set.
     for values in self.expression_data.values() :
       intensities = intensities + values
     average, stdev = statistics(intensities)
-    if stdev == 0 :  # Contact value set went standar deviation across samples is 0 leading to exception
-      stdev = 1e-5
-
     min_after_shift = stdev * sd_multiplier
     m = min(intensities)
     offset = min_after_shift - m
@@ -139,7 +136,10 @@ expression levels across the data set.
       perturbation = array.get_resolve_perturbation().get_simexpression_name()
       if array.get_resolve_reference() is not None :
         reference = array.get_resolve_reference().get_simexpression_name()
-	value =  profile[perturbation] / profile[reference]
+	if profile[perturbation] == 0.0 and  profile[reference] == 0.0 :
+	  value = 1.0
+	else :
+	  value =  profile[perturbation] / profile[reference]
       else :
 	value =  profile[perturbation]
       profile2[array.get_array_name()] = value

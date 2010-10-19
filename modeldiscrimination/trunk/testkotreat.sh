@@ -22,7 +22,7 @@ do_run ./transsyswritesimsetOF -o modeldisdummy_3gene.txt -s 2 -N 0 test_target.
 #do_run ./transsysrewire -w 3 -n test_candidate -r 1 -s 3 test_targettopology.tra
 #do_run ./transsysrewire -w 4 -n test_candidate -r 1 -s 3 test_targettopology.tra
 
-#do_run ./netopt -x test_target_expr.txt -o modeldisdummy_3gene.txt -R 5 -g optspec.dat -T transformerfile.dat -s 1 -c test_candidate_w04_r01.tra t1.txt t2.txt
+do_run ./netopt -x test_target_expr.txt -o modeldisdummy_3gene.txt -R 5 -g optspec.dat -T transformerfile.dat -s 1 -c test_candidate_w04_r01.tra t1.txt t2.txt
 
 #do_run ./netoptrew -l -o 0.01 -s 4 -R 5 -e 100 -n test_target -c test_targettopology -g optspec.dat -T transformerfile.dat -u correlation -L test_rew0 testlog_rew0.txt testfinalparam_rew0.txt
 #do_run ./netoptrew -l -o 1e-10 -s 4 -R 1 -e 100 -n test_target -c test_candidate_w01_r01 -g optspec.dat -T transformerfile.dat -u correlation -L test_rew1 testlog_rew1.txt testfinalparam_rew1.txt
