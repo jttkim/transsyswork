@@ -31,7 +31,6 @@ distancemeasure_def ::= "distance:" distance_type NEWLINE
 distance_type ::= "correlation" | "euclidean" | "sum_squares" 
 
 offset_def ::= "offset:" realnumber
-	| "offset:" realnumber "data_sd"
 
 procedure_header ::= "procedure" identifier NEWLINE 
 procedure_body ::= (instruction)+
