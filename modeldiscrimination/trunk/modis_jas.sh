@@ -43,7 +43,7 @@ function createEmpiricalData()
   do_run ./transsyswritesimsetOF -o  ${specfile} -s ${rndseed} -N ${signal_to_noise} ${true_model}'_m00.tra' ${tp_name} ${tp_name}'_trace.txt'
 }
 
-function optimiseModel()
+function optimiseModelSynthetic()
 {
   tp_name=`printf '%s' ${true_model} `
   for (( model=0; model<=${num_model}; model++ )) ; do
@@ -51,6 +51,18 @@ function optimiseModel()
     do_run ./netopt -x ${tp_name}'_expr.txt' -o ${specfile} -R ${num_optimisations} -g ${gradientfile} -T ${transformerfile} -L ${logfile} -s ${rndseed} -c ${model_name}
   done
 }
+
+
+function optimiseModelEmpiric()
+{
+  tp_name=`printf '%s' ${true_model} `
+  empirical_data=$1
+  for (( model=0; model<=${num_model}; model++ )) ; do
+    model_name=`printf '%s_m%02d' ${tp_name} ${model}`
+    do_run ./netopt -x  ${empirical_data} -o ${specfile} -R ${num_optimisations} -g ${gradientfile} -T ${transformerfile} -L ${logfile} -s ${rndseed} -c ${model_name}
+  done
+}
+
 
 function mergeFile()
 {
@@ -78,7 +90,7 @@ function mergeFile()
 
 
 num_model=3
-specfile=jasmonate_model_snapshot.txt
+specfile=jasmonate_model.txt
 signal_to_noise=0
 rndseed=2
 true_model=jasmonate
@@ -86,7 +98,9 @@ num_optimisations=5
 transformerfile=transformerfile.dat
 logfile=logo
 gradientfile=optspec.dat
+empirical_data=emp_data_jas.txt
 
-createEmpiricalData
-optimiseModel
-mergeFile
+#createEmpiricalData
+#optimiseModelSynthetic
+optimiseModelEmpiric $empirical_data
+#mergeFile
