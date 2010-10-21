@@ -86,7 +86,8 @@ class ExpressionData(object) :
 @type offset: C{float}
 """
     for key in self.expression_data :
-      self.expression_data[key] = map(lambda t: t + offset, self.expression_data[key] )
+      average = statistics(self.expression_data[key])[0]
+      self.expression_data[key] = map(lambda t: t + (offset * average ), self.expression_data[key] )
 
 
   def shift_to_stddev(self, sd_multiplier) :
@@ -95,15 +96,23 @@ Transform expression data by shifting such that the minimum expression
 level is C{s * sd_multiplier}, where C{s} is the standard deviation of
 expression levels across the data set.
 """
-    intensities = []
-    for values in self.expression_data.values() :
-      intensities = intensities + values
-    average, stdev = statistics(intensities)
-    min_after_shift = stdev * sd_multiplier
-    m = min(intensities)
-    offset = min_after_shift - m
-    self.shift_data(offset)
 
+    if self.nonzerodata() > 0.0 :
+      intensities = []
+      i = 0.0
+      for values in self.expression_data.values() :
+        average, stdev = statistics(values)
+        intensities = intensities + values
+        i = i + stdev / average
+      relstdev = (1.0 / len(self.expression_data.keys())) * i
+      min_after_shift = relstdev * sd_multiplier
+      m = min(intensities)
+      offset = min_after_shift - m
+      self.shift_data(offset)
+    else :
+      self.shift_data(sd_multiplier)
+      
+  
 
   def get_profile(self, gene_name) :
     """ Retrieve gene_name expression vector
@@ -214,6 +223,17 @@ All expression values in the newly added array are initialised with C{None}.
     """
     return math.log((x / r) , 2.0)
 
+
+  def nonzerodata(self) :
+    """ Check if a gene whose average expression  profile is zero
+ @return: either the average expression profile of the zero profile gene or the last gene in the array
+ @rtype: C{float}
+ """
+    for key in self.expression_data.keys() :
+      if statistics(self.expression_data[key])[0] < 0 :
+        break
+    return statistics(self.expression_data[key])[0] 
+    
 
 class FeatureData(object) :
   """ Create feature data object
@@ -519,12 +539,10 @@ gene in that array.
     return d
 
 
-  def divergence_treat(self, other, arraymapping_defs, distance_function) :
+  def divergence_treat(self, other, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
 @type other: ExpressionSet
-@param arraymapping_defs: arraymapping_defs
-@type arraymapping_defs: L{ArrayMapping}
 @param distance_function: specification to calculate distance
 @type distance_function: C{String}
 @return: divergence between this expression set and the other expression set
@@ -532,8 +550,8 @@ gene in that array.
 """
     d = 0.0
     for factor_name in self.expression_data.expression_data.keys() :
-      selfProfile = self.get_ratioprofile(arraymapping_defs, factor_name)
-      otherProfile = other.get_ratioprofile(arraymapping_defs, factor_name)
+      selfProfile = self.get_profile(factor_name)
+      otherProfile = other.get_profile(factor_name)
       d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
     return d
 
@@ -1208,6 +1226,8 @@ series is the simulation of the gene expression levels for that genotype.
     for array in self.simexpression_defs :
       simexpression_name_spec.append(array.get_simexpression_name())
     array_name_eset = self.expression_set.expression_data.array_name
+    #print array_name_eset
+    #sys.exit()
     if (len(simexpression_name_spec) != len(array_name_eset)) :
       raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(simexpression_name_spec), len(array_name_eset))
 
@@ -1620,7 +1640,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec']
+    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean']
     self.identifier_re = re.compile('["A-Za-z_]["A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -2144,14 +2164,14 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: C{String}
 """
     self.expect_token(':')
-    transformation = self.scanner.token()[1]
+    transformation = self.scanner.token()[0]
     if isinstance(transformation, types.StringType):
       if transformation == "none" or transformation == "log" :
         return transformation
       else :
         raise StandardError, "%s is not a recognised transformation"%transformation
     else :
-      raise StandardError, "%s is not a correct string value"%s
+      raise StandardError, "%s is not a correct string value"%transformation
 
 
   def validate_distance_type(self) :
@@ -2160,14 +2180,14 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: C{String}
 """
     self.expect_token(':')
-    distance_type = self.scanner.token()[1]
+    distance_type = self.scanner.token()[0]
     if isinstance(distance_type, types.StringType):
       if distance_type == "correlation" or distance_type == "euclidean" or distance_type == "sum_squares" :
         return distance_type
       else :
         raise StandardError, "%s is not a recognised transformation"%distance_type
     else :
-      raise StandardError, "%s is not a correct string value"%s
+      raise StandardError, "%s is not a correct string value"%distance_type
 
 
   def validate_offset(self):
@@ -2180,7 +2200,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     if (isinstance(float(value), types.FloatType)) :
       return value
     else :
-      raise StandardError, "%s is not a correct string value"%s
+      raise StandardError, "%s is not a correct string value"%value
 
 
   def parse_globalsettings_body(self):
@@ -2190,10 +2210,15 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     globalsettings_dict = {}
     while self.scanner.lookahead() != 'endglobalsettingdefs' :
-      m = self.expect_token('identifier')
-      self.expect_token(':')
-      d = self.expect_token(['identifier', 'realvalue'])
-      globalsettings_dict[m] = d
+      m = self.scanner.token()
+      if 'transformation' in m :
+        globalsettings_dict[m[0]] = self.validate_transformation()
+      elif 'distance' in m : 
+        globalsettings_dict[m[0]] = self.validate_distance_type()
+      elif 'offset' in m : 
+        globalsettings_dict[m[0]] = self.validate_offset()
+      else :
+        raise StandardError, "Identifier '%s' is not a recognised setting value"%m[1]
     return(globalsettings_dict)
 
 
@@ -2215,7 +2240,11 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure_name_list = self.validateProcedureName(procedure_defs)
     self.resolveSpecProcedure(procedure_defs)
     self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
-    self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
+    if globalsettings.get_globalsettings_list()['transformation'] == 'log' :
+      if len(arraymapping_defs) > 0 :
+        self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
+      else :
+        raise StandardError, "Array mapping definition is empty"
 
 
   def resolve_instruction_list(self, unresolved_instruction_list, procedure_defs) :
