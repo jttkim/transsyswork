@@ -552,7 +552,10 @@ gene in that array.
     for factor_name in self.expression_data.expression_data.keys() :
       selfProfile = self.get_profile(factor_name)
       otherProfile = other.get_profile(factor_name)
+      print "selfProfile", selfProfile, "otherProfile", "\n", otherProfile
       d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
+      print d
+      sys.exit()
     return d
 
 
