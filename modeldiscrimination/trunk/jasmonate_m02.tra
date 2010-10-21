@@ -45,22 +45,28 @@ transsys jasmonate
   // accelerated decay in presence of COI1 and jasmonate
   factor JAZ
   {
-    decay: 0.005 + 0.05 * COI1;
+    decay: 0.005 + 0.05 * COI1 * jasmonate;
     diffusibility: 0.0;
   }
 
   factor JAZ10
   {
-    decay: 0.1 + 0.3 * COI1;
+    decay: 0.1 + 0.3 * COI1 * jasmonate;
     diffusibility: 0.0;
   }
 
   factor JAZ1
   {
-    decay: 0.1 + 0.3 * COI1;
+    decay: 0.1 + 0.3 * COI1 * jasmonate;
     diffusibility: 0.0;
   }
 
+  factor JAZ3
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+  
   factor DIN11
   {
     decay: 0.1;
@@ -196,6 +202,18 @@ transsys jasmonate
     product
     {
       default: JAZ1;
+    }
+  }
+
+  gene jaz3_gene
+  {
+    promoter
+    {
+      constitutive: 0.1;
+    }
+    product
+    {
+      default: JAZ3;
     }
   }
 

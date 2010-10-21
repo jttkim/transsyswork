@@ -38,19 +38,24 @@ runtimesteps: 15
 endprocedure
 
 procedure run30min
-runtimesteps: 30
+run15min
+run15min
 endprocedure
 
 procedure run1h
-runtimesteps: 60
+run30min
+run30min
 endprocedure
 
 procedure run3h
-runtimesteps: 180
+run1h
+run1h
+run1h
 endprocedure
 
 procedure run6h
-runtimesteps: 360
+run3h
+run3h
 endprocedure
 
 procedure ja_treatment

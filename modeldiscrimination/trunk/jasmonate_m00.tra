@@ -61,6 +61,12 @@ transsys jasmonate
     diffusibility: 0.0;
   }
 
+  factor JAZ3
+  {
+    decay: 0.1;
+    diffusibility: 0.0;
+  }
+  
   factor DIN11
   {
     decay: 0.1;
@@ -196,6 +202,18 @@ transsys jasmonate
     product
     {
       default: JAZ1;
+    }
+  }
+
+  gene jaz3_gene
+  {
+    promoter
+    {
+      constitutive: 0.1;
+    }
+    product
+    {
+      default: JAZ3;
     }
   }
 
