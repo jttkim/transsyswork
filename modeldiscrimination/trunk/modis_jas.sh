@@ -89,7 +89,7 @@ function mergeFile()
 }
 
 
-num_model=3
+num_model=2
 specfile=jasmonate_model.txt
 signal_to_noise=0
 rndseed=2

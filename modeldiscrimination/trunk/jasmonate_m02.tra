@@ -155,9 +155,8 @@ transsys jasmonate
   {
     promoter
     {
-      // what are the presumed regulatory mechanisms of the jut gene?
       constitutive: 0.1;
-      MYC2: activate(0.1, 1.0 * (JAZ < 6));
+      AtAIB: repress(0.1, 1.0);
     }
     product
     {
@@ -185,6 +184,7 @@ transsys jasmonate
     {
       constitutive: 0.1;
       MYC2: activate(0.1, 1.0);
+      AtAIB: repress(0.1, 1.0);
     }
     product
     {
@@ -197,7 +197,8 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
-      MYC2: activate(0.1, 10.0 * (MYC2 > 1.5));
+      MYC2: activate(0.1, 1.0);
+      AtAIB: repress(0.1, 1.0);
     }
     product
     {
@@ -222,6 +223,8 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
+      MYC2: activate(0.1, 1.0);
+      AtAIB: activate(0.1, 1.0);
     }
     product
     {
@@ -234,6 +237,8 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
+      MYC2: activate(0.1, 1.0);
+      AtAIB: activate(0.1, 1.0);
     }
     product
     {
@@ -246,6 +251,8 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
+      MYC2: activate(0.1, 1.0);
+      AtAIB: activate(0.1, 1.0);
     }
     product
     {
@@ -258,6 +265,8 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
+      MYC2: activate(0.1, 1.0);
+      AtAIB: activate(0.1, 1.0);
     }
     product
     {
@@ -270,6 +279,7 @@ transsys jasmonate
     promoter
     {
       constitutive: 0.1;
+      MYC2: activate(0.1, 1.0);
     }
     product
     {
