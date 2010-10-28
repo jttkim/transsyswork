@@ -422,6 +422,7 @@ Notice that the current contents of this instance are lost.
        raise StandardError, 'indexes of expression data and pheno data are not comparable'
 
    
+#FIXME: It seems this function is not longer needed as values are taken from the arraymapping_defs
   def get_profile(self, gene_name) :
     """Retrieve the gene expression profile of a specific gene in this set.
 The profile is represented as a dictionary with keys being the
@@ -437,7 +438,7 @@ gene in that array.
     profile = self.expression_data.get_profile(gene_name)
     return profile
 
-
+#FIXME: It seems this function is not longer needed
   def get_logratioprofile(self, wt, gene_name) :
     """Retrieve the gene expression profile of a specific gene in this set.
 The profile is represented as a dictionary with keys being the
@@ -539,7 +540,7 @@ gene in that array.
     return d
 
 
-  def divergence_treat(self, other, distance_function) :
+  def divergence_treat(self, other, arraymapping_defs, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
 @type other: ExpressionSet
@@ -550,8 +551,8 @@ gene in that array.
 """
     d = 0.0
     for factor_name in self.expression_data.expression_data.keys() :
-      selfProfile = self.get_profile(factor_name)
-      otherProfile = other.get_profile(factor_name)
+      selfProfile = self.get_ratioprofile(arraymapping_defs, factor_name)
+      otherProfile = other.get_ratioprofile(arraymapping_defs, factor_name)
       d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
     return d
 
@@ -1123,7 +1124,7 @@ series is the simulation of the gene expression levels for that genotype.
     if self.transformation == 'log' :
       s = self.expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
     else :
-      s = self.expression_set.divergence_treat(e, self.distance) # eexpression set was written, why?
+      s = self.expression_set.divergence_treat(e, self.arraymapping_defs, self.distance) # eexpression set was written, why?
     return ModelFitnessResult(s)
 
 
@@ -2240,11 +2241,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure_name_list = self.validateProcedureName(procedure_defs)
     self.resolveSpecProcedure(procedure_defs)
     self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
-    if globalsettings.get_globalsettings_list()['transformation'] == 'log' :
-      if len(arraymapping_defs) > 0 :
-        self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
-      else :
-        raise StandardError, "Array mapping definition is empty"
+    self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
 
 
   def resolve_instruction_list(self, unresolved_instruction_list, procedure_defs) :
@@ -2322,6 +2319,8 @@ class EmpiricalObjectiveFunctionParser(object) :
 	else :
 	  raise StandardError, "The array %s is already declared" %i.get_simexpression_name()
 
+    if len(arraymapping_defs) == 0 :
+      raise StandardError, "Array mappings were not declared"
     for arraymapping in arraymapping_defs :
       if arraymapping.get_unresolve_perturbation() not in a :
         raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_perturbation()
