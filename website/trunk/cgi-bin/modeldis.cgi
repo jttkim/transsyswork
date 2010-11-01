@@ -1,14 +1,14 @@
 #!/usr/bin/python
 
 import sys
-#import trsyslocal
-#try :
-#  import trsyslocal
-#  trsys_syspath = trsyslocal.trsys_syspath
-#except ImportError :
-#  trsys_syspath = []
-#sys.path = trsys_syspath + sys.path
-sys.path = sys.path
+import trsyslocal
+try :
+  import trsyslocal
+  trsys_syspath = trsyslocal.trsys_syspath
+except ImportError :
+  trsys_syspath = []
+sys.path = trsys_syspath + sys.path
+# sys.path = sys.path
 # sys.path = ['/jtkpc/home/jtk/lib/python'] + sys.path
 # sys.path = ['/home/trsysweb/lib/python', '/home/trsysweb/lib/python/python_igraph-0.5.2-py2.4-linux-x86_64.egg'] + sys.path
 import os
