@@ -1,0 +1,113 @@
+div.navbar {
+  width: 13em;
+  background: palegreen;
+  /* position: absolute; */
+  float: left;
+}
+
+div.adminstuff
+{
+  background: gold;
+  color: green;
+}
+
+
+div.content
+{
+  margin-left: 14em;
+}
+
+div.messages
+{
+  background: #d0d0ff;
+}
+
+/* links to resources outside the grninfo system */
+a.outlink:link
+{
+  color: rgb(128, 128, 128);
+  font-style: italic;
+}
+
+a.outlink:visited
+{
+  color: rgb(64, 64, 64);
+  font-style: italic;
+}
+
+.errorMessage
+{
+  color: red;
+  font-weight: bolder;
+}
+
+.errormessage
+{
+  color: red;
+  font-weight: bolder;
+}
+
+.infomessage
+{
+  color: green;
+  font-style: italic;
+}
+
+.todonote
+{
+  font-size: small;
+  font-family: sans-serif;
+  font-style: italic;
+  font-color: grey;
+}
+
+/*table
+{
+  vertical-align: baseline;
+}
+
+td
+{
+  vertical-align: baseline;
+}
+*/
+select 
+{
+  background-color: #D7E5F2;
+  color: #102132;
+  font: 15px Verdana, Geneva, Arial, Helvetica, sans-serif;
+}
+
+.scientificname
+{
+  font-style: italic;
+}
+
+.texta 
+{
+  font-size: 10px;
+  background-color: #CCCCCC;
+  border: 1px solid #666666;
+}
+
+table 
+{  
+ background-color: #F9FBFD;  
+ color: #000000;  
+ width: 440px;  
+ border: 1px solid #D7E5F2; 
+ font: 15px Verdana, Geneva, Arial, Helvetica, sans-serif;
+ border-collapse: collapse;  
+}  
+ 
+td 
+{  
+ border: 1px solid #D7E5F2;  
+ padding-left: 4px;  
+}
+
+h1
+{
+font: 25px Verdana, Geneva, Arial, Helvetica, sans-serif;
+}
+

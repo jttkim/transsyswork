@@ -4,7 +4,7 @@
 # dreamhost
 import sys
 
-sys.path = ['/home/trsysweb/lib', '/home/trsysweb/lib/python/python_igraph-0.5.2-py2.4-linux-x86_64.egg'] + sys.path
+sys.path = ['/home/bkx08wju'] + sys.path
 
 from igraph import *
 import cgi, cgitb
@@ -13,6 +13,9 @@ import trsysmodis
 import StringIO
 import trsysweb
 import os
+if os.environ.get('MPLCONFIGDIR') is None :
+  f = StringIO.StringIO()	
+  os.environ['MPLCONFIGDIR'] = '/var/www/'
 cgitb.enable()
 import Gnuplot
 import random
