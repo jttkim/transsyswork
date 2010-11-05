@@ -218,7 +218,8 @@ instruction ::= procedure_identifier
 primary_instruction ::= "knockout:" identifier NEWLINE
 	| "runtimesteps:" integer NEWLINE
 	| "treatment:" identifier "=" realnumber NEWLINE
-	| "overexpress:" identifier "=" realnumber NEWLINE 
+	| "overexpress:" identifier "=" realnumber NEWLINE
+        | "setproduct:" identifier identifier NEWLINE
 
 procedure_footer ::= "endprocedure" NEWLINE
 procedure_identifier ::= identifier
@@ -249,6 +250,9 @@ elementary operations that the simulator knows to perform. These are:
   specified existing gene, and has a promoter comprised of one
   \computercode{constitutive} element, expressing the gene at the
   specified rate.
+\item \computercode{setproduct} replaces the product of the gene
+  identified by the first identifier with the factor identified by the
+  second identifier.
 \end{itemize}
 An identifier in a procedure body identifies another procedure to be
 invoked. Invoking another procedure results in execution of the
