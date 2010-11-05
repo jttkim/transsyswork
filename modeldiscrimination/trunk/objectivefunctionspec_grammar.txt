@@ -6,7 +6,7 @@ procedure_defs ::= (procedure_def)+
 simexpression_defs ::= (simexpression_def)+
 knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE NEWLINE
 
-blacklist ::= blacklist_header blacklist_body blacklist_footer
+whitelist ::= whitelist_header whitelist_body whitelist_footer
 NEWLINE
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer NEWLINE
 genemapping_def ::= genemapping_header genemapping_body genemapping_footer NEWLINE
@@ -14,11 +14,11 @@ procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
 simexpression_def ::= simexpression_header simexpression_body simexpression_footer NEWLINE
 arraymapping_def ::= arraymapping_header arraymapping_body arraymapping_footer
 
-blacklist_header ::= "blacklistdefs" NEWLINE
-blacklist_body ::= (blacklist_instruction)+
-blacklist_footer ::= "endblacklistdefs" NEWLINE
+whitelist_header ::= "whitelistdefs" NEWLINE
+whitelist_body ::= (whitelist_instruction)+
+whitelist_footer ::= "endwhitelistdefs" NEWLINE
 
-blacklist_instruction ::= "factor: " (identifier)+ | "gene: " (identifier)+
+whitelist_instruction ::= "factor: " (identifier)+ | "gene: " (identifier)+
 
 globalsettings_header ::= "globasettingdefs" NEWLINE
 globalsettings_body ::= transformation_def distancemeasure_def offset_def
@@ -42,6 +42,7 @@ primary_instruction ::= "knockout:" identifier NEWLINE
 	| "runtimesteps:" integer NEWLINE
 	| "treatment:" identifier "=" realnumber NEWLINE
 	| "overexpress:" identifier "=" realnumber NEWLINE 
+	| "transgene:" identifier "=" "identifier" NEWLINE 
 
 
 procedure_footer ::= "endprocedure" NEWLINE
