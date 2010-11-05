@@ -946,6 +946,48 @@ class OverexpressionInstruction(PrimaryInstruction) :
     return s
 
 
+class SetproductInstruction(PrimaryInstruction) :
+  """ Class simulate set product """
+
+  magic = "setproduct"
+
+  def __init__(self, gene_name, factor_name) :
+    """Constructor 
+@param gene_name: gene name
+@type gene_name: C{String}
+@param factor_name: factor_name
+@type factor_name: C{String}
+"""
+    super(SetproductInstruction, self).__init__()
+    if isinstance(gene_name, types.StringType) :
+      self.gene_name = gene_name
+    else :
+      raise StandardError, '%s is not a string' %gene_name
+    if isinstance(factor_name, types.StringType) :
+      self.factor_name = factor_name
+    else :
+      raise StandardError, '%s is not a string' %factor_name
+   
+
+  def apply_instruction(self, transsys_instance) :
+    """ Overexpress gene
+@param transsys_program: transsys program
+@type transsys_program: Object{transsys_program}
+"""
+    tp = copy.deepcopy(transsys_instance.transsys_program)
+    gene = tp.find_gene(self.gene_name)
+    factor = tp.find_factor(self.factor_name)
+    gene_name_list = map(lambda gene: gene.name, tp.gene_list)
+    gene.product = factor
+    transsys_instance.transsys_program = tp
+    return [transsys_instance]
+
+
+  def __str__(self) :
+    s = self.magic + ": " + self.gene_name + " = " + ("%s" %self.constitute_value)  
+    return s
+
+
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
   """Abstract base class for objective functions based on empirical
 expression sets.
@@ -1641,7 +1683,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean']
+    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean']
     self.identifier_re = re.compile('["A-Za-z_]["A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.header = self.lookheader()
@@ -1923,8 +1965,10 @@ class EmpiricalObjectiveFunctionParser(object) :
       return(self.validate_knockout())
     elif "runtimesteps" in t[0] :
       return(self.validate_runtimesteps())
-    elif "overexpress" in t[0]:
+    elif "overexpress" in t[0] :
       return(self.validate_overexpression())
+    elif "setproduct" in t[0] :
+      return(self.validate_setproduct())
     else :
       return(t[1])
 
@@ -1979,11 +2023,20 @@ class EmpiricalObjectiveFunctionParser(object) :
     factor = self.scanner.token()[1]
     self.expect_token('=')
     value = self.expect_token('realvalue')
-    if isinstance(factor, types.StringType):
-      oso = OverexpressionInstruction(factor, value)
-      return(oso)
-    else :
-      raise StandardError, "%s is not a correct string value"%s
+    oso = OverexpressionInstruction(factor, value)
+    return(oso)
+
+
+  def validate_setproduct(self) :
+    """ Instantiate setproduct
+@return: Object
+@rtype: L{SetproductInstruction}
+"""
+    self.expect_token(':')
+    gene_name = self.expect_token('identifier')
+    factor_name = self.expect_token('identifier')
+    spo = SetproductInstruction(gene_name, factor_name)
+    return(spo)
 
 
   def parse_procedure_body(self) :
