@@ -13,6 +13,7 @@ spec = None
 rndseed = 1
 noise = 0.0
 tracefile = None
+tp_tracefile = None
 
 optlist, args = getopt.getopt(sys.argv[1:], 's:o:N:lvh')
 
@@ -44,8 +45,11 @@ else :
 if len(args) > 1 :
   outfile = args[1]
 if len(args) > 2 :
-  tracefile = open(args[2], 'w')
-
+  if args[2] != 'None' :
+    tracefile = open(args[2], 'w')
+if len(args) > 3 :
+  if args[3] != 'None' :
+    tp_tracefile = open(args[3], 'w')
 
 specfile = open(spec, 'r')
 o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
@@ -53,7 +57,7 @@ objective_function = o.parse_objectivespec()
 
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
-e = objective_function.get_simulated_set(transsys_program, tracefile)
+e = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile)
 
 if noise > 0.0 :
   if rndseed is not None :

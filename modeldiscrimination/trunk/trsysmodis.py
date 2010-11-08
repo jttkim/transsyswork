@@ -1200,7 +1200,7 @@ series is the simulation of the gene expression levels for that genotype.
     se    
 
 
-  def get_simulated_set(self, transsys_program, tracefile = None) :
+  def get_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None) :
     """Produce simulated data.
 @param transsys_program: transsys program
 @type transsys_program: transsys program
@@ -1213,6 +1213,7 @@ series is the simulation of the gene expression levels for that genotype.
       tp = copy.deepcopy(transsys_program)
       ti_trace = simexpression.simulate(transsys_program)
       ti = ti_trace[-1]
+      self.write_tp_tracefile(tp_tracefile, ti.transsys_program, simexpression.get_simexpression_name())
       e.add_array(simexpression.get_simexpression_name())
       map(lambda t: e.set_expression_value(simexpression.get_simexpression_name(), t, ti.get_factor_concentration(t)), e.expression_data.expression_data.keys())
       self.write_trace_simexpression(tracefile, simexpression.get_simexpression_name(), ti_trace)
@@ -1232,12 +1233,33 @@ series is the simulation of the gene expression levels for that genotype.
 
 
   def write_trace_simexpression(self, tracefile, array_name, ti_trace) :
+    """ Write expression profiles per time step
+@param tracefile: tracefile
+@type tracefile: File
+@param array_name: array_name
+@type array_name: C{String}
+@param ti_trace: time series
+@type ti_trace: time_series
+"""
     if tracefile is not None :
       for ti in ti_trace :
         tracefile.write("%s\t" % array_name)
         for factor in ti.transsys_program.factor_list :
           tracefile.write("%02f\t" % ti.get_factor_concentration(factor.name))
         tracefile.write("\n")
+
+
+  def write_tp_tracefile(self, tp_tracefile, tp, name) :
+    """Write modified versions of transsys programs according to simgenex file
+@param tp_tracefile: tp_tracefile
+@type tp_tracefile: File
+@param tp: modified transsys program
+@type: tp: transsys_program
+@param name: array name
+@type name: C{String}
+"""
+    tp_tracefile.write('Array name: %s\n'%name)
+    tp_tracefile.write('%s\n'%tp)
 
 
   def get_trace_file(self) :
@@ -1269,8 +1291,6 @@ series is the simulation of the gene expression levels for that genotype.
     for array in self.simexpression_defs :
       simexpression_name_spec.append(array.get_simexpression_name())
     array_name_eset = self.expression_set.expression_data.array_name
-    #print array_name_eset
-    #sys.exit()
     if (len(simexpression_name_spec) != len(array_name_eset)) :
       raise StandardError, 'Arrays vary in length spec: %s, eset: %s' %(len(simexpression_name_spec), len(array_name_eset))
 
