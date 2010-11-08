@@ -1196,10 +1196,6 @@ series is the simulation of the gene expression levels for that genotype.
     self.expression_set = self.transform_expression_set(self.expression_set)
 
 
-  def set_white_list(self) :
-    se    
-
-
   def get_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None) :
     """Produce simulated data.
 @param transsys_program: transsys program
@@ -1258,8 +1254,9 @@ series is the simulation of the gene expression levels for that genotype.
 @param name: array name
 @type name: C{String}
 """
-    tp_tracefile.write('Array name: %s\n'%name)
-    tp_tracefile.write('%s\n'%tp)
+    if tp_tracefile is not None :
+      tp_tracefile.write('Array name: %s\n'%name)
+      tp_tracefile.write('%s\n'%tp)
 
 
   def get_trace_file(self) :
