@@ -984,7 +984,7 @@ class SetproductInstruction(PrimaryInstruction) :
 
 
   def __str__(self) :
-    s = self.magic + ": " + self.gene_name + " = " + ("%s" %self.constitute_value)  
+    s = self.magic + ": " + self.gene_name + " " + self.factor_name 
     return s
 
 
@@ -2087,13 +2087,15 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_procedure_defs(self) :
     """Parse procedure defs """
 
-    procedure_list = []
+    temp_procedure_list = {}
     while self.scanner.lookahead() == 'procedure' :
-      # FIXME: once procedure_list is replaced with a dictionary, check that key is not already taken before inserting new procedure
-      procedure_list.append(self.parse_procedure_def())
+      p = self.parse_procedure_def()
+      if p.get_procedure_name() in temp_procedure_list.keys() :
+        raise StandardError, "%s Procedure already defined" %p.get_procedure_name()
+      temp_procedure_list[p.get_procedure_name()] = p
       self.expect_token('endprocedure')
       self.expect_token('\n')
-    return procedure_list
+    return temp_procedure_list
 
 
 ### GeneMapping
@@ -2169,24 +2171,24 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: dictionary{}
 """
     whitelist_dict = {}
-    values = []
+    temp_whitelist_dict = {}
     self.expect_token('factor')
     self.expect_token(':')
     while self.scanner.lookahead() != 'endwhitelistdefs' and self.scanner.lookahead() != 'gene' :
       t = self.expect_token('identifier')
-      if t in values :
-	  raise StandardError, "%s already whitelisted" %t
-      values.append(t[1:(len(t)-1)])
-    whitelist_dict['factor'] = values
-    values = []
+      if t[1:(len(t)-1)] in temp_whitelist_dict.keys() :
+        raise StandardError, "%s already exist" %(t[1:(len(t)-1)])
+      temp_whitelist_dict[t[1:(len(t)-1)]] = []
+    whitelist_dict['factor'] = temp_whitelist_dict.keys()
+    temp_whitelist_dict = {}
     self.expect_token('gene')
     self.expect_token(':')
     while self.scanner.lookahead() != 'endwhitelistdefs' :
       t = self.expect_token('identifier')
-      if t in values :
-	  raise StandardError, "%s already whitelisted" %t
-      values.append(t[1:(len(t)-1)])
-    whitelist_dict['gene'] = values
+      if t[1:(len(t)-1)] in temp_whitelist_dict.keys() :
+        raise StandardError, "%s already exist" %(t[1:(len(t)-1)])
+      temp_whitelist_dict[t[1:(len(t)-1)]] = []
+    whitelist_dict['gene'] = temp_whitelist_dict.keys()
     return(whitelist_dict)
 
 
@@ -2311,58 +2313,49 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def resolve_spec(self, globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs) :
-    """ Resolve spec """
-    # FIXME: required for enforcing uniqueness of procedure names
-    procedure_name_list = self.validateProcedureName(procedure_defs)
+    """ Resolve spec
+@param globalsettings: globalsettings
+@type globalsettings: dictionary{}
+@param genemapping: genemapping
+@type genemapping: dictionary{}
+@param procedure_defs: procedure_defs
+@type procedure_defs: dictionary{}
+@param simexpression_defs: simexpression_defs
+@type simexpression_defs: L{simexpression}
+@param arraymapping_defs: arraymapping_defs
+@type arraymapping_defs: L{arraymapping}
+"""
+    procedure_name_list = procedure_defs.keys()
     self.resolveSpecProcedure(procedure_defs)
     self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
     self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
 
 
   def resolve_instruction_list(self, unresolved_instruction_list, procedure_defs) :
+    """ Resolve instruction list
+@param unresolved_instruction_list: unresolved_instruction_list
+@type unresolved_instruction_list: L{unresolved_instruction_list}
+@param procedure_defs: procedure_defs
+@type procedure_defs: dictionary{}
+"""
     resolved_instruction_list = []
     for instruction in unresolved_instruction_list :
       if isinstance(instruction, PrimaryInstruction) :
         resolved_instruction_list.append(instruction)
       elif isinstance(instruction, types.StringType) :
-        resolved_instruction_list.append(self.searchProcedure(instruction, procedure_defs))
+        resolved_instruction_list.append(procedure_defs[instruction])
       else :
         raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
     return resolved_instruction_list
     
 
   def resolveSpecProcedure(self, procedure_defs) :
-    """Resolve procedure """
-    # NOTE: resolving procedures here
-    for procedure in procedure_defs :
-      procedure.set_instruction_list(self.resolve_instruction_list(procedure.get_instruction_list(), procedure_defs))
-
-
-  def searchProcedure(self, procedure_name, procedure_defs) :
-    """Search procedure_defs 
-@param procedure_name: procedure name
-@type procedure_name: C{String}
-@return: object
-@rtype: C{Array}
+    """Resolve procedure
+@param procedure_defs: procedure_defs
+@type procedure_defs: dictionary{}
 """
-    for procedure in procedure_defs :
-      if procedure.get_procedure_name() == procedure_name :
-        return procedure
-    raise StandardError, 'no procedure "%s"' % procedure_name
-
-  
-  def validateProcedureName(self, procedure_defs) :
-    """ Validate procedure """
-    procedure_name_list = []
-    for procedure in procedure_defs :
-      if len(procedure_name_list) == 0 :
-        procedure_name_list.append(procedure.get_procedure_name()) 
-      else :
-        if procedure.get_procedure_name() not in procedure_name_list :
-          procedure_name_list.append(procedure.get_procedure_name())
-	else :
-	  raise StandardError, "%s Procedure already declared" %procedure.get_procedure_name()
-    return procedure_name_list
+    for name, procedure in procedure_defs.iteritems() :
+      procedure.set_instruction_list(self.resolve_instruction_list(procedure.get_instruction_list(), procedure_defs))
 
 
   def resolveSpecSimexpression(self, simexpression_defs, procedure_defs) :
@@ -2370,9 +2363,8 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param simexpression_defs: simexpression_defs
 @type simexpression_defs: L{SimExpression}
 @param procedure_defs: procedure defs
-@type procedure_defs: L{Procedure}
+@type procedure_defs: dictionary{}
 """
-
     for simexpression in simexpression_defs :
       simexpression.set_instruction_list(self.resolve_instruction_list(simexpression.get_instruction_list(), procedure_defs))
 
@@ -2381,7 +2373,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     """ Validate transformation definition
 @param arraymapping_defs: arraymapping defs
 @type arraymapping_defs: L{ArrayMapping}
-@param simexpression_defs: smexpression_defs
+@param simexpression_defs: simexpression_defs
 @type simexpression_defs: L{SimExpression}
 """
     a = []
