@@ -1196,14 +1196,17 @@ series is the simulation of the gene expression levels for that genotype.
     self.expression_set = self.transform_expression_set(self.expression_set)
 
 
-  def get_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None) :
+  def get_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
     """Produce simulated data.
 @param transsys_program: transsys program
 @type transsys_program: transsys program
 @return: Expression set
 @rtype: C{ExpressionSet}
 """
-    e = self.createTemplate()
+    if all_factors is None :
+      e = self.createTemplate(self.genemapping_defs.get_factor_list())
+    else :
+      e = self.createTemplate(all_factors)
     self.write_trace_header(tracefile, transsys_program)
     for simexpression in self.simexpression_defs :
       tp = copy.deepcopy(transsys_program)
@@ -1267,14 +1270,16 @@ series is the simulation of the gene expression levels for that genotype.
     return self.file
 
 
-  def createTemplate(self) :
+  def createTemplate(self, factor_list) :
     """ Create expression set according to spec file 
+@param factor_list: factor list
+@type factor_list: C{List}
 @return: Expression set
 @rtype: L{ExpressionSet}
 """
     e = ExpressionSet()
     e.expression_data.array_name = []
-    for i in self.genemapping_defs.get_factor_list() :
+    for i in factor_list :
       values = []
       for j in range(0, len(self.simexpression_defs)) :
         values.append('None')

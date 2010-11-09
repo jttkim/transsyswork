@@ -14,8 +14,9 @@ rndseed = 1
 noise = 0.0
 tracefile = None
 tp_tracefile = None
+all_factors = 0
 
-optlist, args = getopt.getopt(sys.argv[1:], 's:o:N:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 's:o:f:N:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
@@ -23,6 +24,7 @@ for opt, par in optlist :
     print '-s <int>: Random seed'
     print '-N <int>: Noise'
     print '-o <str>: specify spec file'
+    print '-f <str>: get expression values for each factor in the transsys program 1. yes 0. no'
     print '-h: print this help and exit'
     sys.exit()
   elif opt == '-o' :
@@ -33,6 +35,8 @@ for opt, par in optlist :
     equilibration_length = int(par)
   elif opt == '-N' :
     noise = float(par)
+  elif opt == '-f' :
+    all_factors = int(par)
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 
@@ -55,9 +59,11 @@ specfile = open(spec, 'r')
 o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
 
-
 transsys_program = transsys.TranssysProgramParser(infile).parse()
-e = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile)
+if all_factors == 1 :
+  e = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile, transsys_program.factor_names())
+else :
+  e = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile)
 
 if noise > 0.0 :
   if rndseed is not None :
