@@ -1,0 +1,93 @@
+ObjectiveSpecification-0.1
+
+globalsettingdefs
+transformation: log
+distance: correlation
+offset: 1e-1
+endglobalsettingdefs
+
+whitelistdefs
+factor: "f0" "f1"
+gene: "g0" "g1"
+endwhitelistdefs
+
+genemapping
+factor f0 = "257221_at" "257222_at" "257223_at"
+factor f1 = "257231_at"
+endgenemapping
+
+procedure equilibration
+runtimesteps: 100
+endprocedure
+
+procedure halfhour
+runtimesteps: 100
+endprocedure
+
+procedure t030
+halfhour
+endprocedure
+
+procedure t060
+halfhour
+halfhour
+endprocedure
+
+procedure ko_g0
+knockout: g0
+endprocedure
+
+procedure ko_g1
+knockout: g1
+endprocedure
+
+procedure MeJA_treatment
+treatment: jasmonate = 1.0
+endprocedure
+
+procedure overexpress_g0
+overexpress: f0 = 1.0 
+endprocedure
+
+procedure setproduct_g1
+setproduct: g0 f1
+endprocedure
+
+simexpression wt
+equilibration
+endsimexpression
+
+simexpression wt_MeJA
+equilibration
+MeJA_treatment
+endsimexpression
+
+simexpression g0
+ko_g0
+equilibration
+endsimexpression
+
+simexpression g0_MeJA
+ko_g0
+equilibration
+MeJA_treatment
+foreach: t030 t060
+endsimexpression
+
+simexpression g1
+ko_g1
+equilibration
+endsimexpression
+
+simexpression g1_MeJA
+ko_g1
+equilibration
+MeJA_treatment
+foreach: t030 t060
+endsimexpression
+
+arraymapping
+array gko : g0 / wt
+endarraymapping
+
+
