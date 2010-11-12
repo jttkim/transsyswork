@@ -942,7 +942,7 @@ class OverexpressionInstruction(PrimaryInstruction) :
 
 
   def __str__(self) :
-    s = self.magic + ": " + self.gene_name + " = " + ("%s" %self.constitute_value)  
+    s = self.magic + ": " + self.factor_name + " = " + ("%s" %self.constitute_value)  
     return s
 
 
@@ -1602,8 +1602,8 @@ class Procedure(Instruction) :
 class SimExpression(object) :
   """ Object SimExpression """
 
-
-  def __init__(self, simexpression_name, instruction_list) :
+  #FIXMEAVC: foreach added 
+  def __init__(self, simexpression_name, instruction_list, foreach_list = None) :
     """ Constructor
 @param simexpression_name: simexpression name
 @type simexpression_name: C{String}
@@ -1612,6 +1612,7 @@ class SimExpression(object) :
 """
     self.simexpression_name = simexpression_name
     self.instruction_list = instruction_list
+    self.foreach_list = foreach_list
 
 
   def get_simexpression_name(self) :
@@ -1621,10 +1622,15 @@ class SimExpression(object) :
   def get_instruction_list(self) :
     return(self.instruction_list)
 
+  def get_foreach_list(self) :
+    return(self.foreach_list)
 
   def set_instruction_list(self, instruction_list) :
     self.instruction_list = instruction_list
-    
+   
+  def set_foreach_list(self, foreach_list) :
+    self.foreach_list = foreach_list
+
 
   def __str__(self) :
     """ Return string of SimExpression """
@@ -1923,10 +1929,20 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: procedure simexpression
 @rtype: array[]
 """
+    unresolved_foreach_list = []
     unresolved_instruction_list = []
     while self.scanner.lookahead() != 'endsimexpression' :
-      unresolved_instruction_list.append(self.expect_token('identifier'))
-    return(unresolved_instruction_list)
+      identifier_name = self.expect_token('identifier')
+      if identifier_name == 'foreach' :
+        self.expect_token(':')
+        while self.scanner.lookahead() != 'endsimexpression':
+          d = self.expect_token('identifier')
+          unresolved_foreach_list.append(d)
+        #FIXMEAV: unresolved_instruction_list.append(self.expect_token('identifier'))
+        #unresolved_instruction_list.append(mapping)
+      else :
+        unresolved_instruction_list.append(identifier_name)
+    return(unresolved_instruction_list, unresolved_foreach_list)
 
 
   def parse_simexpression_def(self) :
@@ -1935,13 +1951,13 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{SimExpression}
 """
     simexpression_name = self.parse_simexpression_header()
-    unresolved_instruction_list = self.parse_simexpression_body()
+    unresolved_instruction_list, unresolved_foreach_list = self.parse_simexpression_body()
     self.parse_simexpression_footer()
     # NOTE: the SimExpression instance contains an unresolved list,
     # the parser will resolve this before completing and passing the
     # its parsing result (i.e. the KnockoutTreatmentObjective) to the
     # caller.
-    return SimExpression(simexpression_name, unresolved_instruction_list)
+    return SimExpression(simexpression_name, unresolved_instruction_list, unresolved_foreach_list)
 
 
   def parse_simexpression_defs(self) :
@@ -2365,8 +2381,23 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param procedure_defs: procedure defs
 @type procedure_defs: dictionary{}
 """
+    new_array = []
+    for simexpression in simexpression_defs :
+      if len(simexpression.foreach_list) > 0 :
+        for ts in simexpression.get_foreach_list() :
+          clone = copy.deepcopy(simexpression)
+	  clone.instruction_list.append(ts)
+	  clone.simexpression_name = clone.get_simexpression_name() + '_' + ts
+	  new_array.append(clone)
+	simexpression_defs.remove(simexpression)
+
+    for na in new_array :
+      simexpression_defs.append(na)
+
+
     for simexpression in simexpression_defs :
       simexpression.set_instruction_list(self.resolve_instruction_list(simexpression.get_instruction_list(), procedure_defs))
+
 
 
   def resolveSpecArraymapping(self, simexpression_defs, arraymapping_defs) :

@@ -49,7 +49,7 @@ procedure_footer ::= "endprocedure" NEWLINE
 procedure_identifier ::= identifier
 
 simexpression_header ::= "simexpression" identifier NEWLINE
-simexpression_body ::= (identifier NEWLINE)+
+simexpression_body ::= (identifier NEWLINE)+ "foreach:" (identifier)+
 simexpression_footer ::= "endsimexpression" NEWLINE
 
 genemapping_header ::= "genemapping" NEWLINE
