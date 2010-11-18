@@ -7,13 +7,14 @@ offset: 1e-1
 endglobalsettingdefs
 
 whitelistdefs
-factor: "f0" "f1"
-gene: "g0" "g1"
+factor: "f0" "f1" "f2"
+gene: "g0" "g1" "g2"
 endwhitelistdefs
 
 genemapping
 factor f0 = "257221_at" "257222_at" "257223_at"
 factor f1 = "257231_at"
+factor f2 = "257241_at"
 endgenemapping
 
 procedure equilibration
@@ -39,6 +40,10 @@ endprocedure
 
 procedure ko_g1
 knockout: g1
+endprocedure
+
+procedure ko_g2
+knockout: g2
 endprocedure
 
 procedure MeJA_treatment
@@ -81,6 +86,18 @@ endsimexpression
 
 simexpression g1_MeJA
 ko_g1
+equilibration
+MeJA_treatment
+foreach: t030 t060
+endsimexpression
+
+simexpression g2
+ko_g2
+equilibration
+endsimexpression
+
+simexpression g2_MeJA
+ko_g2
 equilibration
 MeJA_treatment
 foreach: t030 t060
