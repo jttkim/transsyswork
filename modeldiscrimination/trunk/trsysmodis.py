@@ -14,7 +14,6 @@ import re
 import transsys.utils
 import string
 import types
-import Numeric
 import StringIO
 
 
