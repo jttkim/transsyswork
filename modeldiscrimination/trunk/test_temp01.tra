@@ -12,6 +12,12 @@ transsys b
     diffusibility: 0.1;
   }
 
+  factor f2
+  {
+    decay: 0.1;
+    diffusibility: 0.1;
+  }
+
   factor jasmonate
   {
     decay: 0.1;
@@ -41,6 +47,19 @@ transsys b
     product
     {
       default: f1;
+    }
+  }
+
+  gene g2
+  {
+    promoter
+    {
+      constitutive: 0.1;
+      f1: repress(1, 10);  
+    }
+    product
+    {
+      default: f2;
     }
   }
 }

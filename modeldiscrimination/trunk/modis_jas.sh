@@ -55,11 +55,11 @@ function optimiseModelSynthetic()
 
 function optimiseModelEmpiric()
 {
-  tp_name=`printf '%s' ${true_model} `
   empirical_data=$1
-  for (( model=0; model<=${num_model}; model++ )) ; do
-    model_name=`printf '%s_m%02d' ${tp_name} ${model}`
-    do_run ./netopt -x  ${empirical_data} -o ${specfile} -R ${num_optimisations} -g ${gradientfile} -T ${transformerfile} -L ${logfile} -s ${rndseed} -c ${model_name}
+  for model in ${tp_candidate[@]} 
+  do
+    
+    do_run ./netopt -x  ${empirical_data} -o ${specfile} -R ${num_optimisations} -g ${gradientfile} -T ${transformerfile} -L ${logfile} -s ${rndseed} -c ${model} 'opt_'model'.txt' t2.txt
   done
 }
 
@@ -89,16 +89,28 @@ function mergeFile()
 }
 
 
-num_model=2
+num_model=0
 specfile=jasmonate_model.txt
 signal_to_noise=0
 rndseed=2
 true_model=jasmonate
-num_optimisations=1
+num_optimisations=2
 transformerfile=transformerfile.dat
 logfile=logo
 gradientfile=optspec.dat
 empirical_data=emp_data_jas.txt
+tp_candidate=none
+
+while getopts m:d opt
+do
+  case "$opt" in
+    m) tp_candidate="$OPTARG";;
+    d) isdef=1;;
+    \?) help_ani;;
+  esac
+done
+
+
 
 #createEmpiricalData
 #optimiseModelSynthetic
