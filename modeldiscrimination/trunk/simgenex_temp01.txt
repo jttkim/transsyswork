@@ -1,7 +1,7 @@
 ObjectiveSpecification-0.1
 
 globalsettingdefs
-transformation: log
+transformation: none
 distance: correlation
 offset: 1e-1
 endglobalsettingdefs
@@ -59,7 +59,10 @@ setproduct: g0 f1
 endprocedure
 
 simexpression wt
+ko_g0
 equilibration
+MeJA_treatment
+t030
 endsimexpression
 
 simexpression wt_MeJA
@@ -104,7 +107,13 @@ foreach: t030 t060
 endsimexpression
 
 arraymapping
-array gko : g0 / wt
+#array wtMeJA: wt_MeJA / wt
+array g0MeJAt030: g0_MeJA_t030 / g0
+array g0MeJAt060: g0_MeJA_t060 / g0
+array g1MeJAt030: g1_MeJA_t030 / g1
+array g1MeJAt060: g1_MeJA_t060 / g1
+array g2MeJAt030: g2_MeJA_t030 / g2
+array g2MeJAt060: g2_MeJA_t060 / g2
 endarraymapping
 
 

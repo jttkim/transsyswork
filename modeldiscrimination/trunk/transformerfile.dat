@@ -14,16 +14,16 @@ maxValue: 1.0
 aspecTransformation
 ArctanFunction
 minValue: 0.01
-maxValue: 10.0
+maxValue: 100.0
 amaxTransformation
 ArctanFunction
 minValue: 0.1
-maxValue: 10.0
+maxValue: 100.0
 rspecTransformation
 ArctanFunction
 minValue: 0.01
-maxValue: 10.0
+maxValue: 100.0
 rmaxTransformation
 ArctanFunction
 minValue: 0.1
-maxValue: 10.0
+maxValue: 100.0

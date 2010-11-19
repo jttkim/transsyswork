@@ -11,6 +11,13 @@ function do_run()
   fi
 }
 
+function checkpython()
+{
+  if [ -z "$PYTHONPATH" ]
+    then
+    export PYTHONPATH=$HOME/lib64/python
+  fi
+}
 
 function dummy()
 {
@@ -40,7 +47,7 @@ function dummy3()
 function createEmpiricalData()
 {
   tp_name=`printf '%s' ${true_model} `
-  do_run ./transsyswritesimsetOF -o  ${specfile} -s ${rndseed} -N ${signal_to_noise} ${true_model}'_m00.tra' ${tp_name} ${tp_name}'_trace.txt'
+  do_run ./transsyswritesimsetOF -o  ${simgenex_model} -s ${rndseed} -N ${signal_to_noise} ${true_model}'_m00.tra' ${tp_name} ${tp_name}'_trace.txt'
 }
 
 function optimiseModelSynthetic()
@@ -48,18 +55,17 @@ function optimiseModelSynthetic()
   tp_name=`printf '%s' ${true_model} `
   for (( model=0; model<=${num_model}; model++ )) ; do
     model_name=`printf '%s_m%02d' ${tp_name} ${model}`
-    do_run ./netopt -x ${tp_name}'_expr.txt' -o ${specfile} -R ${num_optimisations} -g ${gradientfile} -T ${transformerfile} -L ${logfile} -s ${rndseed} -c ${model_name}
+    do_run ./netopt -x ${tp_name}'_expr.txt' -o ${simgenex_model} -R ${num_optimisations} -g ${gradientfile} -T ${transformerfile} -L ${logfile} -s ${rndseed} -c ${model_name}
   done
 }
 
 
 function optimiseModelEmpiric()
 {
-  empirical_data=$1
+
   for model in ${tp_candidate[@]} 
   do
-    
-    do_run ./netopt -x  ${empirical_data} -o ${specfile} -R ${num_optimisations} -g ${gradientfile} -T ${transformerfile} -L ${logfile} -s ${rndseed} -c ${model} 'opt_'model'.txt' t2.txt
+    do_run ./netopt -x  ${empirical_data} -o ${simgenex_model} -R ${num_optimisations} -g ${gradientfile} -T ${transformerfile} -L ${logfile} -s ${rndseed} -c ${model} 'opt_'${model}'.txt' 'tp_'${model}'.txt'
   done
 }
 
@@ -90,29 +96,32 @@ function mergeFile()
 
 
 num_model=0
-specfile=jasmonate_model.txt
+simgenex_model=jasmonate_model.txt
 signal_to_noise=0
 rndseed=2
 true_model=jasmonate
-num_optimisations=2
+num_optimisations=20
 transformerfile=transformerfile.dat
 logfile=logo
 gradientfile=optspec.dat
 empirical_data=emp_data_jas.txt
 tp_candidate=none
 
-while getopts m:d opt
+while getopts m:e:s:o:d opt
 do
   case "$opt" in
     m) tp_candidate="$OPTARG";;
+    e) empirical_data="$OPTARG";;
+    s) simgenex_model="$OPTARG";;
+    o) num_optimisations="$OPTARG";;
     d) isdef=1;;
     \?) help_ani;;
   esac
 done
 
 
-
+checkpython
 #createEmpiricalData
 #optimiseModelSynthetic
-optimiseModelEmpiric $empirical_data
+optimiseModelEmpiric
 #mergeFile

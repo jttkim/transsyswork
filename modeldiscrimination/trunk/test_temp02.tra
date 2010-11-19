@@ -29,8 +29,8 @@ transsys b
     promoter
     {
       constitutive: 0.1;
-      f1: activate(1, 10);
-      jasmonate: activate(1, 10); 
+      f1: activate(0,1); 
+      f2: repress(1, 10);  
     }
     product
     {
@@ -42,9 +42,9 @@ transsys b
   {
     promoter
     {
-      constitutive: 0.1;
-      f0: activate(1, 10); 
-      jasmonate: activate(1, 10); 
+      constitutive: 0.1; 
+      f0: activate(0,1); 
+      f2: repress(1, 10);  
     }
     product
     {
@@ -57,8 +57,7 @@ transsys b
     promoter
     {
       constitutive: 0.1;
-      f1: repress(1, 10);  
-      jasmonate: activate(1, 10); 
+      f1: activate(0,1); 
     }
     product
     {
