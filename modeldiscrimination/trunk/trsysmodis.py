@@ -150,8 +150,6 @@ expression levels across the data set.
 	  value = 1.0
 	else :
 	  value =  profile[perturbation] / profile[reference]
-          print perturbation, reference, 'profile', profile
-          sys.exit()
       else :
 	value =  profile[perturbation]
       profile2[array.get_array_name()] = value
@@ -1213,7 +1211,6 @@ series is the simulation of the gene expression levels for that genotype.
       e = self.createTemplate(all_factors)
     self.write_trace_header(tracefile, transsys_program)
     for simexpression in self.simexpression_defs :
-      print simexpression.get_simexpression_name()
       tp = copy.deepcopy(transsys_program)
       ti_trace = simexpression.simulate(transsys_program)
       ti = ti_trace[-1]
@@ -1653,7 +1650,6 @@ class SimExpression(object) :
     for instruction in self.instruction_list :
       ti_trace = ti_trace + instruction.apply_instruction(ti)
       ti = ti_trace[-1]
-      print ti
     return ti_trace
 
 
