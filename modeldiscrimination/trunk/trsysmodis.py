@@ -144,10 +144,14 @@ expression levels across the data set.
       perturbation = array.get_resolve_perturbation().get_simexpression_name()
       if array.get_resolve_reference() is not None :
         reference = array.get_resolve_reference().get_simexpression_name()
-	if profile[perturbation] == 0.0 and  profile[reference] == 0.0 :
+        #FIXMEAVC: probably a bug?
+	#if profile[perturbation] == 0.0 and  profile[reference] == 0.0 :
+	if profile[reference] == 0.0 :
 	  value = 1.0
 	else :
 	  value =  profile[perturbation] / profile[reference]
+          print perturbation, reference, 'profile', profile
+          sys.exit()
       else :
 	value =  profile[perturbation]
       profile2[array.get_array_name()] = value
@@ -894,6 +898,7 @@ class RuntimestepsInstruction(PrimaryInstruction) :
 @return: gene_expression
 @rtype: array
 """
+    #FIXMEAVC: +1 ?
     ts = transsys_instance.time_series(int(self.time_steps + 1))
     return ts
 
@@ -1208,6 +1213,7 @@ series is the simulation of the gene expression levels for that genotype.
       e = self.createTemplate(all_factors)
     self.write_trace_header(tracefile, transsys_program)
     for simexpression in self.simexpression_defs :
+      print simexpression.get_simexpression_name()
       tp = copy.deepcopy(transsys_program)
       ti_trace = simexpression.simulate(transsys_program)
       ti = ti_trace[-1]
@@ -1647,6 +1653,7 @@ class SimExpression(object) :
     for instruction in self.instruction_list :
       ti_trace = ti_trace + instruction.apply_instruction(ti)
       ti = ti_trace[-1]
+      print ti
     return ti_trace
 
 
@@ -2327,76 +2334,19 @@ class EmpiricalObjectiveFunctionParser(object) :
     return GlobalSettings(globalsettings_list) 
 
 
-  def resolve_spec(self, globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs) :
-    """ Resolve spec
-@param globalsettings: globalsettings
-@type globalsettings: dictionary{}
-@param genemapping: genemapping
-@type genemapping: dictionary{}
-@param procedure_defs: procedure_defs
-@type procedure_defs: dictionary{}
-@param simexpression_defs: simexpression_defs
-@type simexpression_defs: L{simexpression}
-@param arraymapping_defs: arraymapping_defs
-@type arraymapping_defs: L{arraymapping}
-"""
-    procedure_name_list = procedure_defs.keys()
-    self.resolveSpecProcedure(procedure_defs)
-    self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
-    self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
-
-
-  def resolve_instruction_list(self, unresolved_instruction_list, procedure_defs) :
-    """ Resolve instruction list
-@param unresolved_instruction_list: unresolved_instruction_list
-@type unresolved_instruction_list: L{unresolved_instruction_list}
-@param procedure_defs: procedure_defs
-@type procedure_defs: dictionary{}
-"""
-    resolved_instruction_list = []
-    for instruction in unresolved_instruction_list :
-      if isinstance(instruction, PrimaryInstruction) :
-        resolved_instruction_list.append(instruction)
-      elif isinstance(instruction, types.StringType) :
-        resolved_instruction_list.append(procedure_defs[instruction])
-      else :
-        raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
-    return resolved_instruction_list
-    
-
-  def resolveSpecProcedure(self, procedure_defs) :
-    """Resolve procedure
-@param procedure_defs: procedure_defs
-@type procedure_defs: dictionary{}
-"""
-    for name, procedure in procedure_defs.iteritems() :
-      procedure.set_instruction_list(self.resolve_instruction_list(procedure.get_instruction_list(), procedure_defs))
-
-
-  def resolveSpecSimexpression(self, simexpression_defs, procedure_defs) :
-    """ Validate transformation definition
-@param simexpression_defs: simexpression_defs
+  def searchSimExpression(self, array_name, simexpression_defs) :
+    """ Search array 
+@param array_name: array name
+@type array_name: C{String}
+@param simexpression_defs: simexpression
 @type simexpression_defs: L{SimExpression}
-@param procedure_defs: procedure defs
-@type procedure_defs: dictionary{}
+@return: array
+@rtype: C{Array}
 """
-    new_array = []
-    for simexpression in simexpression_defs :
-      if len(simexpression.foreach_list) > 0 :
-        for ts in simexpression.get_foreach_list() :
-          clone = copy.deepcopy(simexpression)
-	  clone.instruction_list.append(ts)
-	  clone.simexpression_name = clone.get_simexpression_name() + '_' + ts
-	  new_array.append(clone)
-	simexpression_defs.remove(simexpression)
-
-    for na in new_array :
-      simexpression_defs.append(na)
-
-
-    for simexpression in simexpression_defs :
-      simexpression.set_instruction_list(self.resolve_instruction_list(simexpression.get_instruction_list(), procedure_defs))
-
+    for array in simexpression_defs :
+      if array.get_simexpression_name() == array_name :
+        break
+    return array
 
 
   def resolveSpecArraymapping(self, simexpression_defs, arraymapping_defs) :
@@ -2428,19 +2378,81 @@ class EmpiricalObjectiveFunctionParser(object) :
         arraymapping.resolve_reference = self.searchSimExpression(arraymapping.get_unresolve_reference(), simexpression_defs)
 
 
-  def searchSimExpression(self, array_name, simexpression_defs) :
-    """ Search array 
-@param array_name: array name
-@type array_name: C{String}
-@param simexpression_defs: simexpression
+  def resolveSpecSimexpression(self, simexpression_defs, procedure_defs) :
+    """ Validate transformation definition
+@param simexpression_defs: simexpression_defs
 @type simexpression_defs: L{SimExpression}
-@return: array
-@rtype: C{Array}
+@param procedure_defs: procedure defs
+@type procedure_defs: dictionary{}
 """
-    for array in simexpression_defs :
-      if array.get_simexpression_name() == array_name :
-        break
-    return array
+
+    new_array = []
+    index = []
+    for simexp in simexpression_defs :
+      if len(simexp.foreach_list) > 0 :
+        index.append(simexp.get_simexpression_name())
+        for ts in simexp.get_foreach_list() :
+          clone = copy.deepcopy(simexp)
+	  clone.instruction_list.append(ts)
+	  clone.simexpression_name = clone.get_simexpression_name() + '_' + ts
+	  new_array.append(clone)
+    for na in new_array :
+      simexpression_defs.append(na)    
+    for simexp in simexpression_defs :
+      if simexp.get_simexpression_name() in index :
+        simexpression_defs.remove(simexp) 
+    #FIXMEAVC: Dumb coding here
+    for simexp in simexpression_defs :
+      if simexp.get_simexpression_name() in index :
+        simexpression_defs.remove(simexp) 
+    for simexp in simexpression_defs :
+      simexp.set_instruction_list(self.resolve_instruction_list(simexp.get_instruction_list(), procedure_defs))
+
+
+  def resolve_instruction_list(self, unresolved_instruction_list, procedure_defs) :
+    """ Resolve instruction list
+@param unresolved_instruction_list: unresolved_instruction_list
+@type unresolved_instruction_list: L{unresolved_instruction_list}
+@param procedure_defs: procedure_defs
+@type procedure_defs: dictionary{}
+"""
+    resolved_instruction_list = []
+    for instruction in unresolved_instruction_list :
+      if isinstance(instruction, PrimaryInstruction) :
+        resolved_instruction_list.append(instruction)
+      elif isinstance(instruction, types.StringType) :
+        resolved_instruction_list.append(procedure_defs[instruction])
+      else :
+        raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
+    return resolved_instruction_list
+
+
+  def resolveSpecProcedure(self, procedure_defs) :
+    """Resolve procedure
+@param procedure_defs: procedure_defs
+@type procedure_defs: dictionary{}
+"""
+    for name, procedure in procedure_defs.iteritems() :
+      procedure.set_instruction_list(self.resolve_instruction_list(procedure.get_instruction_list(), procedure_defs))
+
+
+  def resolve_spec(self, globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs) :
+    """ Resolve spec
+@param globalsettings: globalsettings
+@type globalsettings: dictionary{}
+@param genemapping: genemapping
+@type genemapping: dictionary{}
+@param procedure_defs: procedure_defs
+@type procedure_defs: dictionary{}
+@param simexpression_defs: simexpression_defs
+@type simexpression_defs: L{simexpression}
+@param arraymapping_defs: arraymapping_defs
+@type arraymapping_defs: L{arraymapping}
+"""
+    procedure_name_list = procedure_defs.keys()
+    self.resolveSpecProcedure(procedure_defs)
+    self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
+    self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
 
 
   def parse_knockout_treatment_objectivespec(self) :
