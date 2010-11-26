@@ -60,6 +60,7 @@ o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
 #print objective_function
 #sys.exit()
+
 transsys_program = transsys.TranssysProgramParser(infile).parse()
 if all_factors :
   e = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile, transsys_program.factor_names())

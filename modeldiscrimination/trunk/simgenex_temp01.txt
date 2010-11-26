@@ -1,7 +1,7 @@
 ObjectiveSpecification-0.1
 
 globalsettingdefs
-transformation: none
+transformation: log
 distance: correlation
 offset: 1e-1
 endglobalsettingdefs

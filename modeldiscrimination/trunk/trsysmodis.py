@@ -896,7 +896,6 @@ class RuntimestepsInstruction(PrimaryInstruction) :
 @return: gene_expression
 @rtype: array
 """
-    #FIXMEAVC: +1 ?
     ts = transsys_instance.time_series(int(self.time_steps + 1))
     return ts
 
@@ -1212,17 +1211,8 @@ series is the simulation of the gene expression levels for that genotype.
     self.write_trace_header(tracefile, transsys_program)
     for simexpression in self.simexpression_defs :
       tp = copy.deepcopy(transsys_program)
-      i = simexpression.get_foreach_list()
-      if i is not None :
-        for ts in simexpression.instruction_list[i]['foreach'] :
-          ti_trace = ts.simulate(transsys_program)
-          ti = ti_trace[-1]
-          self.write_tp_tracefile(tp_tracefile, ti.transsys_program, ts.get_simexpression_name())
-          e.add_array(ts.get_simexpression_name())
-          map(lambda t: e.set_expression_value(ts.get_simexpression_name(), t, ti.get_factor_concentration(t)), e.expression_data.expression_data.keys())
-          self.write_trace_simexpression(tracefile, ts.get_simexpression_name(), ti_trace)
-      else : 
-        ti_trace = simexpression.simulate(transsys_program)
+      ti_trace = simexpression.simulate(transsys_program)
+      if ti_trace is not None :
         ti = ti_trace[-1]
         self.write_tp_tracefile(tp_tracefile, ti.transsys_program, simexpression.get_simexpression_name())
         e.add_array(simexpression.get_simexpression_name())
@@ -1293,12 +1283,8 @@ series is the simulation of the gene expression levels for that genotype.
     e.expression_data.array_name = []
     l = 0
     for simexp in self.simexpression_defs :
-      i = simexp.get_foreach_list()
-      if i is not None :
-        for ts in simexp.instruction_list[i]['foreach'] :
-	  l = l + 1
-      else :
-	  l = l + 1
+      if len(simexp.get_foreach_list()) == 0 or simexp.get_foreach_list() == 'clone' :
+	l = l + 1
 
     for i in factor_list :
       values = []
@@ -1312,11 +1298,7 @@ series is the simulation of the gene expression levels for that genotype.
     """ Validate spec file simexpression consistency """
     simexpression_name_spec = []
     for simexp in self.simexpression_defs :
-      i = simexp.get_foreach_list()
-      if i is not None :
-        for ts in simexp.instruction_list[i]['foreach'] :
-          simexpression_name_spec.append(ts.get_simexpression_name())
-      else :
+      if len(simexp.get_foreach_list()) == 0 or simexp.get_foreach_list() == 'clone' :
         simexpression_name_spec.append(simexp.get_simexpression_name())
     array_name_eset = self.expression_set.expression_data.array_name
     if (len(simexpression_name_spec) != len(array_name_eset)) :
@@ -1346,13 +1328,13 @@ series is the simulation of the gene expression levels for that genotype.
     for i, o in self.procedure_defs.iteritems() :
       s = s + ("%s" %o.__str__())
     for o in self.simexpression_defs :
-      s = s + ("%s" %o.__str__())
-    """
+      n = o.__str__()
+      if n is not None :
+        s = s + ("%s" %n)
     s = s + ("arraymapping\n")
     for o in self.arraymapping_defs :
       s = s + ("%s" %o.__str__())
     s = s + ("endarraymapping\n")
-    """
     return s
 
 
@@ -1609,15 +1591,6 @@ class Procedure(Instruction) :
   def set_instruction_list(self, instruction_list) :
     self.instruction_list = instruction_list
     
-  """
-    for instruction in unresolved_instruction_list :
-      if isinstance(instruction, PrimaryInstruction) :
-        resolved_instruction_list.append(instruction)
-      elif isinstance(instruction, types.StringType) :
-        resolved_instruction_list.append(procedure_defs[instruction])
-      else :
-        raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
-  """
 
   def __str__(self) :
     """ Return string of Procedure """
@@ -1643,9 +1616,7 @@ class Procedure(Instruction) :
 class SimExpression(object) :
   """ Object SimExpression """
 
-  #FIXMEAVC: foreach added 
-  #def __init__(self, simexpression_name, instruction_list, foreach_list = None) :
-  def __init__(self, simexpression_name, instruction_list) :
+  def __init__(self, simexpression_name, instruction_list, foreach_list = None) :
     """ Constructor
 @param simexpression_name: simexpression name
 @type simexpression_name: C{String}
@@ -1654,6 +1625,7 @@ class SimExpression(object) :
 """
     self.simexpression_name = simexpression_name
     self.instruction_list = instruction_list
+    self.foreach_list = foreach_list
 
 
   def get_simexpression_name(self) :
@@ -1665,9 +1637,7 @@ class SimExpression(object) :
 
 
   def get_foreach_list(self) :
-    for instruction in self.instruction_list :
-      if isinstance(instruction, types.DictType) :
-        return(self.instruction_list.index(instruction))
+    return(self.foreach_list)
 
 
   def set_instruction_list(self, instruction_list) :
@@ -1680,26 +1650,32 @@ class SimExpression(object) :
 
   def __str__(self) :
     """ Return string of SimExpression """
-    s = 'simexpression ' + self.simexpression_name + '\n' 
-    for p in self.instruction_list :
-      if isinstance(p, types.DictType) :
-        s = s + "foreach: "
-	for procedures in self.instruction_list[self.get_foreach_list()]['foreach'] :
-	  s = s + ("%s" %procedures) + " "
+    if self.get_foreach_list() == "clone" :
+      s = None
+    else :
+      s = 'simexpression ' + self.simexpression_name + '\n' 
+      for p in self.instruction_list :
+	s = s + ("%s" %p.get_procedure_name()) + " "
         s = s + "\n"
-      else :
-        s = s + ("%s\n" %p)
-    s = s + 'endprocedure' + '\n\n'
+      if len(self.get_foreach_list()) > 0 :
+        s = s + 'foreach: '
+        for ts in self.get_foreach_list() :
+	  s = s + ("%s " %ts)
+        s = s + "\n"
+      s = s + 'endsimexpression' + '\n\n'
     return s
 
 
   def simulate(self, transsys_program) :
-    tp = copy.deepcopy(transsys_program)
-    ti = transsys.TranssysInstance(transsys_program)
-    ti_trace = []
-    for instruction in self.instruction_list :
-      ti_trace = ti_trace + instruction.apply_instruction(ti)
-      ti = ti_trace[-1]
+    if len(self.get_foreach_list()) == 0 or self.get_foreach_list() == 'clone' :
+      tp = copy.deepcopy(transsys_program)
+      ti = transsys.TranssysInstance(transsys_program)
+      ti_trace = []
+      for instruction in self.instruction_list :
+        ti_trace = ti_trace + instruction.apply_instruction(ti)
+        ti = ti_trace[-1]
+    else :
+      ti_trace = None
     return ti_trace
 
 
@@ -1981,23 +1957,19 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: procedure simexpression
 @rtype: array[]
 """
-    unresolved_foreach_list = {}
     procedures = []
     unresolved_instruction_list = []
+    unresolved_foreach_list = []
     while self.scanner.lookahead() != 'endsimexpression' :
       identifier_name = self.expect_token('identifier')
       if identifier_name == 'foreach' :
         self.expect_token(':')
         while self.scanner.lookahead() != 'endsimexpression':
           d = self.expect_token('identifier')
-          procedures.append(d)
-        unresolved_foreach_list['foreach'] = procedures
-        unresolved_instruction_list.append(unresolved_foreach_list)
+          unresolved_foreach_list.append(d)
       else :
         unresolved_instruction_list.append(identifier_name)
-        #unresolved_instruction_list.append(unresolved_foreach_list)
-    #return(unresolved_instruction_list, unresolved_foreach_list)
-    return(unresolved_instruction_list)
+    return(unresolved_instruction_list, unresolved_foreach_list)
 
 
   def parse_simexpression_def(self) :
@@ -2006,15 +1978,14 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{SimExpression}
 """
     simexpression_name = self.parse_simexpression_header()
-    #unresolved_instruction_list, unresolved_foreach_list = self.parse_simexpression_body()
-    unresolved_instruction_list = self.parse_simexpression_body()
+    unresolved_instruction_list, unresolved_foreach_list = self.parse_simexpression_body()
     self.parse_simexpression_footer()
     # NOTE: the SimExpression instance contains an unresolved list,
     # the parser will resolve this before completing and passing the
     # its parsing result (i.e. the KnockoutTreatmentObjective) to the
     # caller.
     #return SimExpression(simexpression_name, unresolved_instruction_list, unresolved_foreach_list)
-    return SimExpression(simexpression_name, unresolved_instruction_list)
+    return SimExpression(simexpression_name, unresolved_instruction_list, unresolved_foreach_list)
 
 
   def parse_simexpression_defs(self) :
@@ -2394,19 +2365,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: array
 @rtype: C{Array}
 """
-    array = 0
     for simexp in simexpression_defs :
-      i = simexp.get_foreach_list()
-      if i is not None :
-        for ts in simexp.instruction_list[i]['foreach'] :
-          if ts.get_simexpression_name() == array_name :
-	    array = ts
-	    break
-      else :
-        if simexp.get_simexpression_name() == array_name :
-	  array = simexp
-          break
-    return array
+      if simexp.get_simexpression_name() == array_name :
+        break
+    return simexp
 
 
   def resolveSpecArraymapping(self, simexpression_defs, arraymapping_defs) :
@@ -2418,19 +2380,14 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     a = {}
     for simexp in simexpression_defs :
-      i = simexp.get_foreach_list()
-      if i is not None :
-        for ts in simexp.instruction_list[i]['foreach'] :
-          a[ts.get_simexpression_name()] = []
-      else :
-        a[simexp.get_simexpression_name()] = []
+      a[simexp.get_simexpression_name()] = []
      
     if len(arraymapping_defs) == 0 :
       raise StandardError, "Array mappings were not declared"
     for arraymapping in arraymapping_defs :
-      if arraymapping.get_unresolve_perturbation() not in a :
+      if arraymapping.get_unresolve_perturbation() not in a.keys() :
         raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_perturbation()
-      if arraymapping.get_unresolve_reference() not in a and arraymapping.get_unresolve_reference() != None :
+      if arraymapping.get_unresolve_reference() not in a.keys() and arraymapping.get_unresolve_reference() != None :
         raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_reference()
       arraymapping.resolve_perturbation = self.searchSimExpression(arraymapping.get_unresolve_perturbation(), simexpression_defs)
       if arraymapping.get_unresolve_reference() != None: 
@@ -2444,49 +2401,20 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param procedure_defs: procedure defs
 @type procedure_defs: dictionary{}
 """ 
-
-    index = []
+    new_array = []
     for simexp in simexpression_defs :
-      new_array = []
-      i = simexp.get_foreach_list()
-      if i is not None :
-        for ts in simexp.instruction_list[i]['foreach'] :
-          clone = copy.deepcopy(simexp)
-	  del clone.instruction_list[i]
-	  clone.instruction_list.append(ts)
-	  clone.simexpression_name = clone.get_simexpression_name() + '_' + ts
-          clone.set_instruction_list(self.resolve_instruction_list(clone.get_instruction_list(), procedure_defs))
-	  new_array.append(clone)
-        simexp.instruction_list[i]['foreach'] = new_array
-      else :
-        simexp.set_instruction_list(self.resolve_instruction_list(simexp.get_instruction_list(), procedure_defs))
-
-    """
       if len(simexp.foreach_list) > 0 :
-        index.append(simexp.get_simexpression_name())
         for ts in simexp.get_foreach_list() :
           clone = copy.deepcopy(simexp)
 	  clone.instruction_list.append(ts)
 	  clone.simexpression_name = clone.get_simexpression_name() + '_' + ts
 	  new_array.append(clone)
-	  ts = clone
-	  #print ts
+    for array in new_array :
+      array.foreach_list = "clone"
+      simexpression_defs.append(array)
     for simexp in simexpression_defs :
-      print simexp.instruction_list
-    for na in new_array :
-      simexpression_defs.append(na)    
-    for simexp in simexpression_defs :
-      if simexp.get_simexpression_name() in index :
-        simexpression_defs.remove(simexp) 
-    #FIXMEAVC: Dumb coding here
-    for simexp in simexpression_defs :
-      if simexp.get_simexpression_name() in index :
-        simexpression_defs.remove(simexp) 
-    for simexp in simexpression_defs :
-      for i in simexp.foreach_list :
-       # print i
-    simexp.set_instruction_list(self.resolve_instruction_list(simexp.get_instruction_list(), procedure_defs))
-"""
+      simexp.set_instruction_list(self.resolve_instruction_list(simexp.get_instruction_list(), procedure_defs))
+
 
   def resolve_instruction_list(self, unresolved_instruction_list, procedure_defs) :
     """ Resolve instruction list
