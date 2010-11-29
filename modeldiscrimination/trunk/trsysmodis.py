@@ -1984,7 +1984,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     # the parser will resolve this before completing and passing the
     # its parsing result (i.e. the KnockoutTreatmentObjective) to the
     # caller.
-    #return SimExpression(simexpression_name, unresolved_instruction_list, unresolved_foreach_list)
     return SimExpression(simexpression_name, unresolved_instruction_list, unresolved_foreach_list)
 
 
@@ -2124,7 +2123,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure_name = self.parse_procedure_header()
     unresolved_instruction_list = self.parse_procedure_body()
     self.parse_procedure_footer()
-    # instruction list is unresolved, parser will resolve later -- see SimExpression comment
     return Procedure(procedure_name, unresolved_instruction_list)
 
 

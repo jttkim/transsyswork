@@ -1,0 +1,105 @@
+#!/usr/bin/python
+
+import copy
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+import random
+import pdb
+
+
+class Interaction(object) :
+  """Represent a regulatory interaction.
+
+Intended for purposes of "rewiring interactions".
+
+@ivar promoterElement the regulator of the interaction
+@type promoterElement C{transsys.PromoterElementLink}
+@ivar target the target of the interaction
+@type target C{String}
+"""
+
+  def __init__(self, promoterElement, target) :
+    if len(promoterElement.factor_list) != 1 :
+      raise StandardError, 'multiple regulators not supported'
+    self.promoterElement = promoterElement
+    self.target = target
+
+
+  def __str__(self) :
+    return 'Interaction: %s -> %s' % (self.promoterElement.factor_list[0].name, self.target)
+
+
+def get_interaction_list(tp) :
+  """Extract regulatory interactions into a list of (target, regulator) pairs.
+"""
+  interaction_list = []
+  for gene in tp.gene_list :
+    for pe in gene.promoter :
+      if isinstance(pe, transsys.PromoterElementLink) :
+        if len(pe.factor_list) != 1 :
+          raise StandardError, 'gene %s: promoter element with multiple regulators, not supported' % gene.name
+        interaction_list.append(Interaction(pe, gene.name))
+  return interaction_list
+
+
+transsys_name = None
+parameters = None
+model = None
+replicate = None
+rndseed = 1
+rewiring_operations = 24
+
+optlist, args = getopt.getopt(sys.argv[1:], 'n:w:r:s:h')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-n: <Transsys program name>: Transsys program name'
+    print '-w: <Number of rewirings>: Number of rewirings'
+    print '-r: <Number of rewired topologies>: Number of rewired topologies'
+    print '-s: <Random seed>: Random seed number'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-n' :
+    transsys_name = par
+  elif opt == '-w' :
+    rewirings = int(par)
+  elif opt == '-r' :
+    replicate = int(par)
+  elif opt == '-s' :
+    rndseed = int(par)
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdout
+
+transsys_program = transsys.TranssysProgramParser(infile).parse()
+if len(get_interaction_list(transsys_program)) < 2 :
+  raise StandardError, 'less than 2 interactions'
+factor_list = transsys_program.factor_list
+gene_list = transsys_program.gene_list
+
+"""
+Changing interactions
+"""
+
+rng = random.Random(rndseed)
+
+for r in xrange(replicate) :
+  tp1 = copy.deepcopy(transsys_program)
+  for j in xrange(rewirings) :
+    interaction_list = get_interaction_list(tp1)
+    interaction_pair = rng.sample(interaction_list, 2)
+    i1 = interaction_pair[0]
+    i2 = interaction_pair[1]
+    f1 = i1.promoterElement.factor_list[0]
+    i1.promoterElement.factor_list[0] = i2.promoterElement.factor_list[0]
+    i2.promoterElement.factor_list[0] = f1
+  model = file('%s_w%02d_r%02d.tra'%(transsys_name, rewirings, (r+1)),'w')
+  model.write('%s'%tp1)
+
