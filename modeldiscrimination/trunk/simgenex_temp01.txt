@@ -107,7 +107,7 @@ foreach: t030 t060
 endsimexpression
 
 arraymapping
-#array wtMeJA: wt_MeJA / wt
+array wtMeJA: wt_MeJA / wt
 array g0MeJAt030: g0_MeJA_t030 / g0
 array g0MeJAt060: g0_MeJA_t060 / g0
 array g1MeJAt030: g1_MeJA_t030 / g1
