@@ -32,17 +32,48 @@ Intended for purposes of "rewiring interactions".
     return 'Interaction: %s -> %s' % (self.promoterElement.factor_list[0].name, self.target)
 
 
-def get_interaction_list(tp) :
-  """Extract regulatory interactions into a list of (target, regulator) pairs.
+class Constitutive(object) :
+  """ Gene's constitutive element
+@ivar constitutiveElement: gene's constitutive element
+@type constitutiveElement: C{transsys.PromoterElementConstitutive}
+@ivar target: gene name
+@type target: C{String}
 """
+
+
+  def __init__(self, constitutiveElement, target) :
+    self.constitutiveElement = constitutiveElement
+    self.target = target
+
+
+class Decay(object) :
+  """ Factor's decay
+@ivar decay_expression: factor's decay expression
+@type  decay_expression: C{transsys.Factor.decay_expression}
+@ivar target: factor name
+@type target: C{String}
+"""
+
+  def __init__(self, decay_expression, target) :
+    self.decay_expression = decay_expression
+    self.target = target
+
+
+def get_interaction_list(tp) :
+  """ Extract regulatory interactions into a list of (target, regulator) pairs."""
   interaction_list = []
-  for gene in tp.gene_list :
+  constitutive_list = []
+  decay_list = []
+  for gene, factor in zip(tp.gene_list, tp.factor_list) :
     for pe in gene.promoter :
       if isinstance(pe, transsys.PromoterElementLink) :
         if len(pe.factor_list) != 1 :
           raise StandardError, 'gene %s: promoter element with multiple regulators, not supported' % gene.name
         interaction_list.append(Interaction(pe, gene.name))
-  return interaction_list
+      if isinstance(pe, transsys.PromoterElementConstitutive) :
+        constitutive_list.append(Constitutive(pe, gene.name))
+    decay_list.append(Decay(factor.decay_expression, factor.name))	
+  return interaction_list, constitutive_list, decay_list
 
 
 transsys_name = None
@@ -90,16 +121,27 @@ Changing interactions
 
 rng = random.Random(rndseed)
 
+promoter_list = []
 for r in xrange(replicate) :
   tp1 = copy.deepcopy(transsys_program)
   for j in xrange(rewirings) :
-    interaction_list = get_interaction_list(tp1)
+    interaction_list, constitutive_list, decay_list = get_interaction_list(tp1)
     interaction_pair = rng.sample(interaction_list, 2)
     i1 = interaction_pair[0]
     i2 = interaction_pair[1]
     f1 = i1.promoterElement.factor_list[0]
     i1.promoterElement.factor_list[0] = i2.promoterElement.factor_list[0]
     i2.promoterElement.factor_list[0] = f1
+    constitutive_pair = rng.sample(constitutive_list, 2)
+    c1 = tp1.find_gene_index(constitutive_pair[0].target)
+    c2 = tp1.find_gene_index(constitutive_pair[1].target)
+    tp1.gene_list[c1].promoter[0] = constitutive_pair[1].constitutiveElement
+    tp1.gene_list[c2].promoter[0] = constitutive_pair[0].constitutiveElement
+    decay_pair = rng.sample(decay_list, 2)
+    d1 = tp1.find_factor_index(decay_pair[0].target)
+    d2 = tp1.find_factor_index(decay_pair[1].target)
+    tp1.factor_list[c1].decay_expression = decay_pair[1].decay_expression
+    tp1.factor_list[c2].decay_expression = decay_pair[0].decay_expression
   model = file('%s_w%02d_r%02d.tra'%(transsys_name, rewirings, (r+1)),'w')
   model.write('%s'%tp1)
 
