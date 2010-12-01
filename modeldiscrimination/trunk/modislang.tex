@@ -213,12 +213,12 @@ procedure_header ::= "procedure" identifier NEWLINE
 procedure_body ::= (instruction)+
 
 instruction ::= procedure_identifier
-	| primary_instruction
+        | primary_instruction
 
 primary_instruction ::= "knockout:" identifier NEWLINE
-	| "runtimesteps:" integer NEWLINE
-	| "treatment:" identifier "=" realnumber NEWLINE
-	| "overexpress:" identifier "=" realnumber NEWLINE
+        | "runtimesteps:" integer NEWLINE
+        | "treatment:" identifier "=" realnumber NEWLINE
+        | "overexpress:" identifier "=" realnumber NEWLINE
         | "setproduct:" identifier identifier NEWLINE
 
 procedure_footer ::= "endprocedure" NEWLINE
@@ -448,6 +448,154 @@ simexpressions independently must be retained.
 If the transsys program object provided a method to detect whether
 the program is deterministic, simulators could use that method to
 automatically activate the prefix optimisation as appropriate.
+
+
+\subsection{SimGenex 2.0}
+
+Syntactic features:
+
+\begin{itemize}
+\item Blocks should be in curly braces rather than in
+  \computercode{something} \ldots \computercode{endsomething}.
+\item Statements should be delimited by \computercode{;} so that
+  newlines are not necessary or considered as terminators or
+  separators.
+\item review keywords
+\end{itemize}
+
+EBNF of SimGenex 2.0, without the individual transformation:
+
+\begin{ebnfrule}
+expressionset ::= "expressionset" "\{" genemapping_def measurementprocess_def measurements_def "\}"
+genemapping_def ::= "\{" (factor_def)+ "\}"
+factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ ";"
+measurementprocess_def ::= "measurementprocess" "\{" offset_def transformation_def distance_def "\}"
+offset_def ::= "offset:" realnumber ";"
+        | "offset:" realnumber * expressionstat ";"
+expressionstat ::= "negmin()" | "stddev()"
+transformation ::= "transformation:" transformation_expr ";"
+transformation_expr ::= transformation_expr "+" transformation_term
+        | transformation_expr "-" transformation_term
+        | transformation_term
+transformation_term ::= transformation_term "+" transformation_unary
+        | transformation_term "-" transformation_unary
+        | transformation_unary
+transformation_unary ::= "log2(" transformation_expression ")"
+        | "offset(" transformation_expression ")"
+        | identifier
+measurements_def ::=  "measurements" "\{" measurement_def "\}"
+measurement_def ::= identifier ":" mvar_assignment_list ";"
+mvar_assignment_list ::= mvar_assignment_list "," mvar_assignment
+        | mvar_assignment
+mvar_assignment ::= identifier "=" identifier
+\end{ebnfrule}
+
+\subsubsection{Example SimGenex 2.0 Code}
+
+\begin{footnotesize}
+\begin{verbatim}
+SimGenex-2.0
+
+
+procedure equilibration
+{
+  runtimesteps: 300;
+}
+
+procedure timepoint015min
+{
+  runtimesteps: 3;
+}
+
+procedure timepoint030min
+{
+  runtimesteps: 6;
+}
+
+procedure ko_g0
+{
+  knockout: g0;
+}
+
+procedure f1_treatment
+{
+  treatment: f1 = 1.0;
+}
+
+procedure overexpressgene
+{
+  overexpress: g1 = 0.7;
+}
+
+simexpression wt
+{
+  equilibration;
+}
+
+simexpression wt_treatment15
+{
+  equilibration;
+  f01_treatment;
+  timepoint015min;
+}
+
+simexpression wt_treatment30
+{
+  equilibration;
+  f01_treatment;
+  timepoint030min;
+}
+
+simexpression g0
+{
+  ko_g0;
+  equilibration;
+}
+
+simexpression g0_treatment15
+{
+  ko_g0;
+  overexpressgene;
+  equilibration;
+  f01_treatment;
+  timepoint015min;
+}
+
+simexpression g0_treatment30
+{
+  ko_g0;
+  equilibration;
+  f01_treatment;
+  timepoint030min;
+}
+
+expressionset
+{
+  genemapping
+  {
+    factor f0 = "257221_at" "257222_at" "257223_at";
+    factor f1 = "257224_at";
+  }
+
+  measurementprocess
+  {
+    # offset: 1 * negmin();
+    offset: 1e-3 * stddev();
+    transformation: log(offset(x1)) / log(offset(x2));
+    distance: correlation;
+  }
+
+  measurements
+  {
+    wt_treatment15 : x1 = wt_treatment15, x2 = wt;
+    wt_treatment30 : x1 = wt_treatment30, x2 = wt;
+    g0000_treatment15 : x1 = g0_treatment15, x2 = g0;
+    g0000_treatment30 : x1 = g0_treatment30, x2 = g0;
+    wt : transformation log(wt) / log(wt);
+  }
+}
+\end{verbatim}
+\end{footnotesize}
 
 \end{document}
 
