@@ -1740,8 +1740,9 @@ class Scanner(object) :
     self.buffer = ''
     self.lineno = 0
     self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean']
-    self.identifier_re = re.compile('["A-Za-z_]["A-Za-z0-9_]*')
+    self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
+    self.gene_manufacturer_re = re.compile('"([^"]+)"')
     self.header = self.lookheader()
     self.next_token = self.get_token()
 
@@ -1802,6 +1803,11 @@ class Scanner(object) :
       s = m.group()
       self.buffer = string.strip(self.buffer[len(s):])
       return ('identifier', s)
+    m = self.gene_manufacturer_re.match(self.buffer)
+    if m :
+      s = m.group(1)
+      self.buffer = string.strip(self.buffer[len(s):])
+      return ('gene_manufacturer_identifier', s)
     m = self.realvalue_re.match(self.buffer)
     if m :
       s = m.group()
@@ -2168,10 +2174,10 @@ class EmpiricalObjectiveFunctionParser(object) :
     while self.scanner.lookahead() != 'endgenemapping' :
       mapping = []
       self.expect_token('factor')
-      m = self.expect_token('identifier')
+      m = self.expect_token('gene_manufacturer_identifier')
       self.expect_token('=')
       while self.scanner.lookahead() != 'factor' and self.scanner.lookahead() != 'endgenemapping':
-        d = self.expect_token('identifier')
+        d = self.expect_token('gene_manufacturer_identifier')
         mapping.append(d)
       genemapping_dict[m] = mapping
     return(genemapping_dict)
@@ -2214,13 +2220,15 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     whitelist_dict = {}
     temp_whitelist_dict = {}
+    factor_whitelist = self.parse_whitelist_factor_def()
+    gene_whitelist = self.parse_whitelist_gene_def()
     self.expect_token('factor')
     self.expect_token(':')
     while self.scanner.lookahead() != 'endwhitelistdefs' and self.scanner.lookahead() != 'gene' :
       t = self.expect_token('identifier')
-      if t[1:(len(t)-1)] in temp_whitelist_dict.keys() :
+      if t in temp_whitelist_dict.keys() :
         raise StandardError, "%s already exist" %(t[1:(len(t)-1)])
-      temp_whitelist_dict[t[1:(len(t)-1)]] = []
+      temp_whitelist_dict[t] = []
     whitelist_dict['factor'] = temp_whitelist_dict.keys()
     temp_whitelist_dict = {}
     self.expect_token('gene')
