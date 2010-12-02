@@ -123,8 +123,7 @@ identifies the file as an objective function specification. The
 objective function specification.
 
 \begin{ebnfrule}
-knockout_treatment_objectivespec ::= globalsettings genemapping_def procedure_defs 
-simexpression_defs arraymapping_def 
+simgenex_def ::= procedure_defs expressionset_def discriminationsettings_def
 \end{ebnfrule}
 An objective function specification is comprised of a set of global
 settings, a gene mapping, procedures, definitions of simulated gene
@@ -220,6 +219,7 @@ primary_instruction ::= "knockout:" identifier NEWLINE
         | "treatment:" identifier "=" realnumber NEWLINE
         | "overexpress:" identifier "=" realnumber NEWLINE
         | "setproduct:" identifier identifier NEWLINE
+        | "foreach:" (identifier)+
 
 procedure_footer ::= "endprocedure" NEWLINE
 procedure_identifier ::= identifier
@@ -253,6 +253,15 @@ elementary operations that the simulator knows to perform. These are:
 \item \computercode{setproduct} replaces the product of the gene
   identified by the first identifier with the factor identified by the
   second identifier.
+\item \computercode{foreach} expects a list of procedures. A
+  \computercode{simexpression} containing a \computercode{foreach}
+  statement results in multiple expression simulations. Each simulation
+  is defined by the body of the \computecode{simexpression} element
+  with the \computercode{foreach} statement replaced by the call to
+  one of the procedures in the list. If a \computercode{simexpression}
+  element contains multiple \computercode{foreach} statements, this
+  replacement is carried out recursively so that all possible
+  combinations of procedure calls are generated.
 \end{itemize}
 An identifier in a procedure body identifies another procedure to be
 invoked. Invoking another procedure results in execution of the
@@ -364,12 +373,13 @@ subjected to offset adding and log transformation.
 \subsection{WhiteList}
 
 \begin{ebnfrule}
-whitelist ::= whitelist_header whitelist_body whitelist_footer
+whitelist_def ::= whitelist_header whitelist_body whitelist_footer
 NEWLINE
 whitelist_header ::= "whitelistdefs" NEWLINE
-whitelist_body ::= (whitelist_instruction)+
+whitelist_body ::= whitelist_factor_def whitelist_gene_def
 whitelist_footer ::= "endwhitelistdefs" NEWLINE
-whitelist_instruction ::= "factor: " (identifier)+ | "gene: " (identifier)+ 
+whitelist_factor_def ::= "factor" ":" (identifier)+
+whitelist_gene_def ::= "gene: " (identifier)+ 
 \end{ebnfrule}
 
 WhiteList terms are those factors or genes, in a transsys program, whose
@@ -460,16 +470,18 @@ Syntactic features:
 \item Statements should be delimited by \computercode{;} so that
   newlines are not necessary or considered as terminators or
   separators.
+\item \computercode{simexpression} blocks are really procedures, so
+  they are replaced with procedures.
 \item review keywords
 \end{itemize}
 
 EBNF of SimGenex 2.0, without the individual transformation:
 
 \begin{ebnfrule}
-expressionset ::= "expressionset" "\{" genemapping_def measurementprocess_def measurements_def "\}"
+expressionset_def ::= "expressionset" "\{" genemapping_def measurementprocess_def measurements_def "\}"
 genemapping_def ::= "\{" (factor_def)+ "\}"
 factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ ";"
-measurementprocess_def ::= "measurementprocess" "\{" offset_def transformation_def distance_def "\}"
+measurementprocess_def ::= "measurementprocess" "\{" offset_def transformation_def "\}"
 offset_def ::= "offset:" realnumber ";"
         | "offset:" realnumber * expressionstat ";"
 expressionstat ::= "negmin()" | "stddev()"
@@ -488,6 +500,7 @@ measurement_def ::= identifier ":" mvar_assignment_list ";"
 mvar_assignment_list ::= mvar_assignment_list "," mvar_assignment
         | mvar_assignment
 mvar_assignment ::= identifier "=" identifier
+discriminationsettings_def ::= "\{"  distance_def whitelist_def "\}"
 \end{ebnfrule}
 
 \subsubsection{Example SimGenex 2.0 Code}
@@ -527,32 +540,32 @@ procedure overexpressgene
   overexpress: g1 = 0.7;
 }
 
-simexpression wt
+procedure wt
 {
   equilibration;
 }
 
-simexpression wt_treatment15
+procedure wt_treatment15
 {
   equilibration;
   f01_treatment;
   timepoint015min;
 }
 
-simexpression wt_treatment30
+procedure wt_treatment30
 {
   equilibration;
   f01_treatment;
   timepoint030min;
 }
 
-simexpression g0
+procedure g0
 {
   ko_g0;
   equilibration;
 }
 
-simexpression g0_treatment15
+procedure g0_treatment15
 {
   ko_g0;
   overexpressgene;
@@ -561,7 +574,7 @@ simexpression g0_treatment15
   timepoint015min;
 }
 
-simexpression g0_treatment30
+procedure g0_treatment30
 {
   ko_g0;
   equilibration;
@@ -582,7 +595,6 @@ expressionset
     # offset: 1 * negmin();
     offset: 1e-3 * stddev();
     transformation: log(offset(x1)) / log(offset(x2));
-    distance: correlation;
   }
 
   measurements
@@ -592,6 +604,16 @@ expressionset
     g0000_treatment15 : x1 = g0_treatment15, x2 = g0;
     g0000_treatment30 : x1 = g0_treatment30, x2 = g0;
     wt : transformation log(wt) / log(wt);
+  }
+}
+
+discriminationsettings
+{
+  distance: correlation;
+  whitelistdefs
+  {
+    factor: f0 f1
+    gene: g0
   }
 }
 \end{verbatim}
