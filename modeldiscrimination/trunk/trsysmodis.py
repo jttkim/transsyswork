@@ -1120,9 +1120,9 @@ of the gene expression levels for that genotype.
 
 # EmpiricalObjective should be refactored to separate specification
 # of experimentation from specification of data
-# KnockoutTreatmentObjective should be a subclass of EmpiricalObjective
+# SimGenex should be a subclass of EmpiricalObjective
 
-class KnockoutTreatmentObjective(transsys.optim.AbstractObjectiveFunction) :
+class SimGenex(transsys.optim.AbstractObjectiveFunction) :
   """Objective function
 For each genotype (wild type and knockouts), a transsys instance is
 created, equilibrated according to some C{equilibration_length} 
@@ -1679,6 +1679,23 @@ class SimExpression(object) :
     return ti_trace
 
 
+class Expressionset(object) :
+ 
+   def __init__(self) :
+     self.genemapping = GeneMapping()
+     self.measurementprocess = MeasurementProcess()
+     self.measurements = ArrayMapping()
+
+
+class MeasurementProcess(object) :
+  
+  
+  def __init__(self, offset, transformation) :
+    self.offset = offset
+    self.transformation = transformation
+    
+
+
 class ArrayMapping(object) :
   """ object ArrayMapping
 @param array_name: array_name
@@ -1739,7 +1756,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean']
+    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean', 'expressionset', 'genemapping', 'measurementprocess', 'measurements', 'discriminationsettings', 'whitelistdefs']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.gene_manufacturer_re = re.compile('"([^"]+)"')
@@ -1805,7 +1822,7 @@ class Scanner(object) :
       return ('identifier', s)
     m = self.gene_manufacturer_re.match(self.buffer)
     if m :
-      s = m.group(1)
+      s = m.group()
       self.buffer = string.strip(self.buffer[len(s):])
       return ('gene_manufacturer_identifier', s)
     m = self.realvalue_re.match(self.buffer)
@@ -1853,7 +1870,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   """ Object specification 
 """
 
-  magic = "ObjectiveSpecification-0.1" 
+  magic = "SimGenex-2.0" 
 
 
   def __init__(self, f) :
@@ -1937,263 +1954,6 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.expect_token('endarraymapping')
       self.expect_token('\n')
     return arraymapping_defs
-
-##SimExpression
-
-  def parse_simexpression_header(self) :
-    """Parse simexpression header
-@return: v
-@rtype: C{String}
-"""
-    self.expect_token('simexpression')
-    simexpression_name = self.expect_token('identifier')
-    return simexpression_name
-
-
-  def parse_simexpression_footer(self) :
-    """ Parse simexpression footer
-@return: Footer
-@rtype: C{String}
-"""
-    return(self.scanner.lookahead())
-
-
-  def parse_simexpression_body(self) :
-    """Comment
-@return: procedure simexpression
-@rtype: array[]
-"""
-    procedures = []
-    unresolved_instruction_list = []
-    unresolved_foreach_list = []
-    while self.scanner.lookahead() != 'endsimexpression' :
-      identifier_name = self.expect_token('identifier')
-      if identifier_name == 'foreach' :
-        self.expect_token(':')
-        while self.scanner.lookahead() != 'endsimexpression':
-          d = self.expect_token('identifier')
-          unresolved_foreach_list.append(d)
-      else :
-        unresolved_instruction_list.append(identifier_name)
-    return(unresolved_instruction_list, unresolved_foreach_list)
-
-
-  def parse_simexpression_def(self) :
-    """Parser simexpression
-@return: Object
-@rtype: L{SimExpression}
-"""
-    simexpression_name = self.parse_simexpression_header()
-    unresolved_instruction_list, unresolved_foreach_list = self.parse_simexpression_body()
-    self.parse_simexpression_footer()
-    # NOTE: the SimExpression instance contains an unresolved list,
-    # the parser will resolve this before completing and passing the
-    # its parsing result (i.e. the KnockoutTreatmentObjective) to the
-    # caller.
-    return SimExpression(simexpression_name, unresolved_instruction_list, unresolved_foreach_list)
-
-
-  def parse_simexpression_defs(self) :
-    """ Parse simexpression blocks """
-    simexpression_list = []
-    while self.scanner.lookahead() == 'simexpression' :
-      simexpression_list.append(self.parse_simexpression_def())
-      self.expect_token('endsimexpression')
-      self.expect_token('\n')
-    return simexpression_list
-
-
-### Procedure
-
-  def parse_procedure_header(self) :
-    """Parse procedure header
-@return: procedure_name
-@rtype: C{String}
-"""
-    self.expect_token('procedure')
-    procedure_name = self.expect_token('identifier')
-    return procedure_name
-
-
-  def parse_procedure_footer(self) :
-    """ Parse procedure footer
-@return: Footer
-@rtype: C{String}
-"""
-    return(self.scanner.lookahead())
-
-
-  def parse_instruction(self) :
-    # FIXME: primary instructions should be keywords, not identifiers
-    """Check procedure lexicon
-@return: array
-@rtype: array[]
-"""
-    t = self.scanner.token()
-    if "treatment" in t[0] :
-      return(self.validate_treatment())
-    elif "knockout" in t[0] :
-      return(self.validate_knockout())
-    elif "runtimesteps" in t[0] :
-      return(self.validate_runtimesteps())
-    elif "overexpress" in t[0] :
-      return(self.validate_overexpression())
-    elif "setproduct" in t[0] :
-      return(self.validate_setproduct())
-    else :
-      return(t[1])
-
-
-  def validate_treatment(self):
-    """ Instantiate Simulation Treatment 
-@return: Object
-@rtype: L{TreatmentInstruction}
-""" 
-    self.expect_token(':')
-    treatment = self.expect_token('identifier')
-    self.expect_token('=')
-    value = self.expect_token('realvalue')
-    if (isinstance(float(value), types.FloatType) and isinstance(treatment, types.StringType)) :
-      ost = TreatmentInstruction(treatment, value)
-      return(ost)
-    else :
-      raise StandardError, "%s is not a correct treatment statement"%s
-
-
-  def validate_knockout(self) :
-    """ Instantiate Simulation Knockout
-@return: Object
-@rtype: L{KnockoutInstruction}
-"""
-    self.expect_token(':')
-    gene = self.scanner.token()[1]
-    osk = KnockoutInstruction(gene)
-    return(osk)
-
-
-  def validate_runtimesteps(self) :
-    """ Instantiate runtimesteps 
-@return: Object
-@rtype: L{RuntimestepsInstruction}
-"""
-    self.expect_token(':')
-    time_steps = self.scanner.token()[1]
-    if isinstance(float(time_steps), types.FloatType) :
-      ost = RuntimestepsInstruction(time_steps)
-      return(ost)
-    else :
-      raise StandardError, "%s is not a correct overpression statement"%s
-
-
-  def validate_overexpression(self) :
-    """ Instantiate overexpression
-@return: Object
-@rtype: L{OverexpressionInstruction}
-"""
-    self.expect_token(':')
-    factor = self.scanner.token()[1]
-    self.expect_token('=')
-    value = self.expect_token('realvalue')
-    oso = OverexpressionInstruction(factor, value)
-    return(oso)
-
-
-  def validate_setproduct(self) :
-    """ Instantiate setproduct
-@return: Object
-@rtype: L{SetproductInstruction}
-"""
-    self.expect_token(':')
-    gene_name = self.expect_token('identifier')
-    factor_name = self.expect_token('identifier')
-    spo = SetproductInstruction(gene_name, factor_name)
-    return(spo)
-
-
-  def parse_procedure_body(self) :
-    """ Parse procedure body
-@return: instruction list
-@rtype: array[]
-"""
-    procedure = []
-    while self.scanner.lookahead() != 'endprocedure' :
-      procedure.append(self.parse_instruction())
-    return procedure
-
-
-  def parse_procedure_def(self) :
-    """ Parse object procedure
-@return: Object
-@rtype: L{Procedure}
-"""
-    procedure_name = self.parse_procedure_header()
-    unresolved_instruction_list = self.parse_procedure_body()
-    self.parse_procedure_footer()
-    return Procedure(procedure_name, unresolved_instruction_list)
-
-
-  def parse_procedure_defs(self) :
-    """Parse procedure defs """
-
-    temp_procedure_list = {}
-    while self.scanner.lookahead() == 'procedure' :
-      p = self.parse_procedure_def()
-      if p.get_procedure_name() in temp_procedure_list.keys() :
-        raise StandardError, "%s Procedure already defined" %p.get_procedure_name()
-      temp_procedure_list[p.get_procedure_name()] = p
-      self.expect_token('endprocedure')
-      self.expect_token('\n')
-    return temp_procedure_list
-
-
-### GeneMapping
-
-
-  def parse_genemapping_header(self) :
-    """ Parse genemapping header
-@return: genemapping header
-@rtype: C{String}
-"""
-    self.expect_token('genemapping')
-
-
-  def parse_genemapping_footer(self):
-    """ Parse genemapping footer
-@return: Footer
-@rtype: C{String}
-"""
-    return(self.scanner.lookahead())
- 
-
-  def parse_genemapping_body(self):
-    """ Parse genemapping body
-@return: genemapping dictionary
-@rtype: dictionary{}
-"""
-    genemapping_dict = {}
-    while self.scanner.lookahead() != 'endgenemapping' :
-      mapping = []
-      self.expect_token('factor')
-      m = self.expect_token('gene_manufacturer_identifier')
-      self.expect_token('=')
-      while self.scanner.lookahead() != 'factor' and self.scanner.lookahead() != 'endgenemapping':
-        d = self.expect_token('gene_manufacturer_identifier')
-        mapping.append(d)
-      genemapping_dict[m] = mapping
-    return(genemapping_dict)
-
-
-  def parse_genemapping(self) :
-    """ Parse objective function genemapping """
-     
-    if self.scanner.lookahead() == 'genemapping' :
-      self.parse_genemapping_header()
-      genemapping_list = self.parse_genemapping_body()
-      self.parse_genemapping_footer()
-      self.expect_token('endgenemapping')
-      self.expect_token('\n')
-    return GeneMapping(genemapping_list) 
-
 
 ### Whitelist
 
@@ -2468,19 +2228,354 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
 
 
-  def parse_knockout_treatment_objectivespec(self) :
+## expressionset_defs
+
+  def parse_measurements_body(self) :
+    """ Parser measurements body"""
+    measurements = []
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    mapping = []
+    array_name = self.expect_token('identifier')
+    self.expect_token(':')
+    while self.scanner.lookahead() != ';' :
+      if self.scanner.lookahead() == 'identifier' :
+        measurements.append(self.expect_token('identifier'))
+      else :
+        measurements.append(self.scanner.token()[0])
+    print measurements
+    self.expect_token(';')
+    self.scanner.token()
+    return ArrayMapping(array_name, measurements, None)
+    
+
+  def parse_measurements_def(self) :
+    """ Parse measurements """
+    self.expect_token('measurements')
+    measurements_list = []
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    self.expect_token('{') 
+    while self.scanner.lookahead() != '}' :
+      measurements_list.append(self.parse_measurements_body())
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    self.expect_token('}')
+    return measurements_list
+
+
+  def parse_measurementprocess_body(self) :
+    pass
+  
+
+  def parse_measurementprocess_def(self) :
+    """ Parse measurement process """
+    print "measurementprocess"
+    self.expect_token('measurementprocess') 
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    self.expect_token('{') 
+    measurementprocess_list = self.parse_measurementprocess_body()
+    self.scanner.token()
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    self.expect_token('}')
+    #return MeasurementProcess(measurementprocess_list) 
+
+
+### Genemapping
+
+  def parse_genemapping_body(self):
+    """ Parse genemapping body
+@return: genemapping dictionary
+@rtype: dictionary{}
+"""
+    genemapping_dict = {}
+    while self.scanner.lookahead() != '}' :
+      while self.scanner.lookahead() == ' ' :
+        self.scanner.token()
+      mapping = []
+      self.expect_token('factor')
+      m = self.expect_token('gene_manufacturer_identifier')
+      self.expect_token('=')
+      while self.scanner.lookahead() != ';' :
+        d = self.expect_token('gene_manufacturer_identifier')
+        mapping.append(d)
+      genemapping_dict[m] = mapping
+      self.expect_token(';')
+      self.scanner.token()
+    return(genemapping_dict)
+
+
+  def parse_genemapping_def(self) :
+    """ Parse objective function genemapping """
+    self.expect_token('genemapping') 
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    self.expect_token('{') 
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    genemapping_list = self.parse_genemapping_body()
+    self.expect_token('}')
+    return GeneMapping(genemapping_list) 
+
+
+  def parse_expressionset_def(self) :
+    self.expect_token('expressionset') 
+    self.expect_token('{') 
+    expressionset_list = []
+    while self.scanner.lookahead() != '}' :
+      while self.scanner.lookahead() == ' ' :
+        self.scanner.token()
+      print self.scanner.lookahead()
+      if self.scanner.lookahead() == 'genemapping' :
+        expressionset_list.append(self.parse_genemapping_def())
+      if self.scanner.lookahead() == 'measurementprocess' :
+        expressionset_list.append(self.parse_measurementprocess_def())
+      if self.scanner.lookahead() == 'measurements' :
+        expressionset_list.append(self.parse_measurements_def())
+      self.scanner.token()
+    sys.exit()
+    return(expressionset_list)
+
+
+##SimExpression
+
+
+  def parse_simexpression_header(self) :
+    """Parse simexpression header
+@return: v
+@rtype: C{String}
+"""
+    self.expect_token('simexpression')
+    simexpression_name = self.expect_token('identifier')
+    return simexpression_name
+
+
+  def parse_simexpression_body(self) :
+    """Comment
+@return: procedure simexpression
+@rtype: array[]
+"""
+    procedures = []
+    unresolved_instruction_list = []
+    unresolved_foreach_list = []
+    while self.scanner.lookahead() != '}' :
+      while self.scanner.lookahead() == ' ' :
+        self.scanner.token()
+      identifier_name = self.expect_token('identifier')
+      if identifier_name == 'foreach' :
+        self.expect_token(':')
+        while self.scanner.lookahead() != ';':
+          d = self.expect_token('identifier')
+          unresolved_foreach_list.append(d)
+        self.expect_token(';')
+      else :
+        unresolved_instruction_list.append(identifier_name)
+        self.expect_token(';')
+    return(unresolved_instruction_list, unresolved_foreach_list)
+
+
+  def parse_simexpression_def(self) :
+    """Parser simexpression
+@return: Object
+@rtype: L{SimExpression}
+"""
+    simexpression_name = self.parse_simexpression_header()
+    self.expect_token('{')
+    unresolved_instruction_list, unresolved_foreach_list = self.parse_simexpression_body()
+    self.expect_token('}')
+    # NOTE: the SimExpression instance contains an unresolved list,
+    # the parser will resolve this before completing and passing the
+    # its parsing result (i.e. the SimGenex) to the
+    # caller.
+    return SimExpression(simexpression_name, unresolved_instruction_list, unresolved_foreach_list)
+
+
+  def parse_simexpression_defs(self) :
+    """ Parse simexpression blocks """
+    simexpression_list = []
+    while self.scanner.lookahead() == 'simexpression' :
+      simexpression_list.append(self.parse_simexpression_def())
+      while self.scanner.lookahead() == '\n' :
+        self.expect_token('\n') 
+    return simexpression_list
+
+
+##procedure_defs
+
+  def parse_procedure_header(self) :
+    """Parse procedure header
+@return: procedure_name
+@rtype: C{String}
+"""
+    self.expect_token('procedure')
+    procedure_name = self.expect_token('identifier')
+    return procedure_name
+
+
+  def parse_instruction(self) :
+    # FIXME: primary instructions should be keywords, not identifiers
+    """Check procedure lexicon
+@return: array
+@rtype: array[]
+"""
+    while self.scanner.lookahead() == ' ' :
+      t = self.scanner.token()
+    t = self.scanner.lookahead()
+    if t == "treatment" :
+      self.expect_token('treatment')
+      return(self.validate_treatment())
+    elif t == "knockout" :
+      self.expect_token('knockout')
+      return(self.validate_knockout())
+    elif t == "runtimesteps" :
+      self.expect_token('runtimesteps')
+      return(self.validate_runtimesteps())
+    elif t == "overexpress" :
+      self.expect_token('overexpress')
+      return(self.validate_overexpression())
+    elif t == "setproduct" :
+      self.expect_token('setproduct')
+      return(self.validate_setproduct())
+    elif t == 'identifier':
+      return self.validate_instruction()
+
+  
+  def validate_instruction(self) :
+    t = self.expect_token('identifier')
+    self.expect_token(';')
+    return t
+
+
+  def validate_treatment(self):
+    """ Instantiate Simulation Treatment 
+@return: Object
+@rtype: L{TreatmentInstruction}
+""" 
+    self.expect_token(':')
+    treatment = self.expect_token('identifier')
+    self.expect_token('=')
+    value = self.expect_token('realvalue')
+    self.expect_token(';')
+    if (isinstance(float(value), types.FloatType) and isinstance(treatment, types.StringType)) :
+      ost = TreatmentInstruction(treatment, value)
+      return(ost)
+    else :
+      raise StandardError, "%s is not a correct treatment statement"%s
+
+
+  def validate_knockout(self) :
+    """ Instantiate Simulation Knockout
+@return: Object
+@rtype: L{KnockoutInstruction}
+"""
+    self.expect_token(':')
+    gene = self.scanner.token()[1]
+    self.expect_token(';')
+    osk = KnockoutInstruction(gene)
+    return(osk)
+
+
+  def validate_runtimesteps(self) :
+    """ Instantiate runtimesteps 
+@return: Object
+@rtype: L{RuntimestepsInstruction}
+"""
+    self.expect_token(':')
+    time_steps = self.scanner.token()[1]
+    self.expect_token(';')
+    if isinstance(float(time_steps), types.FloatType) :
+      ost = RuntimestepsInstruction(time_steps)
+      return(ost)
+    else :
+      raise StandardError, "%s is not a correct overpression statement"%s
+
+
+  def validate_overexpression(self) :
+    """ Instantiate overexpression
+@return: Object
+@rtype: L{OverexpressionInstruction}
+"""
+    self.expect_token(':')
+    factor = self.scanner.token()[1]
+    self.expect_token('=')
+    value = self.expect_token('realvalue')
+    self.expect_token(';')
+    oso = OverexpressionInstruction(factor, value)
+    return(oso)
+
+
+  def validate_setproduct(self) :
+    """ Instantiate setproduct
+@return: Object
+@rtype: L{SetproductInstruction}
+"""
+    self.expect_token(':')
+    gene_name = self.expect_token('identifier')
+    factor_name = self.expect_token('identifier')
+    self.expect_token(';')
+    spo = SetproductInstruction(gene_name, factor_name)
+    return(spo)
+
+
+  def parse_procedure_body(self) :
+    """ Parse procedure body
+@return: instruction list
+@rtype: array[]
+"""
+    procedure = []
+    while self.scanner.lookahead() != '}' :
+      procedure.append(self.parse_instruction())
+    return procedure
+
+
+  def parse_procedure_def(self) :
+    """ Parse object procedure
+@return: Object
+@rtype: L{Procedure}
+"""
+    procedure_name = self.parse_procedure_header()
+    self.expect_token('{')
+    unresolved_instruction_list = self.parse_procedure_body()
+    self.expect_token('}')
+    return Procedure(procedure_name, unresolved_instruction_list)
+
+
+  def parse_procedure_defs(self) :
+    """Parse procedure defs """
+
+    temp_procedure_list = {}
+    while self.scanner.lookahead() == 'procedure':
+      p = self.parse_procedure_def()
+      if p.get_procedure_name() in temp_procedure_list.keys() :
+        raise StandardError, "%s Procedure already defined" %p.get_procedure_name()
+      temp_procedure_list[p.get_procedure_name()] = p
+      while self.scanner.lookahead() == '\n' :
+        self.expect_token('\n') 
+    return temp_procedure_list
+
+
+## parse_simgenex
+
+
+  def parse_simgenex(self) :
     """ Parse specification file 
 @return: Object
-@rtype: L{KnockoutTreatmentObjective}
+@rtype: L{SimGenex}
 """
-    globalsettings = self.parse_globalsettings()
-    whitelist = self.parse_whitelist()
-    genemapping = self.parse_genemapping()
     procedure_defs = self.parse_procedure_defs()
     simexpression_defs = self.parse_simexpression_defs()
-    arraymapping_defs = self.parse_arraymapping_defs()
-    self.resolve_spec(globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
-    return KnockoutTreatmentObjective(globalsettings, whitelist, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
+    expressionset_def = self.parse_expressionset_def()
+    # genemapping_def measurementprocess_def measurements_def 
+    #discriminationsettings_def = 
+    # distance_def whitelist_defs
+    #whitelist = self.parse_whitelist()
+    #genemapping = self.parse_genemapping()
+    #arraymapping_defs = self.parse_arraymapping_defs()
+    #self.resolve_spec(globalsettings, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
+    sys.exit()
+    return SimGenex(globalsettings, whitelist, genemapping, procedure_defs, simexpression_defs, arraymapping_defs)
 
 
   def parse_objectivespec(self) :
@@ -2490,6 +2585,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     if self.scanner.check_magic(self.magic) :
       self.expect_token('\n')
-      return(self.parse_knockout_treatment_objectivespec())
+      return(self.parse_simgenex())
     else :
       raise StandardError, 'bad magic'

@@ -1,119 +1,146 @@
-ObjectiveSpecification-0.1
-
-globalsettingdefs
-transformation: log
-distance: correlation
-offset: 1e-1
-endglobalsettingdefs
-
-whitelistdefs
-factor: "f0" "f1" "f2"
-gene: "g0" "g1" "g2"
-endwhitelistdefs
-
-genemapping
-factor f0 = "257221_at" "257222_at" "257223_at"
-factor f1 = "257231_at"
-factor f2 = "257241_at"
-endgenemapping
+SimGenex-2.0
 
 procedure equilibration
-runtimesteps: 100
-endprocedure
+{
+  runtimesteps: 100;
+  halfhour;
+}
 
 procedure halfhour
-runtimesteps: 100
-endprocedure
+{
+  runtimesteps: 100;
+}
 
 procedure t030
-halfhour
-endprocedure
+{
+  halfhour;
+}
 
 procedure t060
-halfhour
-halfhour
-endprocedure
+{
+  halfhour;
+  halfhour;
+}
 
 procedure ko_g0
-knockout: g0
-endprocedure
+{
+  knockout: g0;
+}
 
 procedure ko_g1
-knockout: g1
-endprocedure
+{
+  knockout: g1;
+}
 
 procedure ko_g2
-knockout: g2
-endprocedure
+{
+  knockout: g2;
+}
 
 procedure MeJA_treatment
-treatment: jasmonate = 1.0
-endprocedure
+{
+  treatment: jasmonate = 1.0;
+}
 
 procedure overexpress_g0
-overexpress: f0 = 1.0 
-endprocedure
+{
+  overexpress: f0 = 1.0;
+}
 
 procedure setproduct_g1
-setproduct: g0 f1
-endprocedure
+{
+  setproduct: g0 f1;
+}
 
 simexpression wt
-ko_g0
-equilibration
-MeJA_treatment
-t030
-endsimexpression
+{
+  ko_g0;
+  equilibration;
+  MeJA_treatment;
+  t030;
+}
 
 simexpression wt_MeJA
-equilibration
-MeJA_treatment
-endsimexpression
+{
+  equilibration;
+  MeJA_treatment;
+}
 
 simexpression g0
-ko_g0
-equilibration
-endsimexpression
+{
+  ko_g0;
+  equilibration;
+}
 
 simexpression g0_MeJA
-ko_g0
-equilibration
-MeJA_treatment
-foreach: t030 t060
-endsimexpression
+{
+  ko_g0;
+  equilibration;
+  MeJA_treatment;
+  foreach: t030 t060;
+}
 
 simexpression g1
-ko_g1
-equilibration
-endsimexpression
+{
+  ko_g1;
+  equilibration;
+}
 
 simexpression g1_MeJA
-ko_g1
-equilibration
-MeJA_treatment
-foreach: t030 t060
-endsimexpression
+{
+  ko_g1;
+  equilibration;
+  MeJA_treatment;
+  foreach: t030 t060;
+}
 
 simexpression g2
-ko_g2
-equilibration
-endsimexpression
+{
+  ko_g2;
+  equilibration;
+}
 
 simexpression g2_MeJA
-ko_g2
-equilibration
-MeJA_treatment
-foreach: t030 t060
-endsimexpression
+{
+  ko_g2;
+  equilibration;
+  MeJA_treatment;
+  foreach: t030 t060;
+}
 
-arraymapping
-array wtMeJA: wt_MeJA / wt
-array g0MeJAt030: g0_MeJA_t030 / g0
-array g0MeJAt060: g0_MeJA_t060 / g0
-array g1MeJAt030: g1_MeJA_t030 / g1
-array g1MeJAt060: g1_MeJA_t060 / g1
-array g2MeJAt030: g2_MeJA_t030 / g2
-array g2MeJAt060: g2_MeJA_t060 / g2
-endarraymapping
+expressionset
+{
+  genemapping
+  {
+    factor f0 = "257221_at" "257222_at" "257223_at";
+    factor f1 = "257231_at";
+    factor f2 = "257241_at";
+  }
 
+  measurementprocess
+  {
 
+  }
+
+  measurements
+  {
+    wtMeJA : wt_MeJA / wt;
+    g0MeJAt030 : g0_MeJA_t030 / g0;
+    g0MeJAt060 : g0_MeJA_t060 / g0;
+    g1MeJAt030 : g1_MeJA_t030 / g1;
+    g1MeJAt060 : g1_MeJA_t060 / g1;
+    g2MeJAt030 : g2_MeJA_t030 / g2;
+    g2MeJAt060 : g2_MeJA_t060 / g2;
+  }
+
+}
+
+discriminationsettings
+{
+  distance: correlation;
+  whitelistdefs
+  {
+    factor: f0 f1 f2;
+    gene: g0 g1 g2;
+  }
+}

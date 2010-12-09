@@ -221,8 +221,8 @@ primary_instruction ::= "knockout:" identifier NEWLINE
         | "setproduct:" identifier identifier NEWLINE
         | "foreach:" (identifier)+
 
-procedure_footer ::= "endprocedure" NEWLINE
-procedure_identifier ::= identifier
+procedure_footer ::= "\}"
+procedure_identifier ::= identifier ";"
 \end{ebnfrule}
 A procedure specifies a sequence of operations to be performed on a
 transsys instance. Operations are specified either by primary
@@ -256,7 +256,7 @@ elementary operations that the simulator knows to perform. These are:
 \item \computercode{foreach} expects a list of procedures. A
   \computercode{simexpression} containing a \computercode{foreach}
   statement results in multiple expression simulations. Each simulation
-  is defined by the body of the \computecode{simexpression} element
+  is defined by the body of the \computercode{simexpression} element
   with the \computercode{foreach} statement replaced by the call to
   one of the procedures in the list. If a \computercode{simexpression}
   element contains multiple \computercode{foreach} statements, this
@@ -281,7 +281,7 @@ reference a procedure before it is defined.
 
 \begin{ebnfrule}
 simexpression_defs ::= (simexpression_def)+
-simexpression_def ::= simexpression_header simexpression_body simexpression_footer 
+Gsimexpression_def ::= simexpression_header simexpression_body simexpression_footer 
 NEWLINE
 simexpression_header ::= "simexpression" identifier NEWLINE
 simexpression_body ::= (identifier NEWLINE)+
@@ -540,32 +540,32 @@ procedure overexpressgene
   overexpress: g1 = 0.7;
 }
 
-procedure wt
+simexpression wt
 {
   equilibration;
 }
 
-procedure wt_treatment15
+simexpression wt_treatment15
 {
   equilibration;
   f01_treatment;
   timepoint015min;
 }
 
-procedure wt_treatment30
+simexpression wt_treatment30
 {
   equilibration;
   f01_treatment;
   timepoint030min;
 }
 
-procedure g0
+simexpression g0
 {
   ko_g0;
   equilibration;
 }
 
-procedure g0_treatment15
+simexpression g0_treatment15
 {
   ko_g0;
   overexpressgene;
@@ -574,7 +574,7 @@ procedure g0_treatment15
   timepoint015min;
 }
 
-procedure g0_treatment30
+simexpression g0_treatment30
 {
   ko_g0;
   equilibration;
