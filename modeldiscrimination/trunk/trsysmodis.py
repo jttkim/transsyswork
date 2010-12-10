@@ -1694,7 +1694,7 @@ class MeasurementProcess(object) :
     self.offset = offset
     self.transformation = transformation
     
-
+  
 
 class ArrayMapping(object) :
   """ object ArrayMapping
@@ -1759,6 +1759,7 @@ class Scanner(object) :
     self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean', 'expressionset', 'genemapping', 'measurementprocess', 'measurements', 'discriminationsettings', 'whitelistdefs']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
+    self.function_re = re.compile('([A-Za-z())]+)')
     self.gene_manufacturer_re = re.compile('"([^"]+)"')
     self.header = self.lookheader()
     self.next_token = self.get_token()
@@ -1825,6 +1826,11 @@ class Scanner(object) :
       s = m.group()
       self.buffer = string.strip(self.buffer[len(s):])
       return ('gene_manufacturer_identifier', s)
+    m = self.function_re.match(self.buffer)
+    if m :
+      s = m.group()
+      self.buffer = string.strip(self.buffer[len(s):])
+      return ('function', s)
     m = self.realvalue_re.match(self.buffer)
     if m :
       s = m.group()
@@ -1954,64 +1960,6 @@ class EmpiricalObjectiveFunctionParser(object) :
       self.expect_token('endarraymapping')
       self.expect_token('\n')
     return arraymapping_defs
-
-### Whitelist
-
-  def parse_whitelist_header(self) :
-    """ Parse whitelist header
-@return: whitelist header
-@rtype: C{String}
-"""
-    self.expect_token('whitelistdefs')
-
-
-  def parse_whitelist_footer(self):
-    """ Parse whitelist footer
-@return: Footer
-@rtype: C{String}
-"""
-    return(self.scanner.lookahead())
- 
-
-  def parse_whitelist_body(self):
-    """ Parse whitelist body
-@return: whitelist dictionary
-@rtype: dictionary{}
-"""
-    whitelist_dict = {}
-    temp_whitelist_dict = {}
-    factor_whitelist = self.parse_whitelist_factor_def()
-    gene_whitelist = self.parse_whitelist_gene_def()
-    self.expect_token('factor')
-    self.expect_token(':')
-    while self.scanner.lookahead() != 'endwhitelistdefs' and self.scanner.lookahead() != 'gene' :
-      t = self.expect_token('identifier')
-      if t in temp_whitelist_dict.keys() :
-        raise StandardError, "%s already exist" %(t[1:(len(t)-1)])
-      temp_whitelist_dict[t] = []
-    whitelist_dict['factor'] = temp_whitelist_dict.keys()
-    temp_whitelist_dict = {}
-    self.expect_token('gene')
-    self.expect_token(':')
-    while self.scanner.lookahead() != 'endwhitelistdefs' :
-      t = self.expect_token('identifier')
-      if t[1:(len(t)-1)] in temp_whitelist_dict.keys() :
-        raise StandardError, "%s already exist" %(t[1:(len(t)-1)])
-      temp_whitelist_dict[t[1:(len(t)-1)]] = []
-    whitelist_dict['gene'] = temp_whitelist_dict.keys()
-    return(whitelist_dict)
-
-
-  def parse_whitelist(self) :
-    """ Parse objective function whitelist """
-
-    if self.scanner.lookahead() == 'whitelistdefs' :
-      self.parse_whitelist_header()
-      whitelist_dict = self.parse_whitelist_body()
-      self.parse_whitelist_footer()
-      self.expect_token('endwhitelistdefs')
-      self.expect_token('\n')
-    return WhiteList(whitelist_dict) 
 
 
 ### Global settings 
@@ -2228,6 +2176,74 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.resolveSpecArraymapping(simexpression_defs, arraymapping_defs)
 
 
+## discriminatiosettings_def
+
+### Whitelist
+
+  def parse_whitelist_body(self):
+    """ Parse whitelist body
+@return: whitelist dictionary
+@rtype: dictionary{}
+"""
+    whitelist_dict = {}
+    factor_list = []
+    gene_list = []
+    while self.scanner.lookahead() != '}' :
+      while self.scanner.lookahead() == ' ' :
+        self.scanner.token()
+      if self.scanner.lookahead() == 'factor' :
+	self.expect_token('factor')
+	self.expect_token(':')
+        while self.scanner.lookahead() != ';' :
+	  factor_list.append(self.expect_token('identifier'))
+	whitelist_dict['factor'] = factor_list
+        self.expect_token(';')
+      elif self.scanner.lookahead() == 'gene' :
+	self.expect_token('gene')
+	self.expect_token(':')
+        while self.scanner.lookahead() != ';' :
+	  gene_list.append(self.expect_token('identifier'))
+	whitelist_dict['gene'] = gene_list
+        self.expect_token(';')
+      else :
+        raise StandardError, 'Unknown identifier'
+      self.scanner.token()
+    return whitelist_dict
+
+
+  def parse_discriminationsettings_body(self) :
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+      if self.scanner.lookahead() == 'distance' :
+        self.expect_token('distance')
+	self.expect_token(':')
+        distance = self.scanner.token()[0]
+	self.expect_token(';')
+      if self.scanner.lookahead() == 'whitelistdefs' :
+        self.expect_token('whitelistdefs')
+        while self.scanner.lookahead() == ' ' :
+          self.scanner.token()
+	self.expect_token('{')
+	whitelist_list = self.parse_whitelist_body()
+    return distance, whitelist_list
+  
+
+  def parse_discriminationsettings_def(self) :
+    """ Parse discrimination settings def """
+    self.expect_token('discriminationsettings')
+    discriminationsettings_list = []
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    self.expect_token('{') 
+    offset, transformation = self.parse_discriminationsettings_body()
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+    self.expect_token('}')
+    discriminationsettings_list.append(offset)
+    discriminationsettings_list.append(transformation)
+    return discriminationsettings_list 
+
+
 ## expressionset_defs
 
   def parse_measurements_body(self) :
@@ -2243,7 +2259,6 @@ class EmpiricalObjectiveFunctionParser(object) :
         measurements.append(self.expect_token('identifier'))
       else :
         measurements.append(self.scanner.token()[0])
-    print measurements
     self.expect_token(';')
     self.scanner.token()
     return ArrayMapping(array_name, measurements, None)
@@ -2264,23 +2279,45 @@ class EmpiricalObjectiveFunctionParser(object) :
     return measurements_list
 
 
+  def get_values(self) :
+    equation = []
+    while self.scanner.lookahead() != ';' :
+      if self.scanner.lookahead() == 'identifier' :
+        equation.append(self.expect_token('identifier'))
+      elif self.scanner.lookahead() == 'realvalue' :
+        equation.append(self.expect_token('realvalue'))
+      elif self.scanner.lookahead() == 'function' :
+        equation.append(self.expect_token('function'))
+      else :
+        equation.append(self.scanner.token()[0])
+    self.expect_token(';')
+    return equation
+
+
   def parse_measurementprocess_body(self) :
-    pass
+    while self.scanner.lookahead() == ' ' :
+      self.scanner.token()
+      t = self.scanner.token()[0]
+      self.expect_token(':')
+      if t == 'offset' :
+        offset = self.get_values()
+      else :
+        transformation = self.get_values()
+        self.scanner.token()
+    return offset, transformation
   
 
   def parse_measurementprocess_def(self) :
     """ Parse measurement process """
-    print "measurementprocess"
     self.expect_token('measurementprocess') 
     while self.scanner.lookahead() == ' ' :
       self.scanner.token()
     self.expect_token('{') 
-    measurementprocess_list = self.parse_measurementprocess_body()
-    self.scanner.token()
+    offset, transformation = self.parse_measurementprocess_body()
     while self.scanner.lookahead() == ' ' :
       self.scanner.token()
     self.expect_token('}')
-    #return MeasurementProcess(measurementprocess_list) 
+    return MeasurementProcess(offset, transformation) 
 
 
 ### Genemapping
@@ -2327,7 +2364,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     while self.scanner.lookahead() != '}' :
       while self.scanner.lookahead() == ' ' :
         self.scanner.token()
-      print self.scanner.lookahead()
       if self.scanner.lookahead() == 'genemapping' :
         expressionset_list.append(self.parse_genemapping_def())
       if self.scanner.lookahead() == 'measurementprocess' :
@@ -2335,7 +2371,8 @@ class EmpiricalObjectiveFunctionParser(object) :
       if self.scanner.lookahead() == 'measurements' :
         expressionset_list.append(self.parse_measurements_def())
       self.scanner.token()
-    sys.exit()
+    self.expect_token('}')
+    self.scanner.token() # FIXME: a bit odd this one I had to add an extra scanner.token
     return(expressionset_list)
 
 
@@ -2567,8 +2604,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure_defs = self.parse_procedure_defs()
     simexpression_defs = self.parse_simexpression_defs()
     expressionset_def = self.parse_expressionset_def()
-    # genemapping_def measurementprocess_def measurements_def 
-    #discriminationsettings_def = 
+    discriminationsettings_def = self.parse_discriminationsettings_def()
     # distance_def whitelist_defs
     #whitelist = self.parse_whitelist()
     #genemapping = self.parse_genemapping()

@@ -119,7 +119,8 @@ expressionset
 
   measurementprocess
   {
-
+    offset:  1e-3 * stddev();
+    transformation: log(offset(x1)) / log(offset(x2));
   }
 
   measurements
