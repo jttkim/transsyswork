@@ -1780,6 +1780,7 @@ class Scanner(object) :
  """
     return_token = self.next_token
     self.next_token = self.get_token()
+    print repr(return_token)
     return return_token
 
 
@@ -1797,20 +1798,17 @@ class Scanner(object) :
   def get_token(self) :
     """ Comment """
     if len(self.buffer) > 0 :
-      if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
+      if self.buffer[0] == '#' :
          self.buffer = ''
     while self.buffer == '' :
       self.buffer = self.infile.readline()
-      if len(self.buffer) > 0 :
-        if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
-          self.buffer = ''
+      if self.buffer == '' :
+        return None, None
       self.lineno = self.lineno + 1
-    if self.buffer == '' :
-      return None, None
-      self.buffer = string.strip(self.buffer)
-    if len(self.buffer) > 0 :
-      if self.buffer[0] == '#' or self.buffer[0:2] == '//' :
-        self.buffer = ''
+      self.buffer = self.buffer.strip()
+      if len(self.buffer) > 0 :
+        if self.buffer[0] == '#' :
+          self.buffer = ''
     for kw in self.keywords :
       if self.buffer[:len(kw)] == kw :
 	if re.match('%s($|[^A-Za-z0-9_])' % kw, self.buffer) is not None :
@@ -2582,15 +2580,15 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_procedure_defs(self) :
     """Parse procedure defs """
 
-    temp_procedure_list = {}
+    temp_procedure_dict = {}
     while self.scanner.lookahead() == 'procedure':
       p = self.parse_procedure_def()
-      if p.get_procedure_name() in temp_procedure_list.keys() :
+      if p.get_procedure_name() in temp_procedure_dict.keys() :
         raise StandardError, "%s Procedure already defined" %p.get_procedure_name()
-      temp_procedure_list[p.get_procedure_name()] = p
+      temp_procedure_dict[p.get_procedure_name()] = p
       while self.scanner.lookahead() == '\n' :
         self.expect_token('\n') 
-    return temp_procedure_list
+    return temp_procedure_dict
 
 
 ## parse_simgenex
