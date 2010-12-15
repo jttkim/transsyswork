@@ -1893,6 +1893,8 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: string
 """
     t, v = self.scanner.token()
+    if expected_token == 'discriminationsettings' :
+      print 'discriminationsettings', t, v
     if t not in expected_token :
       raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
     return v
@@ -2210,8 +2212,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_discriminationsettings_body(self) :
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
+    while self.scanner.lookahead() != '}' :
       if self.scanner.lookahead() == 'distance' :
         self.expect_token('distance')
 	self.expect_token(':')
@@ -2219,8 +2220,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 	self.expect_token(';')
       if self.scanner.lookahead() == 'whitelistdefs' :
         self.expect_token('whitelistdefs')
-        while self.scanner.lookahead() == ' ' :
-          self.scanner.token()
 	self.expect_token('{')
 	whitelist_list = self.parse_whitelist_body()
     return distance, whitelist_list
@@ -2230,12 +2229,8 @@ class EmpiricalObjectiveFunctionParser(object) :
     """ Parse discrimination settings def """
     self.expect_token('discriminationsettings')
     discriminationsettings_list = []
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
     self.expect_token('{') 
     offset, transformation = self.parse_discriminationsettings_body()
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
     self.expect_token('}')
     discriminationsettings_list.append(offset)
     discriminationsettings_list.append(transformation)
@@ -2247,8 +2242,6 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_measurements_body(self) :
     """ Parser measurements body"""
     measurements = []
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
     mapping = []
     array_name = self.expect_token('identifier')
     self.expect_token(':')
@@ -2258,7 +2251,6 @@ class EmpiricalObjectiveFunctionParser(object) :
       else :
         measurements.append(self.scanner.token()[0])
     self.expect_token(';')
-    self.scanner.token()
     return ArrayMapping(array_name, measurements, None)
     
 
@@ -2266,13 +2258,9 @@ class EmpiricalObjectiveFunctionParser(object) :
     """ Parse measurements """
     self.expect_token('measurements')
     measurements_list = []
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
     self.expect_token('{') 
     while self.scanner.lookahead() != '}' :
       measurements_list.append(self.parse_measurements_body())
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
     self.expect_token('}')
     return measurements_list
 
@@ -2293,27 +2281,23 @@ class EmpiricalObjectiveFunctionParser(object) :
 
 
   def parse_measurementprocess_body(self) :
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
+    while self.scanner.lookahead() != '}' :
       t = self.scanner.token()[0]
       self.expect_token(':')
       if t == 'offset' :
         offset = self.get_values()
-      else :
+      elif t == 'transformation' :
         transformation = self.get_values()
-        self.scanner.token()
+      else :
+        raise StandardError, "%s is not a recognised measurement" %s
     return offset, transformation
   
 
   def parse_measurementprocess_def(self) :
     """ Parse measurement process """
     self.expect_token('measurementprocess') 
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
     self.expect_token('{') 
     offset, transformation = self.parse_measurementprocess_body()
-    while self.scanner.lookahead() == ' ' :
-      self.scanner.token()
     self.expect_token('}')
     return MeasurementProcess(offset, transformation) 
 
@@ -2327,8 +2311,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     genemapping_dict = {}
     while self.scanner.lookahead() != '}' :
-      while self.scanner.lookahead() == ' ' :
-        self.scanner.token()
       mapping = []
       self.expect_token('factor')
       m = self.expect_token('gene_manufacturer_identifier')
@@ -2338,7 +2320,6 @@ class EmpiricalObjectiveFunctionParser(object) :
         mapping.append(d)
       genemapping_dict[m] = mapping
       self.expect_token(';')
-      self.scanner.token()
     return(genemapping_dict)
 
 
@@ -2370,12 +2351,10 @@ class EmpiricalObjectiveFunctionParser(object) :
         expressionset_list.append(self.parse_measurements_def())
       self.scanner.token()
     self.expect_token('}')
-    self.scanner.token() # FIXME: a bit odd this one I had to add an extra scanner.token
     return(expressionset_list)
 
 
 ##SimExpression
-
 
   def parse_simexpression_header(self) :
     """Parse simexpression header
@@ -2586,8 +2565,6 @@ class EmpiricalObjectiveFunctionParser(object) :
       if p.get_procedure_name() in temp_procedure_dict.keys() :
         raise StandardError, "%s Procedure already defined" %p.get_procedure_name()
       temp_procedure_dict[p.get_procedure_name()] = p
-      while self.scanner.lookahead() == '\n' :
-        self.expect_token('\n') 
     return temp_procedure_dict
 
 
@@ -2618,7 +2595,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: object
 """
     if self.scanner.check_magic(self.magic) :
-      self.expect_token('\n')
       return(self.parse_simgenex())
     else :
       raise StandardError, 'bad magic'
