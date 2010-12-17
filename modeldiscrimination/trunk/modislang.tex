@@ -140,15 +140,15 @@ simulated gene expression samples.
 
 \begin{ebnfrule}
 globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer
-NEWLINE
-globalsettings_header ::= "globasettingdefs" NEWLINE
-globalsettings_body ::= transformation_def distancemeasure_def offset_def
-globalsettings_footer ::= "endglobalsettingdefs" NEWLINE
 
-transformation_def ::= "transformation:" transformation_type NEWLINE
+globalsettings_header ::= "globasettingdefs" 
+globalsettings_body ::= transformation_def distancemeasure_def offset_def
+globalsettings_footer ::= "endglobalsettingdefs" 
+
+transformation_def ::= "transformation:" transformation_type 
 transformation_type ::= "log" | "none"
 
-distancemeasure_def ::= "distance:" distance_type NEWLINE
+distancemeasure_def ::= "distance:" distance_type 
 distance_type ::= "correlation" | "euclidean" | "sum_squares" 
 
 offset_def ::= "offset:" realnumber
@@ -176,11 +176,11 @@ The \computercode{globalsettings} contain the parameteters
 \end{itemize}
 
 \begin{ebnfrule}
-genemapping_def ::= genemapping_header genemapping_body genemapping_footer NEWLINE
-genemapping_header ::= "genemapping" NEWLINE
-genemapping_body ::= (factor_def NEWLINE)+   
-genemapping_footer ::= "endgenemapping" NEWLINE 
-factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ NEWLINE
+genemapping_def ::= genemapping_header genemapping_body genemapping_footer 
+genemapping_header ::= "genemapping" 
+genemapping_body ::= (factor_def )+   
+genemapping_footer ::= "endgenemapping"  
+factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ 
 \end{ebnfrule}
 The gene mapping maps transsys factor names (notice: not gene names)
 to identifiers that label the profiles in the empirical matrix, (the
@@ -202,27 +202,35 @@ this case, the average profile is used for comparison.
 \subsubsection{Procedures}
 \label{section_procedures}
 
-\todo{is it necessary that at least one procedure is required?}
-
 \begin{ebnfrule}
-procedure_defs ::= (procedure_def)+
-procedure_def ::= procedure_header procedure_body procedure_footer NEWLINE
+procedure_defs ::= (procedure_def)*
+procedure_def ::= procedure_header procedure_body
 
-procedure_header ::= "procedure" identifier NEWLINE 
-procedure_body ::= (instruction)+
+procedure_header ::= "procedure" identifier
+procedure_body ::= "\{" (procedure_statement)* "\}"
 
-instruction ::= procedure_identifier
+procedure_statement ::= instruction ";"
+
+instruction ::= identifier
         | primary_instruction
 
-primary_instruction ::= "knockout:" identifier NEWLINE
-        | "runtimesteps:" integer NEWLINE
-        | "treatment:" identifier "=" realnumber NEWLINE
-        | "overexpress:" identifier "=" realnumber NEWLINE
-        | "setproduct:" identifier identifier NEWLINE
-        | "foreach:" (identifier)+
+primary_instruction ::= knockout_instruction
+        | runtimesteps_instruction
+        | treatment_instruction
+        | overexpress_instruction
+        | setproduct_instruction
+        | foreach_instruction
 
-procedure_footer ::= "\}"
-procedure_identifier ::= identifier ";"
+knockout_instruction ::= "knockout:" identifier 
+
+runtimesteps_instruction ::= "runtimesteps" integer 
+
+treatment_instruction ::= "treatment" identifier "=" realnumber 
+
+overexpress_instruction ::= "overexpress" identifier "=" realnumber 
+
+setproduct_instruction ::= "setproduct" identifier identifier 
+
 \end{ebnfrule}
 A procedure specifies a sequence of operations to be performed on a
 transsys instance. Operations are specified either by primary
@@ -280,12 +288,19 @@ reference a procedure before it is defined.
 \subsubsection{Gene Expression Sample Simulation}
 
 \begin{ebnfrule}
-simexpression_defs ::= (simexpression_def)+
-Gsimexpression_def ::= simexpression_header simexpression_body simexpression_footer 
-NEWLINE
-simexpression_header ::= "simexpression" identifier NEWLINE
-simexpression_body ::= (identifier NEWLINE)+
-simexpression_footer ::= "endsimexpression" NEWLINE
+simexpression_defs ::= (simexpression_def)*
+simexpression_def ::= simexpression_header simexpression_body
+
+simexpression_header ::= "simexpression" identifier 
+simexpression_body ::= "\{" (simexpression_statement)* "\}"
+
+simexpression_statement ::= simexpression_instruction ";"
+
+simexpression_instruction ::= instruction
+        | foreach_instruction
+
+foreach_instruction ::= "foreach" (identifier)+
+
 \end{ebnfrule}
 
 \todo{is there a reason to only allow procedures in the simexpression
@@ -330,13 +345,13 @@ procedures. Invocation of other simexpressions is an error.
 
 \begin{ebnfrule}
 arraymapping_def ::= arraymapping_header arraymapping_body arraymapping_footer
-arraymapping_header ::= "arraymapping" NEWLINE
+arraymapping_header ::= "arraymapping" 
 arraymapping_body ::= (arraymapping_spec)+
 # identifier following "array" identifies an array in the empirical data set
 # identifier following ":" identifies a simexpression
 # identifier following "/" identifies a simexpression to be used as a ratio reference
-arraymapping_spec ::= "array" identifier ":" identifier ( "/" identifier)? NEWLINE
-arraymapping_footer ::= "endarraymapping" NEWLINE
+arraymapping_spec ::= "array" identifier ":" identifier ( "/" identifier)? 
+arraymapping_footer ::= "endarraymapping" 
 \end{ebnfrule}
 
 \todo{It seems to me that it was not ideal to call these things
@@ -374,10 +389,10 @@ subjected to offset adding and log transformation.
 
 \begin{ebnfrule}
 whitelist_def ::= whitelist_header whitelist_body whitelist_footer
-NEWLINE
-whitelist_header ::= "whitelistdefs" NEWLINE
+
+whitelist_header ::= "whitelistdefs" 
 whitelist_body ::= whitelist_factor_def whitelist_gene_def
-whitelist_footer ::= "endwhitelistdefs" NEWLINE
+whitelist_footer ::= "endwhitelistdefs" 
 whitelist_factor_def ::= "factor" ":" (identifier)+
 whitelist_gene_def ::= "gene: " (identifier)+ 
 \end{ebnfrule}
@@ -393,8 +408,8 @@ to specify under which conditions a biochemical reaction might take place.
 \begin{ebnfrule}
 ----- terminals --------------------------------------------------------------------
 
-knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" NEWLINE
-NEWLINE
+knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" 
+
 
 gene_manufacturer_identifier ::= doublequote character_but_not_doublequote+ doublequote
 

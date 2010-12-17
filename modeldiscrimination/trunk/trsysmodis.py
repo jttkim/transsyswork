@@ -768,7 +768,45 @@ The trace is guaranteed to contain at least one instance.
     raise StandardError, 'abstract method called'
 
 
-class PrimaryInstruction(Instruction) :
+class ForeachInstruction(Instruction) :
+
+  def __init__(self, procedure_list) :
+    self.procedure_list = procedure_list
+
+
+  def __str__(self) :
+    s = 'foreach:'
+    for p in self.procedure_list :
+      s = s + ' %s' % p.get_procedure_name()
+
+
+  def make_header_list(self, prefix_list) :
+    header_list = []
+    for prefix in prefix_list :
+      for procedure in self.procedure_list :
+        header_list.append('%s_%s' % (prefix, procedure.get_procedure_name()))
+    return header_list
+
+
+  def make_instruction_sequence_list(self, prefix_list) :
+    instruction_sequence_list = []
+    for prefix in prefix_list :
+      for procedure in self.procedure_list :
+        instruction_sequence = prefix[:]
+        instruction_sequence.append(procedure)
+        instruction_sequence_list.append(instruction_sequence)
+    return instruction_sequence_list
+    
+
+class ProcedureInstruction(Instruction) :
+  """Instructions that are appropriate for procedures.
+"""
+
+  def __init__(self) :
+    pass
+
+
+class PrimaryInstruction(ProcedureInstruction) :
   """Abstract function to simulate treatment - i.e. equilibration, knockout, treatment"""
 
 
@@ -872,10 +910,7 @@ class RuntimestepsInstruction(PrimaryInstruction) :
 @type time_steps: Int
 """
     super(RuntimestepsInstruction, self).__init__()
-    if isinstance(time_steps, types.FloatType) :
-      self.time_steps = time_steps
-    else :
-      raise StandardError, '%s is not a numeric expression' %time_steps
+    self.time_steps = time_steps
 
 
   def __str__(self) :
@@ -1513,7 +1548,7 @@ class Procedure(Instruction) :
 class SimExpression(object) :
   """ Object SimExpression """
 
-  def __init__(self, simexpression_name, instruction_list, foreach_list = None) :
+  def __init__(self, simexpression_name, instruction_list) :
     """ Constructor
 @param simexpression_name: simexpression name
 @type simexpression_name: C{String}
@@ -1522,7 +1557,6 @@ class SimExpression(object) :
 """
     self.simexpression_name = simexpression_name
     self.instruction_list = instruction_list
-    self.foreach_list = foreach_list
 
 
   def get_simexpression_name(self) :
@@ -1533,37 +1567,38 @@ class SimExpression(object) :
     return(self.instruction_list)
 
 
-  def get_foreach_list(self) :
-    return(self.foreach_list)
-
-
   def set_instruction_list(self, instruction_list) :
     self.instruction_list = instruction_list
 
 
-  def set_foreach_list(self, foreach_list) :
-    self.foreach_list = foreach_list
-
-
   def __str__(self) :
     """ Return string of SimExpression """
-    if self.get_foreach_list() == "clone" :
-      s = None
-    else :
-      s = 'simexpression ' + self.simexpression_name + '\n' 
-      s = s + '{' + '\n'
-      for p in self.instruction_list :
-	s = s + ("\t%s;" %p.get_procedure_name()) + " "
-        s = s + "\n"
-      if len(self.get_foreach_list()) > 0 :
-        s = s + '\tforeach:'
-        for ts in self.get_foreach_list() :
-	  s = s + (" %s" %ts)
-	s = s + ";"
-        s = s + "\n"
-      s = s + '}' + '\n\n'
+    s = 'simexpression ' + self.simexpression_name + '\n' 
+    s = s + '{' + '\n'
+    for p in self.instruction_list :
+      s = s + ('\t%s;\n' % str(p)
+    s = s + '}\n\n'
     return s
 
+
+  def get_foreach_list(self) :
+    foreach_list = []
+    for instruction in self.instruction_list :
+      if isinstance(instruction, ForeachInstruction) :
+        foreach_list.append(instruction)
+    return foreach_list
+
+
+  def get_simulated_column_header_list(self) :
+    column_header_list = [self.simexpression_name]
+    for f in self.get_foreach_list() :
+      column_header_list = f.make_header_list(column_header_list)
+    return column_header_list
+
+
+  def get_instruction_sequence_list(self) :
+    instruction_sequence_list = []
+    
 
   def simulate(self, transsys_program) :
     if len(self.get_foreach_list()) == 0 or self.get_foreach_list() == 'clone' :
@@ -2228,6 +2263,19 @@ class EmpiricalObjectiveFunctionParser(object) :
     return simexpression_name
 
 
+  def parse_simexpression_instruction(self) :
+    if self.scanner.lookahead() == 'foreach' :
+      instruction = self.parse_foreach_instruction()
+    else :
+      instruction = self.parse_instruction()
+    return instruction
+
+
+  def parse_simexpression_statement(self) :
+    s = self.parse_simexpression_instruction()
+    self.expect_token(';')
+
+
   def parse_simexpression_body(self) :
     """Comment
 @return: unresolved_intsruction_list
@@ -2235,24 +2283,13 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: unresolved_foreach_list
 @rtype: list[]
 """
-    procedures = []
+    self.expect_token('{')
     unresolved_instruction_list = []
-    unresolved_foreach_list = []
     while self.scanner.lookahead() != '}' :
-      while self.scanner.lookahead() == ' ' :
-        self.scanner.token()
-      identifier_name = self.expect_token('identifier')
-      if identifier_name == 'foreach' :
-        self.expect_token(':')
-        while self.scanner.lookahead() != ';':
-          d = self.expect_token('identifier')
-          unresolved_foreach_list.append(d)
-        self.expect_token(';')
-      else :
-        unresolved_instruction_list.append(identifier_name)
-        self.expect_token(';')
-    return(unresolved_instruction_list, unresolved_foreach_list)
-
+      unresolved_instruction_list.append(self.parse_simexpression_statement())
+    self.expect_token('}')
+    return(unresolved_instruction_list)
+    
 
   def parse_simexpression_def(self) :
     """Parser simexpression
@@ -2260,14 +2297,12 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{SimExpression}
 """
     simexpression_name = self.parse_simexpression_header()
-    self.expect_token('{')
-    unresolved_instruction_list, unresolved_foreach_list = self.parse_simexpression_body()
-    self.expect_token('}')
+    unresolved_instruction_list = self.parse_simexpression_body()
     # NOTE: the SimExpression instance contains an unresolved list,
     # the parser will resolve this before completing and passing the
     # its parsing result (i.e. the SimGenex) to the
     # caller.
-    return SimExpression(simexpression_name, unresolved_instruction_list, unresolved_foreach_list)
+    return SimExpression(simexpression_name, unresolved_instruction_list)
 
 
   def parse_simexpression_defs(self) :
@@ -2276,10 +2311,13 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: list[]
 """
     simexpression_list = []
+    namelist = []
     while self.scanner.lookahead() == 'simexpression' :
-      simexpression_list.append(self.parse_simexpression_def())
-      while self.scanner.lookahead() == '\n' :
-        self.expect_token('\n') 
+      simexpression = self.parse_simexpression_def()
+      if simexpression.get_simexpression_name() in namelist :
+        raise StandardError, 'duplicate definintion of simexpression "%s"' % simexpression.get_simexpression_name()
+      simexpression_list.append(simexpression)
+      namelist.append(simexpression.get_simexpression_name())
     return simexpression_list
 
 
@@ -2294,114 +2332,96 @@ class EmpiricalObjectiveFunctionParser(object) :
     procedure_name = self.expect_token('identifier')
     return procedure_name
 
-
-  def parse_instruction(self) :
-    # FIXME: primary instructions should be keywords, not identifiers
-    """Check procedure lexicon
-@return: Object 
-@rtype: L{}
-"""
-    while self.scanner.lookahead() == ' ' :
-      t = self.scanner.token()
-    t = self.scanner.lookahead()
-    if t == "treatment" :
-      self.expect_token('treatment')
-      return(self.validate_treatment())
-    elif t == "knockout" :
-      self.expect_token('knockout')
-      return(self.validate_knockout())
-    elif t == "runtimesteps" :
-      self.expect_token('runtimesteps')
-      return(self.validate_runtimesteps())
-    elif t == "overexpress" :
-      self.expect_token('overexpress')
-      return(self.validate_overexpression())
-    elif t == "setproduct" :
-      self.expect_token('setproduct')
-      return(self.validate_setproduct())
-    elif t == 'identifier':
-      return self.validate_none_primary_instruction()
-
   
-  def validate_none_primary_instruction(self) :
-    """ Validate instruction
-@param: new_intruction
-@rtype: C{String}
-"""
-    none_primary_instruction = self.expect_token('identifier')
-    self.expect_token(';')
-    return none_primary_instruction
-
-
-  def validate_treatment(self):
+  def parse_treatment(self):
     """ Instantiate Simulation Treatment 
 @return: Object
 @rtype: L{TreatmentInstruction}
 """ 
+    self.expect_token('treatment')
     self.expect_token(':')
     treatment = self.expect_token('identifier')
     self.expect_token('=')
     value = self.expect_token('realvalue')
-    self.expect_token(';')
-    if (isinstance(float(value), types.FloatType) and isinstance(treatment, types.StringType)) :
-      ost = TreatmentInstruction(treatment, value)
-      return(ost)
-    else :
-      raise StandardError, "%s is not a correct treatment statement"%s
+    ost = TreatmentInstruction(treatment, value)
+    return(ost)
 
 
-  def validate_knockout(self) :
+  def parse_knockout(self) :
     """ Instantiate Simulation Knockout
 @return: Object
 @rtype: L{KnockoutInstruction}
 """
+    self.expect_token('knockout')
     self.expect_token(':')
     gene = self.scanner.token()[1]
-    self.expect_token(';')
     osk = KnockoutInstruction(gene)
     return(osk)
 
 
-  def validate_runtimesteps(self) :
+  def parse_runtimesteps(self) :
     """ Instantiate runtimesteps 
 @return: Object
 @rtype: L{RuntimestepsInstruction}
 """
+    self.expect_token('runtimesteps')
     self.expect_token(':')
-    time_steps = self.scanner.token()[1]
-    self.expect_token(';')
-    if isinstance(float(time_steps), types.FloatType) :
-      ost = RuntimestepsInstruction(time_steps)
-      return(ost)
-    else :
-      raise StandardError, "%s is not a correct overpression statement"%s
+    time_steps = self.expect_token('realvalue')
+    ost = RuntimestepsInstruction(int(time_steps))
+    return(ost)
 
 
-  def validate_overexpression(self) :
+  def parse_overexpression(self) :
     """ Instantiate overexpression
 @return: Object
 @rtype: L{OverexpressionInstruction}
 """
+    self.expect_token('overexpress')
     self.expect_token(':')
-    factor = self.scanner.token()[1]
+    factor = self.expect_token('identifier')
     self.expect_token('=')
     value = self.expect_token('realvalue')
-    self.expect_token(';')
     oso = OverexpressionInstruction(factor, value)
     return(oso)
 
 
-  def validate_setproduct(self) :
+  def parse_setproduct(self) :
     """ Instantiate setproduct
 @return: Object
 @rtype: L{SetproductInstruction}
 """
+    self.expect_token('setproduct')
     self.expect_token(':')
     gene_name = self.expect_token('identifier')
     factor_name = self.expect_token('identifier')
-    self.expect_token(';')
     spo = SetproductInstruction(gene_name, factor_name)
     return(spo)
+
+
+  def parse_instruction(self) :
+    """Check procedure lexicon
+@return: Object 
+@rtype: L{}
+"""
+    t = self.scanner.lookahead()
+    if t == 'treatment' :
+      return(self.parse_treatment())
+    elif t == 'knockout' :
+      return(self.parse_knockout())
+    elif t == 'runtimesteps' :
+      return(self.parse_runtimesteps())
+    elif t == 'overexpress' :
+      return(self.parse_overexpression())
+    elif t == 'setproduct' :
+      return(self.parse_setproduct())
+    elif t == 'identifier':
+      return self.expect_token('identifier')
+
+
+  def parse_procedure_statement(self) :
+    instruction = self.parse_instruction()
+    self.expect_token(';')
+    return instruction
 
 
   def parse_procedure_body(self) :
@@ -2410,8 +2430,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: list[]
 """
     procedure = []
+    self.expect_token('{')
     while self.scanner.lookahead() != '}' :
-      procedure.append(self.parse_instruction())
+      procedure.append(self.parse_procedure_statement())
+    self.expect_token('}')
     return procedure
 
 
@@ -2421,9 +2443,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{Procedure}
 """
     procedure_name = self.parse_procedure_header()
-    self.expect_token('{')
     unresolved_instruction_list = self.parse_procedure_body()
-    self.expect_token('}')
     return Procedure(procedure_name, unresolved_instruction_list)
 
 
