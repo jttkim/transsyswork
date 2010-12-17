@@ -1201,7 +1201,7 @@ series is the simulation of the gene expression levels for that genotype.
 @rtype: C{ExpressionSet}
 """
     if all_factors is None :
-      e = self.createTemplate(self.genemapping_defs.get_factor_list())
+      e = self.createTemplate(self.expressionset.get_factor_list())
     else :
       e = self.createTemplate(all_factors)
     self.write_trace_header(tracefile, transsys_program)
@@ -1763,7 +1763,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean', 'expressionset', 'genemapping', 'measurementprocess', 'measurements', 'discriminationsettings', 'whitelistdefs', 'stddev()', 'log(offset(x1))', 'log(offset(x2))']
+    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean', 'expressionset', 'genemapping', 'measurementprocess', 'measurements', 'discriminationsettings', 'whitelistdefs', 'stddev()', 'negmin()']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.function_re = re.compile('([A-Za-z())]+)')
@@ -2016,8 +2016,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.resolveSpecExpressionset()
     self.resolveSpecDiscriminationSettings()
 
-
-## discriminatiosettings_def
 
 ### Whitelist
 
