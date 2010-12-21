@@ -791,6 +791,7 @@ class ForeachInstruction(Instruction) :
     s = 'foreach:'
     for instruction in self.instruction_list :
       s = s + ' %s' % instruction.get_procedure().get_procedure_name()
+    return s
 
 
   def make_header_list(self, prefix_list) :
@@ -836,6 +837,10 @@ class InvocationInstruction(Instruction) :
       return self.procedure
     else :
       raise StandardError, 'bad procedure instance variable'
+
+
+  def __str__(self) :
+    return self.get_procedure_name()
 
 
 class PrimaryInstruction(ApplicableInstruction) :
@@ -1809,6 +1814,7 @@ class DiscriminationSettings(object) :
     s = s + '{' + '\n'
     s = s + ('\t%s\n', self.get_distance())
     s = s + '}' + '\n'
+    return s
 
 
 class WhiteList(object) :
@@ -2345,6 +2351,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_simexpression_statement(self) :
     s = self.parse_simexpression_instruction()
     self.expect_token(';')
+    return s
 
 
   def parse_simexpression_body(self) :
