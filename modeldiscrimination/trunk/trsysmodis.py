@@ -768,22 +768,35 @@ The trace is guaranteed to contain at least one instance.
     raise StandardError, 'abstract method called'
 
 
+  def resolve(self, procedure_dict) :
+    pass
+
+
+  def make_instruction_sequence_list(self, prefix_list) :
+    instruction_sequence_list = []
+    for prefix in prefix_list[:] :
+      instruction_sequence = prefix.get_copy()
+      instruction_sequence.append_instruction(self)
+      instruction_sequence_list.append(instruction_sequence)
+    return instruction_sequence_list
+
+
 class ForeachInstruction(Instruction) :
 
-  def __init__(self, procedure_list) :
-    self.procedure_list = procedure_list
+  def __init__(self, instruction_list) :
+    self.instruction_list = instruction_list
 
 
   def __str__(self) :
     s = 'foreach:'
-    for p in self.procedure_list :
-      s = s + ' %s' % p.get_procedure_name()
+    for instruction in self.instruction_list :
+      s = s + ' %s' % instruction.get_procedure().get_procedure_name()
 
 
   def make_header_list(self, prefix_list) :
     header_list = []
     for prefix in prefix_list :
-      for procedure in self.procedure_list :
+      for procedure in self.instruction_list :
         header_list.append('%s_%s' % (prefix, procedure.get_procedure_name()))
     return header_list
 
@@ -791,22 +804,41 @@ class ForeachInstruction(Instruction) :
   def make_instruction_sequence_list(self, prefix_list) :
     instruction_sequence_list = []
     for prefix in prefix_list :
-      for procedure in self.procedure_list :
-        instruction_sequence = prefix[:]
-        instruction_sequence.append(procedure)
+      for instruction in self.instruction_list :
+        instruction_sequence = prefix.get_copy()
+        instruction_sequence.append_instruction(instruction)
         instruction_sequence_list.append(instruction_sequence)
     return instruction_sequence_list
-    
 
-class ProcedureInstruction(Instruction) :
-  """Instructions that are appropriate for procedures.
-"""
+
+  def resolve(self, procedure_dict) :
+    for instruction in self.instruction_list :
+      instruction.resolve(procedure_dict)
+
+class ApplicableInstruction(Instruction) :
 
   def __init__(self) :
     pass
 
 
-class PrimaryInstruction(ProcedureInstruction) :
+class InvocationInstruction(Instruction) :
+  """Instruction to invoke a procedure.
+"""
+
+  def __init__(self, procedure) :
+    self.procedure = procedure
+
+
+  def get_procedure_name(self) :
+    if isinstance(self.procedure, Procedure) :
+      return self.procedure.get_procedure_name()
+    elif isinstance(self.procedure, types.StringType) :
+      return self.procedure
+    else :
+      raise StandardError, 'bad procedure instance variable'
+
+
+class PrimaryInstruction(ApplicableInstruction) :
   """Abstract function to simulate treatment - i.e. equilibration, knockout, treatment"""
 
 
@@ -1354,18 +1386,18 @@ series is the simulation of the gene expression levels for that genotype.
 @rtype: C{String}
 """
     s = ("%s\n\n" %EmpiricalObjectiveFunctionParser.magic)
-    s = s + ("%s\n" %self.globalsettings_defs.__str__())
-    s = s + ("%s" %self.genemapping_defs.__str__())
+    # s = s + ("%s\n" %self.globalsettings_defs.__str__())
+    # s = s + ("%s" %self.genemapping_defs.__str__())
     for i, o in self.procedure_defs.iteritems() :
       s = s + ("%s" %o.__str__())
     for o in self.simexpression_defs :
       n = o.__str__()
       if n is not None :
         s = s + ("%s" %n)
-    s = s + ("arraymapping\n")
-    for o in self.arraymapping_defs :
-      s = s + ("%s" %o.__str__())
-    s = s + ("endarraymapping\n")
+#     s = s + ("arraymapping\n")
+#     for o in self.arraymapping_defs :
+#       s = s + ("%s" %o.__str__())
+#     s = s + ("endarraymapping\n")
     return s
 
 
@@ -1536,6 +1568,7 @@ class Procedure(Instruction) :
     return s
 
 
+  # FIXME: this is really an application of the invocation
   def apply_instruction(self, transsys_instance) :
     ti = transsys_instance
     ti_trace = []
@@ -1545,8 +1578,33 @@ class Procedure(Instruction) :
     return ti_trace
 
 
+  def resolve(self, procedure_dict) :
+    for instruction in self.instruction_list :
+      instruction.resolve(procedure_dict)
+        
+
+class InstructionSequence(object) :
+
+
+  def __init__(self, name, instruction_sequence = None) :
+    self.name = name
+    if instruction_sequence is None :
+      self.instruction_sequence = []
+    else :
+      self.instruction_sequence = instruction_sequence[:]
+
+
+  def append_instruction(self, instruction) :
+    self.instruction_sequence.append(instruction)
+
+
+  def get_copy(self) :
+    return InstructionSequence(name, self.instruction_sequence)
+
+
 class SimExpression(object) :
   """ Object SimExpression """
+
 
   def __init__(self, simexpression_name, instruction_list) :
     """ Constructor
@@ -1576,7 +1634,7 @@ class SimExpression(object) :
     s = 'simexpression ' + self.simexpression_name + '\n' 
     s = s + '{' + '\n'
     for p in self.instruction_list :
-      s = s + ('\t%s;\n' % str(p)
+      s = s + ('\t%s;\n' % str(p))
     s = s + '}\n\n'
     return s
 
@@ -1597,7 +1655,9 @@ class SimExpression(object) :
 
 
   def get_instruction_sequence_list(self) :
-    instruction_sequence_list = []
+    instruction_sequence_list = [InstructionSequence(self.simexpression_name)]
+    for instruction in self.instruction_list :
+      instruction_sequence_list = instruction.make_instruction_sequence_list(instruction_sequence_list)
     
 
   def simulate(self, transsys_program) :
@@ -1798,7 +1858,7 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean', 'expressionset', 'genemapping', 'measurementprocess', 'measurements', 'discriminationsettings', 'whitelistdefs', 'stddev()', 'negmin()']
+    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean', 'expressionset', 'genemapping', 'measurementprocess', 'measurements', 'discriminationsettings', 'whitelistdefs', 'foreach', 'stddev()', 'negmin()']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.function_re = re.compile('([A-Za-z())]+)')
@@ -2045,11 +2105,13 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param discriminationsettings_def: Object
 @type discriminationsettings_def: L{discriminationsettings_def}
 """
-    procedure_name_list = procedure_defs.keys()
-    self.resolveSpecProcedure(procedure_defs)
-    self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
-    self.resolveSpecExpressionset()
-    self.resolveSpecDiscriminationSettings()
+    for procedure in procedure_defs.values() :
+      procedure.resolve(procedure_defs)
+#     procedure_name_list = procedure_defs.keys()
+#     self.resolveSpecProcedure(procedure_defs)
+#     self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
+#     self.resolveSpecExpressionset()
+#     self.resolveSpecDiscriminationSettings()
 
 
 ### Whitelist
@@ -2263,6 +2325,15 @@ class EmpiricalObjectiveFunctionParser(object) :
     return simexpression_name
 
 
+  def parse_foreach_instruction(self) :
+    self.expect_token('foreach')
+    self.expect_token(':')
+    instruction_list = []
+    while self.scanner.lookahead() != ';' :
+      invocation_instruction = InvocationInstruction(self.expect_token('identifier'))
+    return ForeachInstruction(instruction_list)
+    
+
   def parse_simexpression_instruction(self) :
     if self.scanner.lookahead() == 'foreach' :
       instruction = self.parse_foreach_instruction()
@@ -2415,7 +2486,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     elif t == 'setproduct' :
       return(self.parse_setproduct())
     elif t == 'identifier':
-      return self.expect_token('identifier')
+      return InvocationInstruction(self.expect_token('identifier'))
 
 
   def parse_procedure_statement(self) :
@@ -2474,8 +2545,8 @@ class EmpiricalObjectiveFunctionParser(object) :
     expressionset_def = self.parse_expressionset_def()
     discriminationsettings_def = self.parse_discriminationsettings_def()
     self.resolve_spec(procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def)
-    sys.exit()
-    #return SimGenex(procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def)
+    # sys.exit()
+    return SimGenex(procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def)
 
 
   def parse_objectivespec(self) :

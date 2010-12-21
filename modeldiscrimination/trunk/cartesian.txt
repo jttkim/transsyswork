@@ -1,105 +1,13 @@
+procedure ko_jin
+{
+  knockout: jin;
+}
+
 simexpression j
 {
   foreach wt ko_jin ko_jut oe_jut;
   equilibrate;
   foreach mock MeJA;
   foreach t030 t060 t120;
-}
-
-simexpression j_wt_mock_t030
-{
-  wt;
-  equilibrate;
-  mock;
-  t030;
-}
-
-simexpression j_wt_mock_t060
-{
-  wt;
-  equilibrate;
-  mock;
-  t060;
-}
-
-simexpression j_wt_mock_t120
-{
-  wt;
-  equilibrate;
-  mock;
-  t120;
-}
-
-simexpression j_wt_MeJA_t030
-{
-  wt;
-  equilibrate;
-  MeJA;
-  t030;
-}
-
-simexpression j_wt_MeJA_t060
-{
-  wt;
-  equilibrate;
-  MeJA;
-  t060;
-}
-
-simexpression j_wt_MeJA_t120
-{
-  wt;
-  equilibrate;
-  MeJA;
-  t120;
-}
-
-
-simexpression j_ko_jin_mock_t030
-{
-  ko_jin;
-  equilibrate;
-  mock;
-  t030;
-}
-
-simexpression j_ko_jin_mock_t060
-{
-  ko_jin;
-  equilibrate;
-  mock;
-  t060;
-}
-
-simexpression j_ko_jin_mock_t120
-{
-  ko_jin;
-  equilibrate;
-  mock;
-  t120;
-}
-
-simexpression j_ko_jin_MeJA_t030
-{
-  ko_jin;
-  equilibrate;
-  MeJA;
-  t030;
-}
-
-simexpression j_ko_jin_MeJA_t060
-{
-  ko_jin;
-  equilibrate;
-  MeJA;
-  t060;
-}
-
-simexpression j_ko_jin_MeJA_t120
-{
-  ko_jin;
-  equilibrate;
-  MeJA;
-  t120;
 }
 
