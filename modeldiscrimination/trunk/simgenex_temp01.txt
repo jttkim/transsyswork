@@ -108,7 +108,28 @@ simexpression g2_MeJA
   foreach: t030 t060;
 }
 
-expressionset
+measurementmatrix
+{
+  measurementprocess
+  {
+    offset:  1e-3 * stddev();
+    transformation: log2(offset(x1)) / log2(offset(x2));
+  }
+
+  measurementcolumns
+  {
+    wtMeJA: x1 = wt_MeJA, x2 = wt;
+    g0MeJAt030: x1 = g0_MeJA_t030, x2 = g0;
+    g0MeJAt060: x1 = g0_MeJA_t060, x2 = g0;
+    g1MeJAt030: x1 = g1_MeJA_t030, x2 = g1;
+    g1MeJAt060: x1 = g1_MeJA_t060, x2 = g1;
+    g2MeJAt030: x1 = g2_MeJA_t030, x2 = g2;
+    g2MeJAt060: x1 = g2_MeJA_t060, x2 = g2;
+  }
+
+}
+
+discriminationsettings
 {
   genemapping
   {
@@ -117,28 +138,8 @@ expressionset
     factor f2 = "257241_at";
   }
 
-  measurementprocess
-  {
-    offset:  1e-3 * stddev();
-    transformation: log(offset(x1)) / log(offset(x2));
-  }
-
-  measurements
-  {
-    wtMeJA : wt_MeJA / wt;
-    g0MeJAt030 : g0_MeJA_t030 / g0;
-    g0MeJAt060 : g0_MeJA_t060 / g0;
-    g1MeJAt030 : g1_MeJA_t030 / g1;
-    g1MeJAt060 : g1_MeJA_t060 / g1;
-    g2MeJAt030 : g2_MeJA_t030 / g2;
-    g2MeJAt060 : g2_MeJA_t060 / g2;
-  }
-
-}
-
-discriminationsettings
-{
   distance: correlation;
+
   whitelistdefs
   {
     factor: f0 f1 f2;

@@ -790,7 +790,7 @@ class ForeachInstruction(Instruction) :
   def __str__(self) :
     s = 'foreach:'
     for instruction in self.instruction_list :
-      s = s + ' %s' % instruction.get_procedure().get_procedure_name()
+      s = s + ' %s' % instruction.get_procedure_name()
     return s
 
 
@@ -841,7 +841,7 @@ class InvocationInstruction(Instruction) :
 
   def __str__(self) :
     return self.get_procedure_name()
-
+  
 
 class PrimaryInstruction(ApplicableInstruction) :
   """Abstract function to simulate treatment - i.e. equilibration, knockout, treatment"""
@@ -939,8 +939,6 @@ class TreatmentInstruction(PrimaryInstruction) :
 class RuntimestepsInstruction(PrimaryInstruction) :
   """ Class to simulate timesteps """
 
-  magic = "timesteps"
-
   def __init__(self, time_steps) :
     """Constructor
 @param time_steps: time steps
@@ -951,7 +949,7 @@ class RuntimestepsInstruction(PrimaryInstruction) :
 
 
   def __str__(self) :
-    s = self.magic + ": " + ("%s" %self.time_steps)
+    s = 'runtimesteps: %s' % self.time_steps
     return s
 
 
@@ -1203,21 +1201,21 @@ and finally equilibrated again. The instance at the end of this time
 series is the simulation of the gene expression levels for that genotype.
 """ 
 
-  def __init__(self, procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def) :
+  def __init__(self, procedure_defs, simexpression_defs, measurementmatrix_def, discriminationsettings_def) :
     """ Constructor 
 @param procedure_defs: procedure definition.
 @type procedure_defs: list[Procedure]
 @param simexpression_defs: array definition.
 @type simexpression_defs: list[SimExpression]
-@param expressionset_def: expressionset definitions.
-@type expressionset_def: L{expressionset_def}
+@param measurementmatrix_def: measurementmatrix definitions.
+@type measurementmatrix_def: L{measurementmatrix_def}
 @param discriminationsettings_def: discriminationsettings definitions
 @type discriminationsettings_def: L{discriminationsettings_def}
 """
     self.expression_set = None
     self.procedure_defs = procedure_defs
     self.simexpression_defs = simexpression_defs
-    self.expressionset_def = expressionset_def
+    self.measurementmatrix_def = measurementmatrix_def
     self.discriminationsettings_def = discriminationsettings_def
     self.transformation = None
     self.offset = None
@@ -1393,12 +1391,12 @@ series is the simulation of the gene expression levels for that genotype.
     s = ("%s\n\n" %EmpiricalObjectiveFunctionParser.magic)
     # s = s + ("%s\n" %self.globalsettings_defs.__str__())
     # s = s + ("%s" %self.genemapping_defs.__str__())
-    for i, o in self.procedure_defs.iteritems() :
-      s = s + ("%s" %o.__str__())
-    for o in self.simexpression_defs :
-      n = o.__str__()
-      if n is not None :
-        s = s + ("%s" %n)
+    for procedure in self.procedure_defs :
+      s = s + ("%s" % str(procedure))
+    for simexpression in self.simexpression_defs :
+      s = s + ('%s' % str(simexpression))
+    s = s + '%s' % str(self.measurementmatrix_def)
+    s = s + '%s' % str(self.discriminationsettings_def)
 #     s = s + ("arraymapping\n")
 #     for o in self.arraymapping_defs :
 #       s = s + ("%s" %o.__str__())
@@ -1565,11 +1563,8 @@ class Procedure(Instruction) :
     s = 'procedure ' + self.procedure_name + '\n' 
     s = s + '{' + '\n'
     for instruction in self.get_instruction_list() :
-      if isinstance(instruction, PrimaryInstruction) :
-        s = s +  ("%s;" %instruction) + '\n' 
-      else :
-        s = s +  ("%s;" %instruction.get_procedure_name()) + '\n' 
-    s = s + '}' + '\n\n'
+      s = s + ('  %s;\n' % instruction)
+    s = s + '}\n\n'
     return s
 
 
@@ -1639,7 +1634,7 @@ class SimExpression(object) :
     s = 'simexpression ' + self.simexpression_name + '\n' 
     s = s + '{' + '\n'
     for p in self.instruction_list :
-      s = s + ('\t%s;\n' % str(p))
+      s = s + ('  %s;\n' % str(p))
     s = s + '}\n\n'
     return s
 
@@ -1678,24 +1673,30 @@ class SimExpression(object) :
     return ti_trace
 
 
-class Expressionset(object) :
+class MeasurementMatrix(object) :
  
-   def __init__(self, genemapping, measurementprocess, measurements) :
-     self.genemapping =  genemapping
+   def __init__(self, measurementprocess, measurementcolumn_list) :
      self.measurementprocess = measurementprocess
-     self.measurements = measurements
+     self.measurementcolumn_list = measurementcolumn_list
 
 
-   def get_genemapping(self) :
-     return(self.genemapping)
+   def __str__(self) :
+     s = 'measurementmatrix\n{\n'
+     s = s + str(self.measurementprocess)
+     s = s + '  measurementcolumns\n  {\n'
+     for measurementcolumn in self.measurementcolumn_list :
+       s = s + '    %s;\n' % str(measurementcolumn)
+     s = s + '  }\n'
+     s = s + '}\n'
+     return s
 
-  
+
    def get_measurementprocess(self) :
-     return(self.measurements)
+     return(self.measurementprocess)
 
 
-   def get_measurements(self) :
-     return(self.measurements)
+   def get_measurementcolumn_list(self) :
+     return(self.measurementcolumn_list)
 
 
 class GeneMapping(object) :
@@ -1719,13 +1720,13 @@ class GeneMapping(object) :
 @return: s
 @rtype: C{String}
 """    
-    s = '\tgenemapping\n\t{'
+    s = '  genemapping\n  {'
     for name, value in self.factor_list.iteritems() :
       w = ''
       for u in value :
 	w = w + u + " "
       s = s + ('factor ' + name + " = " + w + "\n")
-    s = s + '\t}\n\n'
+    s = s + '  }\n\n'
     return s
 
 
@@ -1735,7 +1736,15 @@ class MeasurementProcess(object) :
   def __init__(self, offset, transformation) :
     self.offset = offset
     self.transformation = transformation
-    
+
+
+  def __str__(self) :
+    s = '  measurementprocess\n  {\n'
+    s = s + '    %s;\n' % str(self.offset)
+    s = s + '    transformation: %s;\n' % str(self.transformation)
+    s = s + '  }\n'
+    return s
+
 
 class Measurements(object) :
   """ object Measurements
@@ -1791,12 +1800,17 @@ class Measurements(object) :
 
 class DiscriminationSettings(object) :
 
-  def __init__(self, distance, whitelist) :
+  def __init__(self, genemapping, distance, whitelist) :
     """ FIXME: verbose """
     self.distance = distance
     self.whitelist = whitelist
+    self.genemapping =  genemapping
 
 
+  def get_genemapping(self) :
+     return(self.genemapping)
+
+  
   def get_distance(self) :
     return(self.distance)
 
@@ -1812,7 +1826,9 @@ class DiscriminationSettings(object) :
 """
     s = 'discriminationsettings' + '\n'
     s = s + '{' + '\n'
-    s = s + ('\t%s\n', self.get_distance())
+    s = s + str(self.genemapping)
+    s = s + str(self.whitelist)
+    s = s + ('  distance: %s;\n' % self.get_distance())
     s = s + '}' + '\n'
     return s
 
@@ -1821,24 +1837,21 @@ class WhiteList(object) :
   """  Object WhiteList """
 
 
-  def __init__(self, whitelist_dict):
+  def __init__(self, factor_list, gene_list):
     """ Constructor
 @param whitelist_dict: whitelist_dict
 @type whitelist_dict: Dictionary{S}
 """
-    self.whitelist_dict = whitelist_dict
+    self.factor_list = factor_list
+    self.gene_list = gene_list
    
 
-  def get_term_list(self) :
-    return(self.whitelist_dict)
+  def get_factor_list(self) :
+    return self.factor_list
 
 
-  def get_factorwhitelist(self) :
-    return(self.whitelist_dict['factor'])
-
-
-  def get_genewhitelist(self) :
-    return(self.whitelist_dict['gene'])
+  def get_gene_list(self) :
+    return self.gene_list
 
 
   def __str__(self) :
@@ -1846,13 +1859,16 @@ class WhiteList(object) :
 @return: s
 @rtype: C{String}
 """    
-    s = '{\n'
-    for name, value in self.whitelist_dict.iteritems() :
-      w = ''
-      for u in value :
-	w = w + u + " "
-      s = s + ('term ' + name + " = " + w + "\n")
-    s = s + '}\n'
+    s = '  whitelistdefs\n  {\n'
+    s = s + '    factor:'
+    for factor in self.factor_list :
+      s = s + ' %s' % factor
+    s = s + ';\n'
+    s = s + '    gene:'
+    for gene in self.gene_list :
+      s = s + ' %s' % gene
+    s = s + ';\n'
+    s = s + '  }\n'
     return s
 
 
@@ -1864,10 +1880,9 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'gene', 'array', 'globalsettingdefs', 'endglobalsettingdefs', 'whitelistdefs', 'endwhitelistdefs', 'terms', 'genemapping', 'endgenemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct','endprocedure','simexpression','endsimexpression', 'arraymapping', 'endarraymapping', 'endspec', 'transformation', 'distance', 'offset', 'none', 'log', 'correlation', 'sum_squares', 'euclidean', 'expressionset', 'genemapping', 'measurementprocess', 'measurements', 'discriminationsettings', 'whitelistdefs', 'foreach', 'stddev()', 'negmin()']
+    self.keywords = ['factor', 'gene', 'whitelistdefs', 'genemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct' ,'simexpression', 'transformation', 'distance', 'offset', 'log', 'log2', 'correlation', 'sum_squares', 'euclidean', 'measurementmatrix', 'genemapping', 'measurementprocess', 'measurementcolumns', 'discriminationsettings', 'foreach', 'stddev()', 'negmin()']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
-    self.function_re = re.compile('([A-Za-z())]+)')
     self.gene_manufacturer_re = re.compile('"([^"]+)"')
     self.header = self.lookheader()
     self.next_token = self.get_token()
@@ -1972,6 +1987,149 @@ class Scanner(object) :
     return("true")
 
 
+class MvarAssignment(object) :
+
+  def __init__(self, lhs, rhs) :
+    self.lhs = lhs
+    self.rhs = rhs
+
+
+  def __str__(self) :
+    lhs = self.lhs
+    rhs = self.rhs
+    return '%s = %s' % (lhs, rhs)
+
+
+class MeasurementColumn(object) :
+
+  def __init__(self, name, mvar_assignment_list) :
+    self.name = name
+    self.mvar_assignment_list = mvar_assignment_list
+
+
+  def __str__(self) :
+    s = '%s: ' % self.name
+    glue = ''
+    for mvar_assignment in self.mvar_assignment_list :
+      s = s + glue + str(mvar_assignment)
+      glue = ', '
+    return s
+    
+
+class TransformationExpr(object) :
+  """Abstract base class for transformation expressions."""
+
+  def __init__(self) :
+    pass
+
+
+class TransformationExprPlus(TransformationExpr) :
+
+  def __init__(self, operand1, operand2) :
+    self.operand1 = operand1
+    self.operand2 = operand2
+
+
+  def __str__(self) :
+    return '%s + %s' % (str(self.operand1), str(self.operand2))
+
+
+class TransformationExprMinus(TransformationExpr) :
+
+  def __init__(self, operand1, operand2) :
+    self.operand1 = operand1
+    self.operand2 = operand2
+
+
+  def __str__(self) :
+    return '%s - %s' % (str(self.operand1), str(self.operand2))
+
+
+class TransformationExprMultiply(TransformationExpr) :
+
+  def __init__(self, operand1, operand2) :
+    self.operand1 = operand1
+    self.operand2 = operand2
+
+
+  def __str__(self) :
+    return '%s * %s' % (str(self.operand1), str(self.operand2))
+
+
+class TransformationExprDivide(TransformationExpr) :
+
+  def __init__(self, operand1, operand2) :
+    self.operand1 = operand1
+    self.operand2 = operand2
+
+
+  def __str__(self) :
+    return '%s / %s' % (str(self.operand1), str(self.operand2))
+
+
+class TransformationExprLog2(TransformationExpr) :
+
+  def __init__(self, operand) :
+    self.operand = operand
+
+
+  def __str__(self) :
+    return 'log2(%s)' % str(self.operand)
+
+  
+class TransformationExprOffset(TransformationExpr) :
+
+  def __init__(self, operand) :
+    self.operand = operand
+
+
+  def __str__(self) :
+    return 'offset(%s)' % str(self.operand)
+
+  
+class TransformationExprMvar(TransformationExpr) :
+
+  def __init__(self, name) :
+    self.name = name
+
+
+  def __str__(self) :
+    return self.name
+
+
+class Offset(object) :
+
+  def __init__(self, offsetvalue, expressionstat = None) :
+    self.offsetvalue = offsetvalue
+    self.expressionstat = expressionstat
+
+
+  def __str__(self) :
+    if self.expressionstat is None :
+      return 'offset: %f;' % self.offsetvalue
+    else :
+      return 'offset: %f * %s' % (self.offsetvalue, str(self.expressionstat))
+
+
+class ExpressionStat(object) :
+  """Abstract base class for statistical characteristics of expression values."""
+
+  def __init__(self) :
+    pass
+
+
+class ExpressionStatStddev(ExpressionStat) :
+
+  def __str__(self) :
+    return 'stddev()'
+
+  
+class ExpressionStatNegmin(ExpressionStat) :
+
+  def __str__(self) :
+    return 'negmin()'
+
+  
 class EmpiricalObjectiveFunctionParser(object) :
   """ Object specification 
 """
@@ -1999,7 +2157,7 @@ class EmpiricalObjectiveFunctionParser(object) :
       raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
     return v
 
-  
+
 ### Resolve parser ###
 
 
@@ -2041,7 +2199,7 @@ class EmpiricalObjectiveFunctionParser(object) :
         arraymapping.resolve_reference = self.searchSimExpression(arraymapping.get_unresolve_reference(), simexpression_defs)
 
 
-  def resolveSpecExpressionset(self) :
+  def resolveSpecMeasurementMatrix(self) :
     pass
 
 
@@ -2111,43 +2269,41 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param discriminationsettings_def: Object
 @type discriminationsettings_def: L{discriminationsettings_def}
 """
-    for procedure in procedure_defs.values() :
+    for procedure in procedure_defs :
       procedure.resolve(procedure_defs)
 #     procedure_name_list = procedure_defs.keys()
 #     self.resolveSpecProcedure(procedure_defs)
 #     self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
-#     self.resolveSpecExpressionset()
+#     self.resolveSpecMeasurementMatrix()
 #     self.resolveSpecDiscriminationSettings()
 
 
 ### Whitelist
+
+
+  def parse_identifier_list(self) :
+    identifier_list = []
+    while self.scanner.lookahead() == 'identifier' :
+      identifier_list.append(self.expect_token('identifier'))
+    return identifier_list
+  
 
   def parse_whitelist_body(self):
     """ Parse whitelist body
 @return: whitelist dictionary
 @rtype: dictionary{}
 """
-    whitelist_dict = {}
-    factor_list = []
-    gene_list = []
-    while self.scanner.lookahead() != '}' :
-      if self.scanner.lookahead() == 'factor' :
-	self.expect_token('factor')
-	self.expect_token(':')
-        while self.scanner.lookahead() != ';' :
-	  factor_list.append(self.expect_token('identifier'))
-	whitelist_dict['factor'] = factor_list
-        self.expect_token(';')
-      elif self.scanner.lookahead() == 'gene' :
-	self.expect_token('gene')
-	self.expect_token(':')
-        while self.scanner.lookahead() != ';' :
-	  gene_list.append(self.expect_token('identifier'))
-	whitelist_dict['gene'] = gene_list
-        self.expect_token(';')
-      else :
-        raise StandardError, 'Unknown identifier'
-    return whitelist_dict
+    self.expect_token('{')
+    self.expect_token('factor')
+    self.expect_token(':')
+    factor_list = self.parse_identifier_list()
+    self.expect_token(';')
+    self.expect_token('gene')
+    self.expect_token(':')
+    gene_list = self.parse_identifier_list()
+    self.expect_token(';')
+    self.expect_token('}')
+    return WhiteList(factor_list, gene_list)
 
 
   def parse_discriminationsettings_body(self) :
@@ -2157,17 +2313,14 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: whitelist_dict
 @rtype: dictionary{}
 """
-    while self.scanner.lookahead() != '}' :
-      if self.scanner.lookahead() == 'distance' :
-        self.expect_token('distance')
-	self.expect_token(':')
-        distance = self.scanner.token()[0]
-	self.expect_token(';')
-      if self.scanner.lookahead() == 'whitelistdefs' :
-        self.expect_token('whitelistdefs')
-	self.expect_token('{')
-	whitelist_list = self.parse_whitelist_body()
-    return distance, whitelist_list
+    genemapping = self.parse_genemapping_def()
+    self.expect_token('distance')
+    self.expect_token(':')
+    distance = self.scanner.token()[0]
+    self.expect_token(';')
+    self.expect_token('whitelistdefs')
+    whitelist_list = self.parse_whitelist_body()
+    return DiscriminationSettings(genemapping, distance, whitelist_list)
   
 
   def parse_discriminationsettings_def(self) :
@@ -2178,45 +2331,45 @@ class EmpiricalObjectiveFunctionParser(object) :
     self.expect_token('discriminationsettings')
     discriminationsettings_list = []
     self.expect_token('{') 
-    offset, transformation = self.parse_discriminationsettings_body()
+    discriminationsettings = self.parse_discriminationsettings_body()
     self.expect_token('}')
-    discriminationsettings_list.append(offset)
-    discriminationsettings_list.append(transformation)
-    return discriminationsettings_list 
+    return discriminationsettings
 
 
-## expressionset_defs
+  def parse_mvar_assignment(self) :
+    lhs = self.expect_token('identifier')
+    self.expect_token('=')
+    rhs = self.expect_token('identifier')
+    return MvarAssignment(lhs, rhs)
+    
 
-  def parse_measurements_body(self) :
+  def parse_measurementcolumn_statement(self) :
     """ Parser measurements body
 @return: Object
 @rtype: L{Measurements}
 """
-    measurements = []
-    mapping = []
-    array_name = self.expect_token('identifier')
+    column_name = self.expect_token('identifier')
     self.expect_token(':')
+    mvar_assignment_list = [self.parse_mvar_assignment()]
     while self.scanner.lookahead() != ';' :
-      if self.scanner.lookahead() == 'identifier' :
-        measurements.append(self.expect_token('identifier'))
-      else :
-        measurements.append(self.scanner.token()[0])
+      self.expect_token(',')
+      mvar_assignment_list.append(self.parse_mvar_assignment())
     self.expect_token(';')
-    return Measurements(array_name, measurements, None)
+    return MeasurementColumn(column_name, mvar_assignment_list)
     
 
-  def parse_measurements_def(self) :
+  def parse_measurementcolumns_def(self) :
     """ Parse measurements 
 @return: measurement_list
 @rtype: list[]
 """
-    self.expect_token('measurements')
-    measurements_list = []
+    self.expect_token('measurementcolumns')
+    measurementcolumn_list = []
     self.expect_token('{') 
     while self.scanner.lookahead() != '}' :
-      measurements_list.append(self.parse_measurements_body())
+      measurementcolumn_list.append(self.parse_measurementcolumn_statement())
     self.expect_token('}')
-    return measurements_list
+    return measurementcolumn_list
 
 
   def get_offset_setting(self, process_name) :
@@ -2238,22 +2391,108 @@ class EmpiricalObjectiveFunctionParser(object) :
     return get_offset_setting
 
 
-  def parse_measurementprocess_body(self) :
-    """
-@return: offset
-@rtype: list[]
-@return: transformation
-@rtype: list[]
-"""
-    while self.scanner.lookahead() != '}' :
-      if self.scanner.lookahead() == 'offset' :
-        offset = self.get_offset_setting(self.scanner.lookahead())
-      elif self.scanner.lookahead() == 'transformation' :
-        transformation = self.get_offset_setting(self.scanner.lookahead())
+  def parse_offset_def(self) :
+    self.expect_token('offset')
+    self.expect_token(':')
+    offsetvalue = self.expect_token('realvalue')
+    if self.scanner.lookahead() == '*' :
+      self.expect_token('*')
+      t = self.scanner.lookahead()
+      if t != 'negmin()' and t != 'stddev()' :
+        raise StandardError, 'invalid expressionstat'
+      t, v = self.scanner.token()
+      if t == 'stddev()' :
+        expressionstat = ExpressionStatStddev()
+      elif t == 'negmin()' :
+        expressionstat = ExpressionStatNegmin()
+    else :
+      expressionstat = None
+    self.expect_token(';')
+    return Offset(offsetvalue, expressionstat)
+
+
+  def parse_expr_log2(self) :
+    self.expect_token('log2')
+    self.expect_token('(')
+    operand = self.parse_transformation_expr()
+    self.expect_token(')')
+    return TransformationExprLog2(operand)
+
+
+  def parse_expr_offset(self) :
+    self.expect_token('offset')
+    self.expect_token('(')
+    operand = self.parse_transformation_expr()
+    self.expect_token(')')
+    return TransformationExprOffset(operand)
+    
+
+  def parse_expr_parenthesised(self) :
+    self.expect_token('(')
+    e = self.parse_transformation_expr()
+    self.expect_token(')')
+    return e
+    
+
+  def parse_expr_mvar(self) :
+    name = self.expect_token('identifier')
+    return TransformationExprMvar(name)
+    
+
+  def parse_transformation_unary(self) :
+    if self.scanner.lookahead() == 'log2' :
+      e = self.parse_expr_log2()
+    elif self.scanner.lookahead() == 'offset' :
+      e = self.parse_expr_offset()
+    elif self.scanner.lookahead() == '(' :
+      e = self.parse_expr_parenthesised()
+    elif self.scanner.lookahead() == 'identifier' :
+      e = self.parse_expr_mvar()
+    else :
+      # FIXME: should use facility that also shows line number etc.etc.
+      raise StandardError, 'unexpected token: %s in unary' % self.scanner.lookahead()
+    return e
+
+
+  def parse_transformation_term(self) :
+    operand1 = self.parse_transformation_unary()
+    if self.scanner.lookahead() == '*' or self.scanner.lookahead() == '/' :
+      operator, v = self.scanner.token()
+      operand2 = self.parse_transformation_term()
+      if operator == '*' :
+        e = TransformationExprMultiply(operand1, operand2)
+      elif operator == '/' :
+        e = TransformationExprDivide(operand1, operand2)
       else :
-        raise StandardError, "%s is not a recognised measurement" % self.scanner.lookahead()
-    return offset, transformation
-  
+        raise StandardError, 'internal error -- scanner malfunction??'
+    else :
+      e = operand1
+    return e
+
+
+  def parse_transformation_expr(self) :
+    operand1 = self.parse_transformation_term()
+    if self.scanner.lookahead() == '+' or self.scanner.lookahead() == '-' :
+      operator, v = self.scanner.token()
+      operand2 = self.parse_transformation_expr()
+      if operator == '+' :
+        e = TransformationExprPlus(operand1, operand2)
+      elif operator == '-' :
+        e = TransformationExprMinus(operand1, operand2)
+      else :
+        raise StandardError, 'internal error -- scanner malfunction??'
+    else :
+      e = operand1
+    return e
+
+
+  def parse_transformation_def(self) :
+    self.expect_token('transformation')
+    self.expect_token(':')
+    te = self.parse_transformation_expr()
+    self.expect_token(';')
+    return te
+
 
   def parse_measurementprocess_def(self) :
     """ Parse measurement process 
@@ -2261,8 +2500,9 @@ class EmpiricalObjectiveFunctionParser(object) :
 @rtype: L{MeasurementProcess}
 """
     self.expect_token('measurementprocess') 
-    self.expect_token('{') 
-    offset, transformation = self.parse_measurementprocess_body()
+    self.expect_token('{')
+    offset = self.parse_offset_def()
+    transformation = self.parse_transformation_def()
     self.expect_token('}')
     return MeasurementProcess(offset, transformation) 
 
@@ -2300,23 +2540,18 @@ class EmpiricalObjectiveFunctionParser(object) :
     return GeneMapping(genemapping_list) 
 
 
-  def parse_expressionset_def(self) :
+  def parse_measurementmatrix_def(self) :
     """
-@return: expressionset_list
+@return: measurementmatrix_list
 @rtype: list[]
 """
-    self.expect_token('expressionset') 
+    self.expect_token('measurementmatrix') 
     self.expect_token('{') 
-    expressionset_list = []
-    while self.scanner.lookahead() != '}' :
-      if self.scanner.lookahead() == 'genemapping' :
-        expressionset_list.append(self.parse_genemapping_def())
-      if self.scanner.lookahead() == 'measurementprocess' :
-        expressionset_list.append(self.parse_measurementprocess_def())
-      if self.scanner.lookahead() == 'measurements' :
-        expressionset_list.append(self.parse_measurements_def())
+    measurementmatrix_list = []
+    measurementprocess = self.parse_measurementprocess_def()
+    measurementcolumns = self.parse_measurementcolumns_def()
     self.expect_token('}')
-    return(expressionset_list)
+    return MeasurementMatrix(measurementprocess, measurementcolumns)
 
 
 ##SimExpression
@@ -2337,6 +2572,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     instruction_list = []
     while self.scanner.lookahead() != ';' :
       invocation_instruction = InvocationInstruction(self.expect_token('identifier'))
+      instruction_list.append(invocation_instruction)
     return ForeachInstruction(instruction_list)
     
 
@@ -2530,13 +2766,15 @@ class EmpiricalObjectiveFunctionParser(object) :
 @return: temp_procedure_dict
 @rtype: dictionary{}
 """
-    temp_procedure_dict = {}
+    temp_procedure_list = []
+    namelist = []
     while self.scanner.lookahead() == 'procedure':
       p = self.parse_procedure_def()
-      if p.get_procedure_name() in temp_procedure_dict.keys() :
+      if p.get_procedure_name() in namelist :
         raise StandardError, "%s Procedure already defined" %p.get_procedure_name()
-      temp_procedure_dict[p.get_procedure_name()] = p
-    return temp_procedure_dict
+      temp_procedure_list.append(p)
+      namelist.append(p.get_procedure_name())
+    return temp_procedure_list
 
 
 ## parse_simgenex
@@ -2549,7 +2787,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     procedure_defs = self.parse_procedure_defs()
     simexpression_defs = self.parse_simexpression_defs()
-    expressionset_def = self.parse_expressionset_def()
+    expressionset_def = self.parse_measurementmatrix_def()
     discriminationsettings_def = self.parse_discriminationsettings_def()
     self.resolve_spec(procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def)
     # sys.exit()
