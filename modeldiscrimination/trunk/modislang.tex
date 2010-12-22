@@ -26,7 +26,7 @@
 
 \title{Technical Report: \\
   Modelling Experimental Procedures Using Transsys}
-\author{Anyela \ Camargo, Jan T.\ Kim}
+\author{Anyela Camargo, Jan T.\ Kim}
 \maketitle
 
 \section{Introduction}
@@ -501,17 +501,18 @@ offset_def ::= "offset:" realnumber ";"
         | "offset:" realnumber * expressionstat ";"
 expressionstat ::= "negmin()" | "stddev()"
 transformation ::= "transformation:" transformation_expr ";"
-transformation_expr ::= transformation_expr "+" transformation_term
-        | transformation_expr "-" transformation_term
+transformation_expr ::= transformation_term "+" transformation_expr
+        | transformation_term "-" transformation_expr
         | transformation_term
-transformation_term ::= transformation_term "+" transformation_unary
-        | transformation_term "-" transformation_unary
+transformation_term ::= transformation_unary "*" transformation_term
+        | transformation_unary "*" transformation_term
         | transformation_unary
 transformation_unary ::= "log2(" transformation_expression ")"
-        | "offset(" transformation_expression ")"
+        | "offset(" transformation_expr ")"
+        | "(" transformation_expr ")"
         | identifier
-measurements_def ::=  "measurements" "\{" measurement_def "\}"
-measurement_def ::= identifier ":" mvar_assignment_list ";"
+measurementcolumns_def ::=  "measurementcolumns" "\{" measurementcolumn_statement* "\}"
+measurementcolumn_statement ::= identifier ":" mvar_assignment_list ";"
 mvar_assignment_list ::= mvar_assignment_list "," mvar_assignment
         | mvar_assignment
 mvar_assignment ::= identifier "=" identifier
@@ -618,7 +619,8 @@ expressionset
     wt_treatment30 : x1 = wt_treatment30, x2 = wt;
     g0000_treatment15 : x1 = g0_treatment15, x2 = g0;
     g0000_treatment30 : x1 = g0_treatment30, x2 = g0;
-    wt : transformation log(wt) / log(wt);
+    # idea for later consideration -- not yet in language spec
+    # wt : transformation log(wt) / log(wt);
   }
 }
 

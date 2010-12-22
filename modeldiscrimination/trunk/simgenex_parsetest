@@ -29,4 +29,4 @@ else :
   outfile = sys.stdout
 p = trsysmodis.EmpiricalObjectiveFunctionParser(infile)
 s = p.parse_objectivespec()
-print str(s)
+outfile.write('%s\n' % str(s))
