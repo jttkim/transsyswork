@@ -1217,9 +1217,9 @@ series is the simulation of the gene expression levels for that genotype.
     self.simexpression_defs = simexpression_defs
     self.measurementmatrix_def = measurementmatrix_def
     self.discriminationsettings_def = discriminationsettings_def
-    self.transformation = None
-    self.offset = None
-    self.distance = None
+    #self.transformation = None
+    #self.offset = None
+    #self.distance = None
 
 
   def __call__(self, transsys_program) :
@@ -1229,11 +1229,11 @@ series is the simulation of the gene expression levels for that genotype.
 """
    
     e = self.get_simulated_set(transsys_program)
-    e = self.transform_expression_set(e)
-    if self.transformation == 'log' :
-      s = self.expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
-    else :
-      s = self.expression_set.divergence_treat(e, self.arraymapping_defs, self.distance) # eexpression set was written, why?
+    #e = self.transform_expression_set(e)
+    #if self.transformation == 'log' :
+    #  s = self.expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
+    #else :
+    #  s = self.expression_set.divergence_treat(e, self.arraymapping_defs, self.distance) # eexpression set was written, why?
     return ModelFitnessResult(s)
 
 
@@ -1258,9 +1258,9 @@ series is the simulation of the gene expression levels for that genotype.
     self.expression_set = expression_set
     if self.expression_set == None :
       raise StandardError, 'None expression set %s' %self.expression_set
-    self.validate_spec_simexpression()
-    self.validate_spec_genemapping()
-    self.expression_set = self.transform_expression_set(self.expression_set)
+    #self.validate_spec_simexpression()
+    #self.validate_spec_genemapping()
+    #self.expression_set = self.transform_expression_set(self.expression_set)
 
 
   def get_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
@@ -1270,10 +1270,10 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: C{ExpressionSet}
 """
-    if all_factors is None :
-      e = self.createTemplate(self.expressionset.get_factor_list())
-    else :
-      e = self.createTemplate(all_factors)
+    #if all_factors is None :
+    #  e = self.createTemplate(self.expressionset.get_factor_list())
+    #else :
+    e = self.createTemplate(all_factors)
     self.write_trace_header(tracefile, transsys_program)
     for simexpression in self.simexpression_defs :
       tp = copy.deepcopy(transsys_program)
@@ -1346,17 +1346,24 @@ series is the simulation of the gene expression levels for that genotype.
 @rtype: L{ExpressionSet}
 """
     e = ExpressionSet()
+    print self.measurementmatrix_def.get_measurementcolumn_list()
     e.expression_data.array_name = []
     l = 0
     for simexp in self.simexpression_defs :
-      if len(simexp.get_foreach_list()) == 0 or simexp.get_foreach_list() == 'clone' :
-	l = l + 1
+      simexp.get_instruction_sequence_list()
 
-    for i in factor_list :
+
+    """
+    for simexp in self.simexpression_defs :
+      if len(simexp.get_foreach_list()) == 0 or simexp.get_foreach_list() == 'clone' :
+	l = l + 1 
+
+    for i in  :
       values = []
       for j in range(0, l) :
         values.append('None')
       e.expression_data.expression_data[i] = values
+    """
     return e
 
 
@@ -1389,18 +1396,12 @@ series is the simulation of the gene expression levels for that genotype.
 @rtype: C{String}
 """
     s = ("%s\n\n" %EmpiricalObjectiveFunctionParser.magic)
-    # s = s + ("%s\n" %self.globalsettings_defs.__str__())
-    # s = s + ("%s" %self.genemapping_defs.__str__())
     for procedure in self.procedure_defs :
       s = s + ("%s" % str(procedure))
     for simexpression in self.simexpression_defs :
       s = s + ('%s' % str(simexpression))
     s = s + '%s' % str(self.measurementmatrix_def)
     s = s + '%s' % str(self.discriminationsettings_def)
-#     s = s + ("arraymapping\n")
-#     for o in self.arraymapping_defs :
-#       s = s + ("%s" %o.__str__())
-#     s = s + ("endarraymapping\n")
     return s
 
 
@@ -1599,7 +1600,7 @@ class InstructionSequence(object) :
 
 
   def get_copy(self) :
-    return InstructionSequence(name, self.instruction_sequence)
+    return InstructionSequence(self.name, self.instruction_sequence)
 
 
 class SimExpression(object) :
@@ -1658,6 +1659,7 @@ class SimExpression(object) :
     instruction_sequence_list = [InstructionSequence(self.simexpression_name)]
     for instruction in self.instruction_list :
       instruction_sequence_list = instruction.make_instruction_sequence_list(instruction_sequence_list)
+      print instruction_sequence_list
     
 
   def simulate(self, transsys_program) :
@@ -2216,18 +2218,25 @@ class EmpiricalObjectiveFunctionParser(object) :
 """ 
     new_array = []
     for simexp in simexpression_defs :
-      if len(simexp.foreach_list) > 0 :
-        for ts in simexp.get_foreach_list() :
-          clone = copy.deepcopy(simexp)
-	  clone.instruction_list.append(ts)
-	  clone.simexpression_name = clone.get_simexpression_name() + '_' + ts
-	  new_array.append(clone)
-    for array in new_array :
-      array.foreach_list = "clone"
-      simexpression_defs.append(array)
-    for simexp in simexpression_defs :
+      simexp.get_instruction_sequence_list()
       simexp.set_instruction_list(self.resolve_instruction_list(simexp.get_instruction_list(), procedure_defs))
 
+
+  def searchProcedure(self, instruction, procedure_defs) :
+    """ Search Procedure 
+@param instruction: instruction name
+@type instruction: C{String}
+@param procedure_defs: procedure_defs
+@type procedure_defs: L{Procedure}
+@return: Procedure
+@rtype: C{Procedure}
+"""
+    
+    for procedure in procedure_defs :
+      if procedure.get_procedure_name == instruction :
+        break
+    return procedure
+    
 
   def resolve_instruction_list(self, unresolved_instruction_list, procedure_defs) :
     """ Resolve instruction list
@@ -2240,8 +2249,8 @@ class EmpiricalObjectiveFunctionParser(object) :
     for instruction in unresolved_instruction_list :
       if isinstance(instruction, PrimaryInstruction) :
         resolved_instruction_list.append(instruction)
-      elif isinstance(instruction, types.StringType) :
-        resolved_instruction_list.append(procedure_defs[instruction])
+      elif isinstance(instruction, InvocationInstruction) :
+        resolved_instruction_list.append(self.searchProcedure(instruction, procedure_defs))
       else :
         raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
     return resolved_instruction_list
@@ -2253,9 +2262,8 @@ class EmpiricalObjectiveFunctionParser(object) :
 @type procedure_defs: dictionary{}
 """
      
-    for name, procedure in procedure_defs.iteritems() :
+    for procedure in procedure_defs :
       procedure.set_instruction_list(self.resolve_instruction_list(procedure.get_instruction_list(), procedure_defs))
-
 
 
   def resolve_spec(self, procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def) :
@@ -2269,13 +2277,14 @@ class EmpiricalObjectiveFunctionParser(object) :
 @param discriminationsettings_def: Object
 @type discriminationsettings_def: L{discriminationsettings_def}
 """
+    procedure_name_list = []
     for procedure in procedure_defs :
       procedure.resolve(procedure_defs)
-#     procedure_name_list = procedure_defs.keys()
-#     self.resolveSpecProcedure(procedure_defs)
-#     self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
-#     self.resolveSpecMeasurementMatrix()
-#     self.resolveSpecDiscriminationSettings()
+      procedure_name_list.append(procedure.get_procedure_name())
+    #self.resolveSpecProcedure(procedure_defs)
+    #self.resolveSpecSimexpression(simexpression_defs, procedure_defs)
+    #self.resolveSpecMeasurementMatrix()
+    #self.resolveSpecDiscriminationSettings()
 
 
 ### Whitelist
@@ -2629,7 +2638,7 @@ class EmpiricalObjectiveFunctionParser(object) :
     while self.scanner.lookahead() == 'simexpression' :
       simexpression = self.parse_simexpression_def()
       if simexpression.get_simexpression_name() in namelist :
-        raise StandardError, 'duplicate definintion of simexpression "%s"' % simexpression.get_simexpression_name()
+        raise StandardError, 'duplicate definition of simexpression "%s"' % simexpression.get_simexpression_name()
       simexpression_list.append(simexpression)
       namelist.append(simexpression.get_simexpression_name())
     return simexpression_list
@@ -2790,7 +2799,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     expressionset_def = self.parse_measurementmatrix_def()
     discriminationsettings_def = self.parse_discriminationsettings_def()
     self.resolve_spec(procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def)
-    # sys.exit()
     return SimGenex(procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def)
 
 
