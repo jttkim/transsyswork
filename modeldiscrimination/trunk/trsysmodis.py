@@ -816,6 +816,7 @@ class ForeachInstruction(Instruction) :
     for instruction in self.instruction_list :
       instruction.resolve(procedure_dict)
 
+
 class ApplicableInstruction(Instruction) :
 
   def __init__(self) :
@@ -1192,6 +1193,7 @@ of the gene expression levels for that genotype.
 # of experimentation from specification of data
 # SimGenex should be a subclass of EmpiricalObjective
 
+
 class SimGenex(transsys.optim.AbstractObjectiveFunction) :
   """Objective function
 For each genotype (wild type and knockouts), a transsys instance is
@@ -1217,10 +1219,39 @@ series is the simulation of the gene expression levels for that genotype.
     self.simexpression_defs = simexpression_defs
     self.measurementmatrix_def = measurementmatrix_def
     self.discriminationsettings_def = discriminationsettings_def
+    self.simexpression_resolved = self.resolve_simexpression()
     #self.transformation = None
     #self.offset = None
     #self.distance = None
 
+
+  def resolve_simexpression(self) :
+    simexpression_resolved = []
+    for simexpression in self.simexpression_defs :
+      for seq in simexpression.get_instruction_sequence_list() :
+	for instruction in seq.instruction_sequence :
+           if isinstance(instruction, InvocationInstruction) :
+             instruction = self.searchProcedure(instruction.get_procedure_name(), self.procedure_defs)
+           else :
+             raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
+        simexpression_resolved.append(seq)
+    return simexpression_resolved
+     
+
+  def searchProcedure(self, invocation_instruction_name, procedure_defs) :
+    """ Search Procedure 
+@param instruction: instruction name
+@type instruction: C{String}
+@param procedure_defs: procedure_defs
+@type procedure_defs: L{Procedure}
+@return: Procedure
+@rtype: C{Procedure}
+"""
+    for procedure in procedure_defs :
+      if procedure.get_procedure_name() == invocation_instruction_name :
+        break
+    return procedure
+    
 
   def __call__(self, transsys_program) :
     """
@@ -1270,12 +1301,12 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: C{ExpressionSet}
 """
-    #if all_factors is None :
-    #  e = self.createTemplate(self.expressionset.get_factor_list())
-    #else :
     e = self.createTemplate(all_factors)
     self.write_trace_header(tracefile, transsys_program)
-    for simexpression in self.simexpression_defs :
+    
+    
+    for simexpression in self.simexpression_resolved :
+      print simexpression.name
       tp = copy.deepcopy(transsys_program)
       ti_trace = simexpression.simulate(transsys_program)
       if ti_trace is not None :
@@ -1345,25 +1376,16 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: L{ExpressionSet}
 """
+    if factor_list is None :
+      factor_list = self.discriminationsettings_def.genemapping.get_factor_list()
     e = ExpressionSet()
-    print self.measurementmatrix_def.get_measurementcolumn_list()
-    e.expression_data.array_name = []
-    l = 0
-    for simexp in self.simexpression_defs :
-      simexp.get_instruction_sequence_list()
+    l = len(self.simexpression_resolved)
 
-
-    """
-    for simexp in self.simexpression_defs :
-      if len(simexp.get_foreach_list()) == 0 or simexp.get_foreach_list() == 'clone' :
-	l = l + 1 
-
-    for i in  :
+    for factor in factor_list :
       values = []
       for j in range(0, l) :
         values.append('None')
-      e.expression_data.expression_data[i] = values
-    """
+      e.expression_data.expression_data[factor] = values
     return e
 
 
@@ -1603,6 +1625,17 @@ class InstructionSequence(object) :
     return InstructionSequence(self.name, self.instruction_sequence)
 
 
+  def simulate(self, transsys_program) :
+    tp = copy.deepcopy(transsys_program)
+    ti = transsys.TranssysInstance(transsys_program)
+    ti_trace = []
+    for instruction in self.instruction_sequence :
+      print type(instruction.procedure)
+      ti_trace = ti_trace + instruction.apply_instruction(ti)
+      ti = ti_trace[-1]
+    return ti_trace
+
+
 class SimExpression(object) :
   """ Object SimExpression """
 
@@ -1659,19 +1692,18 @@ class SimExpression(object) :
     instruction_sequence_list = [InstructionSequence(self.simexpression_name)]
     for instruction in self.instruction_list :
       instruction_sequence_list = instruction.make_instruction_sequence_list(instruction_sequence_list)
-      print instruction_sequence_list
+    for instruction, name in zip(instruction_sequence_list, self.get_simulated_column_header_list()) :
+      instruction.name = name
+    return instruction_sequence_list
     
 
   def simulate(self, transsys_program) :
-    if len(self.get_foreach_list()) == 0 or self.get_foreach_list() == 'clone' :
-      tp = copy.deepcopy(transsys_program)
-      ti = transsys.TranssysInstance(transsys_program)
-      ti_trace = []
-      for instruction in self.instruction_list :
-        ti_trace = ti_trace + instruction.apply_instruction(ti)
-        ti = ti_trace[-1]
-    else :
-      ti_trace = None
+    tp = copy.deepcopy(transsys_program)
+    ti = transsys.TranssysInstance(transsys_program)
+    ti_trace = []
+    for instruction in self.instruction_list :
+      ti_trace = ti_trace + instruction.apply_instruction(ti)
+      ti = ti_trace[-1]
     return ti_trace
 
 
@@ -2233,7 +2265,7 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     
     for procedure in procedure_defs :
-      if procedure.get_procedure_name == instruction :
+      if procedure.get_procedure_name() == instruction :
         break
     return procedure
     
