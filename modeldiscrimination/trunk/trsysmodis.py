@@ -823,12 +823,23 @@ class ApplicableInstruction(Instruction) :
     pass
 
 
-class InvocationInstruction(Instruction) :
+class InvocationInstruction(ApplicableInstruction) :
   """Instruction to invoke a procedure.
 """
 
   def __init__(self, procedure) :
     self.procedure = procedure
+
+
+  def __str__(self) :
+    return self.get_procedure_name()
+
+
+  def apply_instruction(self, transsys_instance) :
+    """Abstract method
+ """
+    if not isinstance(self.procedure, Procedure) :
+      raise StandardError, 'unresolved statement'
 
 
   def get_procedure_name(self) :
@@ -839,10 +850,6 @@ class InvocationInstruction(Instruction) :
     else :
       raise StandardError, 'bad procedure instance variable'
 
-
-  def __str__(self) :
-    return self.get_procedure_name()
-  
 
 class PrimaryInstruction(ApplicableInstruction) :
   """Abstract function to simulate treatment - i.e. equilibration, knockout, treatment"""
@@ -1219,39 +1226,19 @@ series is the simulation of the gene expression levels for that genotype.
     self.simexpression_defs = simexpression_defs
     self.measurementmatrix_def = measurementmatrix_def
     self.discriminationsettings_def = discriminationsettings_def
-    self.simexpression_resolved = self.resolve_simexpression()
+    self.simexpression_cols = self.simexpression_cols()
     #self.transformation = None
     #self.offset = None
     #self.distance = None
 
 
-  def resolve_simexpression(self) :
-    simexpression_resolved = []
+  def simexpression_cols(self) :
+    simexpression_cols = []
     for simexpression in self.simexpression_defs :
-      for seq in simexpression.get_instruction_sequence_list() :
-	for instruction in seq.instruction_sequence :
-           if isinstance(instruction, InvocationInstruction) :
-             instruction = self.searchProcedure(instruction.get_procedure_name(), self.procedure_defs)
-           else :
-             raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
-        simexpression_resolved.append(seq)
-    return simexpression_resolved
-     
-
-  def searchProcedure(self, invocation_instruction_name, procedure_defs) :
-    """ Search Procedure 
-@param instruction: instruction name
-@type instruction: C{String}
-@param procedure_defs: procedure_defs
-@type procedure_defs: L{Procedure}
-@return: Procedure
-@rtype: C{Procedure}
-"""
-    for procedure in procedure_defs :
-      if procedure.get_procedure_name() == invocation_instruction_name :
-        break
-    return procedure
-    
+      for seq in simexpression.resolve(self.procedure_defs) :
+        simexpression_cols.append(seq)
+    return simexpression_cols
+   
 
   def __call__(self, transsys_program) :
     """
@@ -1304,9 +1291,8 @@ series is the simulation of the gene expression levels for that genotype.
     e = self.createTemplate(all_factors)
     self.write_trace_header(tracefile, transsys_program)
     
-    
-    for simexpression in self.simexpression_resolved :
-      print simexpression.name
+    for simexpression in self.simexpression_cols :
+      print simexpression
       tp = copy.deepcopy(transsys_program)
       ti_trace = simexpression.simulate(transsys_program)
       if ti_trace is not None :
@@ -1379,7 +1365,7 @@ series is the simulation of the gene expression levels for that genotype.
     if factor_list is None :
       factor_list = self.discriminationsettings_def.genemapping.get_factor_list()
     e = ExpressionSet()
-    l = len(self.simexpression_resolved)
+    l = len(self.simexpression_cols)
 
     for factor in factor_list :
       values = []
@@ -1601,10 +1587,38 @@ class Procedure(Instruction) :
     return ti_trace
 
 
-  def resolve(self, procedure_dict) :
+  def search_procedure(self, invocation_instruction_name, procedure_defs) :
+    """ Search Procedure 
+@param instruction: instruction name
+@type instruction: C{String}
+@param procedure_defs: procedure_defs
+@type procedure_defs: L{Procedure}
+@return: Procedure
+@rtype: C{Procedure}
+"""
+    for procedure in procedure_defs :
+      if procedure.get_procedure_name() == invocation_instruction_name :
+        break
+    return procedure
+  
+
+  def resolve(self, procedure_defs) :
+    """ Resolve instruction list
+@param unresolved_instruction_list: unresolved_instruction_list
+@type unresolved_instruction_list: L{unresolved_instruction_list}
+@param procedure_defs: procedure_defs
+@type procedure_defs: dictionary{}
+"""
+    resolved_instruction_list = []
     for instruction in self.instruction_list :
-      instruction.resolve(procedure_dict)
-        
+      if isinstance(instruction, PrimaryInstruction) :
+        resolved_instruction_list.append(instruction)
+      elif isinstance(instruction, InvocationInstruction) :
+        resolved_instruction_list.append(self.search_procedure(instruction.get_procedure_name(), procedure_defs))
+      else :
+        raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
+    self.set_instruction_list(resolved_instruction_list)
+
 
 class InstructionSequence(object) :
 
@@ -1630,7 +1644,6 @@ class InstructionSequence(object) :
     ti = transsys.TranssysInstance(transsys_program)
     ti_trace = []
     for instruction in self.instruction_sequence :
-      print type(instruction.procedure)
       ti_trace = ti_trace + instruction.apply_instruction(ti)
       ti = ti_trace[-1]
     return ti_trace
@@ -1695,7 +1708,34 @@ class SimExpression(object) :
     for instruction, name in zip(instruction_sequence_list, self.get_simulated_column_header_list()) :
       instruction.name = name
     return instruction_sequence_list
-    
+  
+
+  def search_procedure(self, invocation_instruction_name, procedure_defs) :
+    """ Search Procedure 
+@param instruction: instruction name
+@type instruction: C{String}
+@param procedure_defs: procedure_defs
+@type procedure_defs: L{Procedure}
+@return: Procedure
+@rtype: C{Procedure}
+"""
+    for procedure in procedure_defs :
+      if procedure.get_procedure_name() == invocation_instruction_name :
+        break
+    return procedure
+  
+
+  def resolve(self, procedure_defs) :
+    """ Resolve SimExpression """
+    simexpression_cols = self.get_instruction_sequence_list()
+    for seq in simexpression_cols :
+      for instruction in seq.instruction_sequence :
+        if isinstance(instruction, InvocationInstruction) :
+          instruction = self.search_procedure(instruction.get_procedure_name(), procedure_defs)
+        else :
+          raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
+    return simexpression_cols
+     
 
   def simulate(self, transsys_program) :
     tp = copy.deepcopy(transsys_program)
@@ -2239,63 +2279,6 @@ class EmpiricalObjectiveFunctionParser(object) :
 
   def resolveSpecDiscriminationSettings(self) :
     pass
-
-
-  def resolveSpecSimexpression(self, simexpression_defs, procedure_defs) :
-    """ Validate transformation definition
-@param simexpression_defs: simexpression_defs
-@type simexpression_defs: L{SimExpression}
-@param procedure_defs: procedure defs
-@type procedure_defs: dictionary{}
-""" 
-    new_array = []
-    for simexp in simexpression_defs :
-      simexp.get_instruction_sequence_list()
-      simexp.set_instruction_list(self.resolve_instruction_list(simexp.get_instruction_list(), procedure_defs))
-
-
-  def searchProcedure(self, instruction, procedure_defs) :
-    """ Search Procedure 
-@param instruction: instruction name
-@type instruction: C{String}
-@param procedure_defs: procedure_defs
-@type procedure_defs: L{Procedure}
-@return: Procedure
-@rtype: C{Procedure}
-"""
-    
-    for procedure in procedure_defs :
-      if procedure.get_procedure_name() == instruction :
-        break
-    return procedure
-    
-
-  def resolve_instruction_list(self, unresolved_instruction_list, procedure_defs) :
-    """ Resolve instruction list
-@param unresolved_instruction_list: unresolved_instruction_list
-@type unresolved_instruction_list: L{unresolved_instruction_list}
-@param procedure_defs: procedure_defs
-@type procedure_defs: dictionary{}
-"""
-    resolved_instruction_list = []
-    for instruction in unresolved_instruction_list :
-      if isinstance(instruction, PrimaryInstruction) :
-        resolved_instruction_list.append(instruction)
-      elif isinstance(instruction, InvocationInstruction) :
-        resolved_instruction_list.append(self.searchProcedure(instruction, procedure_defs))
-      else :
-        raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
-    return resolved_instruction_list
-
-
-  def resolveSpecProcedure(self, procedure_defs) :
-    """Resolve procedure
-@param procedure_defs: procedure_defs
-@type procedure_defs: dictionary{}
-"""
-     
-    for procedure in procedure_defs :
-      procedure.set_instruction_list(self.resolve_instruction_list(procedure.get_instruction_list(), procedure_defs))
 
 
   def resolve_spec(self, procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def) :
