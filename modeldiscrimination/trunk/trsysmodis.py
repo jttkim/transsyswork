@@ -540,6 +540,7 @@ gene in that array.
       d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
     return d
 
+
 ### SimGenex
 
   def divergence_measurement(self, other, measurementmatrix_def, discriminationsettings_def) :
@@ -547,6 +548,7 @@ gene in that array.
     for factor_name in self.expression_data.expression_data.keys() :
       selfProfile = self.get_profile(factor_name)
       otherProfile = other.get_profile(factor_name)
+      otherProfile = self.get_transform_profile(otherProfile, measurementmatrix_def)
       for array in selfProfile :
         selfProfile[array] = selfProfile[array]
       #d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
@@ -555,6 +557,14 @@ gene in that array.
 
 ###
 
+   
+  def get_transform_profile(self, otherProfile, measurementmatrix_def) :
+    for col in measurementmatrix_def.get_measurementcolumn_list() :
+      for o in col.mvar_assignment_list :
+         o.lhs, o.rhs
+    if isinstance(measurementmatrix_def.get_measurementprocess().transformation, TransformationExprDivide) :
+      print type(measurementmatrix_def.get_measurementprocess().transformation.operand1)
+       
 
   def divergence_treat(self, other, arraymapping_defs, distance_function) :
     """Divergence measurement.
@@ -1909,6 +1919,9 @@ class MeasurementProcess(object) :
     s = s + '  }\n'
     return s
 
+
+  def resolve(self) :
+    
 
 class Measurements(object) :
   """ object Measurements
