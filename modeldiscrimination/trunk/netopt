@@ -123,7 +123,7 @@ if evaluate_objective :
 for restart_index in xrange(num_restarts) :
   print 'Using %s'%(candidate_name)
   #opt_result = optimiser.optimise(transsys_program, objective_function, ['f0000'], ['g0000'])
-  opt_result = optimiser.optimise(transsys_program, objective_function, objective_function.whitelist_defs.get_factorwhitelist(), objective_function.whitelist_defs.get_genewhitelist())
+  opt_result = optimiser.optimise(transsys_program, objective_function)
   logo.write('rst%d\t%f\n' % (restart_index, opt_result.objectiveOptimum.fitness))
   sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
   if finalparam is not None :
