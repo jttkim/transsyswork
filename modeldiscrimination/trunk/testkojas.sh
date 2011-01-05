@@ -22,3 +22,5 @@ do_run ./netopt -x test_target_expr_temp01.txt -o simgenex_temp01.txt -R 5 -g op
 #do_run ./netopt -x testkojas_expr.txt -o jasmonate_model_snapshot.txt -R 5 -g optspec.dat -T transformerfile.dat -L logo -s 1 -c jasmonate_m01.tra t1.txt t2.txt
 #do_run ./netopt -x testkojas_expr.txt -o jasmonate_model_snapshot.txt -R 5 -g optspec.dat -T transformerfile.dat -L logo -s 1 -c jasmonate_m02.tra t1.txt t2.txt
 #do_run ./netopt -x testkojas_expr.txt -o jasmonate_model_snapshot.txt -R 5 -g optspec.dat -T transformerfile.dat -L logo -s 1 -c jasmonate_m03.tra t1.txt t2.txt
+#./netopt -x temp01_expr.txt -o simgenex_temp01.txt -R 5 -g optspec.dat -T transformerfile.dat -L logo -s 1 -c test_temp01 t1.txt t2.txt
+
