@@ -562,8 +562,7 @@ gene in that array.
     for col in measurementmatrix_def.get_measurementcolumn_list() :
       for o in col.mvar_assignment_list :
          o.lhs, o.rhs
-    if isinstance(measurementmatrix_def.get_measurementprocess().transformation, TransformationExprDivide) :
-      print type(measurementmatrix_def.get_measurementprocess().transformation.operand1)
+         measurementmatrix_def.resolve(o.lhs, o.rhs)
        
 
   def divergence_treat(self, other, arraymapping_defs, distance_function) :
@@ -1873,6 +1872,11 @@ class MeasurementMatrix(object) :
      return(self.measurementcolumn_list)
 
 
+   def resolve(self, lhs, rhs) :
+     if isinstance(self.measurementprocess.transformation, TransformationExprDivide) or isinstance(self.measurementprocess.transformation, TransformationExprMultiply) : 
+       self.measurementprocess.transformation.resolve()
+
+
 class GeneMapping(object) :
   """  Object GeneMapping """
 
@@ -1921,6 +1925,8 @@ class MeasurementProcess(object) :
 
 
   def resolve(self) :
+    print type(self.transformation)
+
     
 
 class Measurements(object) :
@@ -2244,6 +2250,11 @@ class TransformationExprDivide(TransformationExpr) :
     return '%s / %s' % (str(self.operand1), str(self.operand2))
 
 
+  def resolve(self) :
+    self.operand1.resolve()
+    self.operand2.resolve()
+
+
 class TransformationExprLog2(TransformationExpr) :
 
   def __init__(self, operand) :
@@ -2253,6 +2264,10 @@ class TransformationExprLog2(TransformationExpr) :
   def __str__(self) :
     return 'log2(%s)' % str(self.operand)
 
+
+  def resolve(self) :
+    return math.log(self.operand.resolve(), 2)
+    
   
 class TransformationExprOffset(TransformationExpr) :
 
@@ -2263,6 +2278,10 @@ class TransformationExprOffset(TransformationExpr) :
   def __str__(self) :
     return 'offset(%s)' % str(self.operand)
 
+
+  def resolve(self) :
+    self.operand.resolve()
+
   
 class TransformationExprMvar(TransformationExpr) :
 
@@ -2271,6 +2290,10 @@ class TransformationExprMvar(TransformationExpr) :
 
 
   def __str__(self) :
+    return self.name
+
+
+  def resolve(self) :
     return self.name
 
 
@@ -2286,7 +2309,15 @@ class Offset(object) :
       return 'offset: %f;' % self.offsetvalue
     else :
       return 'offset: %f * %s' % (self.offsetvalue, str(self.expressionstat))
+  
 
+  def resolve(self, values) :
+    for v in values :
+      if self.expressionstat is None :
+        v = v + self.offsetvalue
+      else :
+        v = v + (self.offsetvalue * self.expressionstat.resolve(values))
+  
 
 class ExpressionStat(object) :
   """Abstract base class for statistical characteristics of expression values."""
@@ -2300,7 +2331,11 @@ class ExpressionStatStddev(ExpressionStat) :
   def __str__(self) :
     return 'stddev()'
 
-  
+
+  def resolve(self, values) :
+    return statistics(values)[1]
+ 
+
 class ExpressionStatNegmin(ExpressionStat) :
 
   def __str__(self) :
