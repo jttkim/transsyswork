@@ -1800,6 +1800,10 @@ class SimExpression(object) :
     return column_header_list
 
 
+  def contains_column(self, name) :
+    return name in self.get_simulated_column_header_list()
+
+
   def get_instruction_sequence_list(self) :
     instruction_sequence_list = [InstructionSequence(self.simexpression_name)]
     for instruction in self.instruction_list :
