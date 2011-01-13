@@ -541,29 +541,6 @@ gene in that array.
     return d
 
 
-### SimGenex
-
-  def divergence_measurement(self, other, measurementmatrix_def, discriminationsettings_def) :
-    d = 0.0
-    for factor_name in self.expression_data.expression_data.keys() :
-      selfProfile = self.get_profile(factor_name)
-      otherProfile = other.get_profile(factor_name)
-      otherProfile = self.get_transform_profile(otherProfile, measurementmatrix_def)
-      for array in selfProfile :
-        selfProfile[array] = selfProfile[array]
-      #d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
-      d = d + self.distance_divergence(selfProfile, selfProfile, discriminationsettings_def.get_distance())
-    print d
-
-###
-
-   
-  def get_transform_profile(self, otherProfile, measurementmatrix_def) :
-    for col in measurementmatrix_def.get_measurementcolumn_list() :
-      for o in col.mvar_assignment_list :
-         o.lhs, o.rhs
-         measurementmatrix_def.resolve(o.lhs, o.rhs)
-       
 
   def divergence_treat(self, other, arraymapping_defs, distance_function) :
     """Divergence measurement.
@@ -1229,6 +1206,15 @@ of the gene expression levels for that genotype.
 # SimGenex should be a subclass of EmpiricalObjective
 
 
+
+class SimGenexCols(object) :
+  
+  def __init__(self, name, expression_values) :
+    self.name = name
+    self.expression_values = expression_values
+
+
+
 class SimGenex(transsys.optim.AbstractObjectiveFunction) :
   """Objective function
 For each genotype (wild type and knockouts), a transsys instance is
@@ -1256,10 +1242,6 @@ series is the simulation of the gene expression levels for that genotype.
     self.discriminationsettings_def = discriminationsettings_def
     self.simexpression_resolved = []
     self.resolve_spec()
-    #self.transformation = None
-    #self.offset = None
-    #self.distance = None
-
 
 ### Resolve parser ###
 
@@ -1340,15 +1322,38 @@ series is the simulation of the gene expression levels for that genotype.
 @type transsys_program: Instance
 """
    
-    e = self.get_simulated_set(transsys_program)
-    #e = self.transform_expression_set(e)
-    s = self.expression_set.divergence_measurement(e, self.measurementmatrix_def, self.discriminationsettings_def)
-    #if self.transformation == 'log' :
-    #  s = self.expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
-    #  s = self.expression_set.logratio_divergence_treat(e, self.arraymapping_defs, self.distance)
-    #else :
-    #  s = self.expression_set.divergence_treat(e, self.arraymapping_defs, self.distance) # eexpression set was written, why?
+    self.get_simulated_set(transsys_program)
+    e = self.transform_raw_data()
+    s = self.expression_set.divergence(e, self.discriminationsettings_def.distance)
     return ModelFitnessResult(s)
+
+
+  def transform_raw_data(self, all_factors = None) :
+    e = self.createTemplate(all_factors)
+    for columns in self.measurementmatrix_def.get_measurementcolumn_list() :
+      for o in columns.mvar_assignment_list :
+        if o.lhs == 'x1' :
+          x1 = self.search_columns(o.rhs)
+        else :
+          x2 = self.search_columns(o.rhs)
+      tp = self.get_transformed_profile(x1, x2)
+      for factor in e.expression_data.expression_data.keys() :
+        e.set_expression_value(columns.name, factor, tp[factor])
+    return e
+
+   
+  def get_transformed_profile(self, x1, x2) :
+    transformdata_dict = {}
+    for factor in self.discriminationsettings_def.genemapping.get_factor_list() :
+      transformdata_dict[factor] = 0.0
+    return transformdata_dict
+
+
+  def search_columns(self, name) :
+    for simexpression in self.simexpression_resolved :
+      if simexpression.name == name :
+        break
+    return simexpression
 
 
   def transform_expression_set(self, expression_set) :
@@ -1383,7 +1388,7 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Expression set
 @rtype: C{ExpressionSet}
 """
-    e = self.createTemplate(all_factors)
+    #e = self.createTemplate(all_factors)
     self.write_trace_header(tracefile, transsys_program)
     
     for simexpression in self.simexpression_resolved :
@@ -1392,10 +1397,11 @@ series is the simulation of the gene expression levels for that genotype.
       if ti_trace is not None :
         ti = ti_trace[-1]
         self.write_tp_tracefile(tp_tracefile, ti.transsys_program, simexpression.get_instruction_sequence_name())
-        e.add_array(simexpression.get_instruction_sequence_name())
-        map(lambda t: e.set_expression_value(simexpression.get_instruction_sequence_name(), t, ti.get_factor_concentration(t)), e.expression_data.expression_data.keys())
+        for factor in self.discriminationsettings_def.genemapping.get_factor_list() :
+	  simexpression.add_expression_value(factor, ti.get_factor_concentration(factor))
+        #e.add_array(simexpression.get_instruction_sequence_name())
+        #map(lambda t: e.set_expression_value(simexpression.get_instruction_sequence_name(), t, ti.get_factor_concentration(t)), e.expression_data.expression_data.keys())
         self.write_trace_simexpression(tracefile, simexpression.get_instruction_sequence_name(), ti_trace)
-    return e
 
 
   def write_trace_header(self, tracefile, transsys_program) :
@@ -1459,13 +1465,16 @@ series is the simulation of the gene expression levels for that genotype.
     if factor_list is None :
       factor_list = self.discriminationsettings_def.genemapping.get_factor_list()
     e = ExpressionSet()
-    l = len(self.simexpression_resolved)
+    l = len(self.measurementmatrix_def.get_measurementcolumn_list())
 
     for factor in factor_list :
       values = []
       for j in range(0, l) :
         values.append('None')
       e.expression_data.expression_data[factor] = values
+    
+    for colname in self.measurementmatrix_def.get_measurementcolumn_list() :
+      e.add_array(colname.name)
     return e
 
 
@@ -1718,12 +1727,17 @@ class Procedure(Instruction) :
 class InstructionSequence(object) :
 
 
-  def __init__(self, name, instruction_sequence = None) :
+  def __init__(self, name, instruction_sequence = None, expression_values = {}) :
     self.name = name
+    self.expression_values = expression_values
     if instruction_sequence is None :
       self.instruction_sequence = []
     else :
       self.instruction_sequence = instruction_sequence[:]
+
+
+  def add_expression_value(self, factor, value) :
+    self.expression_values[factor] = value
 
 
   def append_instruction(self, instruction) :
@@ -2202,6 +2216,13 @@ class MeasurementColumn(object) :
       glue = ', '
     return s
     
+
+  def get_rhs_name(self, lhs_name) :
+    for col in mvar_assignment_list :
+      if lhs_name == col.lhs :
+        break
+    return col.rhs
+      
 
 class TransformationExpr(object) :
   """Abstract base class for transformation expressions."""
@@ -2872,6 +2893,32 @@ class EmpiricalObjectiveFunctionParser(object) :
     return temp_procedure_list
 
 
+## resolve spec
+  
+  def verify_simexpression_cols(self, simexpression_defs, mesurementmatrix_def) :
+    """ Verify that columns defined in the measurementmatrix are created in the simexpression_defs"""
+    measurementmatrixcols = []
+    for colname in mesurementmatrix_def.get_measurementcolumn_list():
+      for o in colname.mvar_assignment_list : 
+        if o.rhs not in measurementmatrixcols :
+	  measurementmatrixcols.append(o.rhs)
+
+    simexpressioncols = []
+    for simexpression in simexpression_defs :
+      for singlecol in simexpression.get_simulated_column_header_list() :
+        if singlecol not in simexpressioncols :
+	  simexpressioncols.append(singlecol)
+
+    for colname in measurementmatrixcols :
+      if colname not in simexpressioncols :
+	raise StandardError, '%s not defined in measurementcolums' %colname
+
+
+  def resolve_spec(self, simexpression_defs, mesurementmatrix_def) :  
+    """ Resolve spec """
+    self.verify_simexpression_cols(simexpression_defs, mesurementmatrix_def)
+
+
 ## parse_simgenex
 
 
@@ -2882,9 +2929,10 @@ class EmpiricalObjectiveFunctionParser(object) :
 """
     procedure_defs = self.parse_procedure_defs()
     simexpression_defs = self.parse_simexpression_defs()
-    expressionset_def = self.parse_measurementmatrix_def()
+    measurementmatrix_def = self.parse_measurementmatrix_def()
     discriminationsettings_def = self.parse_discriminationsettings_def()
-    return SimGenex(procedure_defs, simexpression_defs, expressionset_def, discriminationsettings_def)
+    self.resolve_spec(simexpression_defs, measurementmatrix_def)
+    return SimGenex(procedure_defs, simexpression_defs, measurementmatrix_def, discriminationsettings_def)
 
 
   def parse_objectivespec(self) :
