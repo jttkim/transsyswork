@@ -1209,9 +1209,9 @@ of the gene expression levels for that genotype.
 
 class SimGenexCols(object) :
   
-  def __init__(self, name, expression_values) :
+  def __init__(self, name, transsys_instance) :
     self.name = name
-    self.expression_values = expression_values
+    self.transsys_instance = transsys_instance
 
 
 
@@ -1240,10 +1240,9 @@ series is the simulation of the gene expression levels for that genotype.
     self.simexpression_defs = simexpression_defs
     self.measurementmatrix_def = measurementmatrix_def
     self.discriminationsettings_def = discriminationsettings_def
-    self.simexpression_resolved = []
+    self.instructionsequence_list = []
     self.resolve_spec()
 
-### Resolve parser ###
 
   def resolve_spec(self) :
     """ Resolve spec
@@ -1267,7 +1266,7 @@ series is the simulation of the gene expression levels for that genotype.
   def resolve_simexpression_cols(self) :
     for simexpression in self.simexpression_defs :
       for seq in simexpression.resolve(self.procedure_defs) :
-        self.simexpression_resolved.append(seq)
+        self.instructionsequence_list.append(seq)
 
 
   def resolve_measurementmatrix(self) :
@@ -1282,10 +1281,10 @@ series is the simulation of the gene expression levels for that genotype.
     """ Search array 
 @param array_name: array name
 @type array_name: C{String}
-@param simexpression_defs: simexpression
-@type simexpression_defs: L{SimExpression}
-@return: array
-@rtype: C{Array}
+@param simexpression_defs: simexpression definitios
+@type simexpression_defs: C{List}
+@return: SimExpression
+@rtype: L{SimExpression}
 """
     for simexp in simexpression_defs :
       if simexp.get_simexpression_name() == array_name :
@@ -1319,23 +1318,23 @@ series is the simulation of the gene expression levels for that genotype.
   def __call__(self, transsys_program) :
     """
 @param transsys_program: transsys program   
-@type transsys_program: Instance
+@type transsys_program: L{TranssysProgram}
 """
    
-    self.get_simulated_set(transsys_program)
-    e = self.transform_raw_data()
+    rawdata_list = self.get_simulated_set(transsys_program)
+    e = self.get_transform_rawdata(rawdata_list)
     s = self.expression_set.divergence(e, self.discriminationsettings_def.distance)
     return ModelFitnessResult(s)
 
 
-  def transform_raw_data(self, all_factors = None) :
-    e = self.createTemplate(all_factors)
+  def get_transform_rawdata(self, rawdata_list, all_factors = None) :
+    e = self.get_expressionset_template(all_factors)
     for columns in self.measurementmatrix_def.get_measurementcolumn_list() :
       for o in columns.mvar_assignment_list :
         if o.lhs == 'x1' :
-          x1 = self.search_columns(o.rhs)
+          x1 = self.get_rawdata_column(o.rhs, rawdata_list)
         else :
-          x2 = self.search_columns(o.rhs)
+          x2 = self.get_rawdata_column(o.rhs, rawdata_list)
       tp = self.get_transformed_profile(x1, x2)
       for factor in e.expression_data.expression_data.keys() :
         e.set_expression_value(columns.name, factor, tp[factor])
@@ -1349,30 +1348,17 @@ series is the simulation of the gene expression levels for that genotype.
     return transformdata_dict
 
 
-  def search_columns(self, name) :
-    for simexpression in self.simexpression_resolved :
-      if simexpression.name == name :
+  def get_rawdata_column(self, name, rawdata_list) :
+    for rawdatacol in rawdata_list :
+      if rawdatacol.name == name :
         break
-    return simexpression
-
-
-  def transform_expression_set(self, expression_set) :
-    """ Transform ExpressionSet 
-@param expression_set: expression_set
-@type expression_set: L{ExpressionSet}
-@return: expression_set
-@rtype: L{ExpressionSet}
-"""
-    if expression_set == None :
-      raise StandardError, 'Expression set is %s' %expression_set
-    expression_set.expression_data.shift_to_stddev(self.offset)
-    return expression_set
+    return rawdatacol
 
 
   def set_expression_set(self, expression_set):
     """Set expression and check it exists
 @param expression_set: expression set
-@type expression_set: object expression set
+@type expression_set: L{ExpressionSet}
 """
     self.expression_set = expression_set
     if self.expression_set == None :
@@ -1384,30 +1370,27 @@ series is the simulation of the gene expression levels for that genotype.
   def get_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
     """Produce simulated data.
 @param transsys_program: transsys program
-@type transsys_program: transsys program
-@return: Expression set
-@rtype: C{ExpressionSet}
+@type transsys_program: L{TranssysProgram}
+@return: rawdata_list
+@rtype: C{List}
 """
-    #e = self.createTemplate(all_factors)
+    rawdata_list = []
     self.write_trace_header(tracefile, transsys_program)
     
-    for simexpression in self.simexpression_resolved :
-      tp = copy.deepcopy(transsys_program)
-      ti_trace = simexpression.simulate(transsys_program)
+    for instructionsequence in self.instructionsequence_list :
+      ti_trace = instructionsequence.simulate(transsys_program)
       if ti_trace is not None :
         ti = ti_trace[-1]
-        self.write_tp_tracefile(tp_tracefile, ti.transsys_program, simexpression.get_instruction_sequence_name())
-        for factor in self.discriminationsettings_def.genemapping.get_factor_list() :
-	  simexpression.add_expression_value(factor, ti.get_factor_concentration(factor))
-        #e.add_array(simexpression.get_instruction_sequence_name())
-        #map(lambda t: e.set_expression_value(simexpression.get_instruction_sequence_name(), t, ti.get_factor_concentration(t)), e.expression_data.expression_data.keys())
-        self.write_trace_simexpression(tracefile, simexpression.get_instruction_sequence_name(), ti_trace)
+        self.write_tp_tracefile(tp_tracefile, ti.transsys_program, instructionsequence.get_instruction_sequence_name())
+        rawdata_list.append(SimGenexCols(instructionsequence.name, ti))
+        self.write_trace_simexpression(tracefile, instructionsequence.get_instruction_sequence_name(), ti_trace)
+    return rawdata_list
 
 
   def write_trace_header(self, tracefile, transsys_program) :
     """Trace interface 
 @param transsys_program: transsys program
-@type transsys_program: transsys program
+@type transsys_program: L{TranssysProgram}
 """
     if tracefile is not None :
       tracefile.write("Array\t")
@@ -1419,11 +1402,11 @@ series is the simulation of the gene expression levels for that genotype.
   def write_trace_simexpression(self, tracefile, array_name, ti_trace) :
     """ Write expression profiles per time step
 @param tracefile: tracefile
-@type tracefile: File
+@type tracefile: C{File}
 @param array_name: array_name
 @type array_name: C{String}
 @param ti_trace: time series
-@type ti_trace: time_series
+@type ti_trace: L{TranssysInstance}
 """
     if tracefile is not None :
       for ti in ti_trace :
@@ -1436,9 +1419,9 @@ series is the simulation of the gene expression levels for that genotype.
   def write_tp_tracefile(self, tp_tracefile, tp, name) :
     """Write modified versions of transsys programs according to simgenex file
 @param tp_tracefile: tp_tracefile
-@type tp_tracefile: File
+@type tp_tracefile: C{File}
 @param tp: modified transsys program
-@type: tp: transsys_program
+@type: tp: L{TranssysProgram}
 @param name: array name
 @type name: C{String}
 """
@@ -1455,7 +1438,7 @@ series is the simulation of the gene expression levels for that genotype.
     return self.file
 
 
-  def createTemplate(self, factor_list) :
+  def get_expressionset_template(self, factor_list) :
     """ Create expression set according to spec file 
 @param factor_list: factor list
 @type factor_list: C{List}
@@ -1727,22 +1710,12 @@ class Procedure(Instruction) :
 class InstructionSequence(object) :
 
 
-  def __init__(self, name, instruction_sequence = None, expression_values = {}) :
+  def __init__(self, name, instruction_sequence = None) :
     self.name = name
-    self.expression_values = expression_values
     if instruction_sequence is None :
       self.instruction_sequence = []
     else :
       self.instruction_sequence = instruction_sequence[:]
-
-
-  def add_expression_value(self, factor, value) :
-    self.expression_values[factor] = value
-
-
-  def append_instruction(self, instruction) :
-    self.instruction_sequence.append(instruction)
-
 
   def get_copy(self) :
     return InstructionSequence(self.name, self.instruction_sequence)
@@ -1750,6 +1723,10 @@ class InstructionSequence(object) :
 
   def get_instruction_sequence_name(self) :
     return self.name
+
+
+  def append_instruction(self, instruction) :
+    self.instruction_sequence.append(instruction)
 
 
   def simulate(self, transsys_program) :
