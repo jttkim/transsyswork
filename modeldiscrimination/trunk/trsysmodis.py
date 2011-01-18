@@ -1207,12 +1207,17 @@ of the gene expression levels for that genotype.
 
 
 
-class SimGenexCols(object) :
+class SimGenexColumn(object) :
   
   def __init__(self, name, transsys_instance) :
+    """
+@param name: instruction sequence name
+@type name: C{String}
+@param transsys_instance: transsys_instance
+@type transsys_instance: L{TranssysInstance}
+"""
     self.name = name
     self.transsys_instance = transsys_instance
-
 
 
 class SimGenex(transsys.optim.AbstractObjectiveFunction) :
@@ -1227,108 +1232,65 @@ series is the simulation of the gene expression levels for that genotype.
   def __init__(self, procedure_defs, simexpression_defs, measurementmatrix_def, discriminationsettings_def) :
     """ Constructor 
 @param procedure_defs: procedure definition.
-@type procedure_defs: list[Procedure]
+@type procedure_defs: C{List}
 @param simexpression_defs: array definition.
-@type simexpression_defs: list[SimExpression]
+@type simexpression_defs: C{List}
 @param measurementmatrix_def: measurementmatrix definitions.
-@type measurementmatrix_def: L{measurementmatrix_def}
+@type measurementmatrix_def: C{List}
 @param discriminationsettings_def: discriminationsettings definitions
-@type discriminationsettings_def: L{discriminationsettings_def}
+@type discriminationsettings_def: C{List}
 """
-    self.expression_set = None
+    self.empirical_expression_set = None
     self.procedure_defs = procedure_defs
     self.simexpression_defs = simexpression_defs
     self.measurementmatrix_def = measurementmatrix_def
     self.discriminationsettings_def = discriminationsettings_def
-    self.instructionsequence_list = []
-    self.resolve_spec()
+    self.resolve_procedure()
+    self.instructionsequence_list = self.get_instructionsequence_list()
 
 
-  def resolve_spec(self) :
-    """ Resolve spec
-@param procedure_defs: Procedure definitions
-@type procedure_defs: dictionary{}
-@param simexpression_defs: simexpression_defs
-@type simexpression_defs: list[]
-@param expressionset_def: Object
-@type expressionset_def: L{expressionset_def}
-@param discriminationsettings_def: Object
-@type discriminationsettings_def: L{discriminationsettings_def}
-"""
-    procedure_name_list = []
+  def resolve_procedure(self) :
+    """ Resolve spec """
     for procedure in self.procedure_defs :
       procedure.resolve(self.procedure_defs)
-      procedure_name_list.append(procedure.get_procedure_name())
-    self.resolve_simexpression_cols()
-    self.resolve_measurementmatrix()
 
 
-  def resolve_simexpression_cols(self) :
+  def get_instructionsequence_list(self) :
+    """ Get instruction sequence list from simexpression_defs
+@return: instructionsequence_list
+@rtype: C{List}
+"""
+    instructionsequence_list = []
     for simexpression in self.simexpression_defs :
       for seq in simexpression.resolve(self.procedure_defs) :
-        self.instructionsequence_list.append(seq)
-
-
-  def resolve_measurementmatrix(self) :
-    pass
-
-
-  def resolve_discrimination_settings(self) :
-    pass
-
-
-  def search_simexpression(self, array_name, simexpression_defs) :
-    """ Search array 
-@param array_name: array name
-@type array_name: C{String}
-@param simexpression_defs: simexpression definitios
-@type simexpression_defs: C{List}
-@return: SimExpression
-@rtype: L{SimExpression}
-"""
-    for simexp in simexpression_defs :
-      if simexp.get_simexpression_name() == array_name :
-        break
-    return simexp
-
-
-  def resolve_measurementcolumns(self, simexpression_defs, arraymapping_defs) :
-    """ Validate transformation definition
-@param arraymapping_defs: arraymapping defs
-@type arraymapping_defs: L{Measurements}
-@param simexpression_defs: simexpression_defs
-@type simexpression_defs: L{SimExpression}
-"""
-    a = {}
-    for simexp in simexpression_defs :
-      a[simexp.get_simexpression_name()] = []
-     
-    if len(arraymapping_defs) == 0 :
-      raise StandardError, "Array mappings were not declared"
-    for arraymapping in arraymapping_defs :
-      if arraymapping.get_unresolve_perturbation() not in a.keys() :
-        raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_perturbation()
-      if arraymapping.get_unresolve_reference() not in a.keys() and arraymapping.get_unresolve_reference() != None :
-        raise StandardError, "%s might not be declared in simexpression session" %arraymapping.get_unresolve_reference()
-      arraymapping.resolve_perturbation = self.searchSimExpression(arraymapping.get_unresolve_perturbation(), simexpression_defs)
-      if arraymapping.get_unresolve_reference() != None: 
-        arraymapping.resolve_reference = self.searchSimExpression(arraymapping.get_unresolve_reference(), simexpression_defs)
+        instructionsequence_list.append(seq)
+    return instructionsequence_list
 
 
   def __call__(self, transsys_program) :
     """
 @param transsys_program: transsys program   
 @type transsys_program: L{TranssysProgram}
+@return: Fitness results
+@rtype: L{ModelFitnessResult}
 """
    
     rawdata_list = self.get_simulated_set(transsys_program)
-    e = self.get_transform_rawdata(rawdata_list)
-    s = self.expression_set.divergence(e, self.discriminationsettings_def.distance)
+    simulated_expression_set = self.get_transform_rawdata(rawdata_list)
+    s = self.get_divergence(simulated_expression_set)
     return ModelFitnessResult(s)
 
 
   def get_transform_rawdata(self, rawdata_list, all_factors = None) :
-    e = self.get_expressionset_template(all_factors)
+    """
+@param rawdata_list: simulated raw data
+@type rawdata_list: C{List}
+@param all_factors: factor list
+@type all_factors: C{List}
+@return: simulated_expression_set
+@rtype: L{ExpressionSet}
+"""
+    simulated_expression_set = self.get_expressionset_template(all_factors)
     for columns in self.measurementmatrix_def.get_measurementcolumn_list() :
       for o in columns.mvar_assignment_list :
         if o.lhs == 'x1' :
@@ -1336,13 +1298,19 @@ series is the simulation of the gene expression levels for that genotype.
         else :
           x2 = self.get_rawdata_column(o.rhs, rawdata_list)
       tp = self.get_transformed_profile(x1, x2)
-      for factor in e.expression_data.expression_data.keys() :
-        e.set_expression_value(columns.name, factor, tp[factor])
-    return e
+      for factor in simulated_expression_set.expression_data.expression_data.keys() :
+        simulated_expression_set.set_expression_value(columns.name, factor, tp[factor])
+    return simulated_expression_set
 
    
   def get_transformed_profile(self, x1, x2) :
+    """ Perform matrix transformation according to columns specified in measurementmatrix_def
+@return: transformed data
+@rtype: C{dictionary}
+"""
     transformdata_dict = {}
+    print self.measurementmatrix_def.get_measurementprocess().transformation
+    sys.exit()
     for factor in self.discriminationsettings_def.genemapping.get_factor_list() :
       transformdata_dict[factor] = 0.0
     return transformdata_dict
@@ -1355,16 +1323,31 @@ series is the simulation of the gene expression levels for that genotype.
     return rawdatacol
 
 
-  def set_expression_set(self, expression_set):
-    """Set expression and check it exists
+  def set_empirical_expression_set(self, empirical_expression_set):
+    """Set empirical expression set and check it exists
 @param expression_set: expression set
 @type expression_set: L{ExpressionSet}
 """
-    self.expression_set = expression_set
-    if self.expression_set == None :
-      raise StandardError, 'None expression set %s' %self.expression_set
+    self.empirical_expression_set = empirical_expression_set
+    if self.empirical_expression_set == None :
+      raise StandardError, 'None expression set %s' %self.empirical_expression_set
     self.validate_measurementcolumn()
     self.validate_genemapping()
+
+
+  def get_divergence(self, simulated_expression_set) :
+    """Divergence measurement.
+@param simulated_expression_set: simulated expression set
+@type simulated_expression_set: L{ExpressionSet}
+@return: divergence between this expression set and the other expression set
+@rtype: C{float}
+"""
+    d = 0.0
+    for factor_name in simulated_expression_set.expression_data.expression_data.keys() :
+      empiricalProfile = self.empirical_expression_set.get_profile(factor_name)
+      simulatedProfile = simulated_expression_set.get_profile(factor_name)
+      d = d + self.empirical_expression_set.distance_divergence(empiricalProfile, simulatedProfile, self.discriminationsettings_def.distance)
+    return d
 
 
   def get_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
@@ -1382,7 +1365,7 @@ series is the simulation of the gene expression levels for that genotype.
       if ti_trace is not None :
         ti = ti_trace[-1]
         self.write_tp_tracefile(tp_tracefile, ti.transsys_program, instructionsequence.get_instruction_sequence_name())
-        rawdata_list.append(SimGenexCols(instructionsequence.name, ti))
+        rawdata_list.append(SimGenexColumn(instructionsequence.name, ti))
         self.write_trace_simexpression(tracefile, instructionsequence.get_instruction_sequence_name(), ti_trace)
     return rawdata_list
 
@@ -1463,12 +1446,12 @@ series is the simulation of the gene expression levels for that genotype.
 
   def validate_measurementcolumn(self) :
     """ Validate spec file simexpression consistency """
-    if self.expression_set is None :
+    if self.empirical_expression_set is None :
       raise StandardError, 'Empirical data have not been provided'
     simexpression_name_spec = []
     for col in self.measurementmatrix_def.get_measurementcolumn_list() :
       simexpression_name_spec.append(col.name)
-    array_name_eset = self.expression_set.expression_data.array_name
+    array_name_eset = self.empirical_expression_set.expression_data.array_name
     if (len(self.measurementmatrix_def.get_measurementcolumn_list()) != len(array_name_eset)) :
       raise StandardError, 'Arrays vary in length spec: %s, empirical data: %s' %(len(simexpression_name_spec), len(array_name_eset))
 
@@ -1481,7 +1464,7 @@ series is the simulation of the gene expression levels for that genotype.
     """ Validate spec file genemapping consistency """
 
     gene_name_spec = self.discriminationsettings_def.get_genemapping().get_factor_list()
-    if (len(gene_name_spec) != len(self.expression_set.expression_data.get_gene_name())) :
+    if (len(gene_name_spec) != len(self.empirical_expression_set.expression_data.get_gene_name())) :
       raise StandardError, 'Arrays vary in length spec: %s, empirical data: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name()))
 
   
