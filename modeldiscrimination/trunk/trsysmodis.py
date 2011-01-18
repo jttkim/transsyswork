@@ -769,7 +769,7 @@ The trace is guaranteed to contain at least one instance.
     raise StandardError, 'abstract method called'
 
 
-  def resolve(self, procedure_dict) :
+  def resolve(self, procedure_defs) :
     pass
 
 
@@ -836,6 +836,20 @@ class InvocationInstruction(ApplicableInstruction) :
     return self.get_procedure_name()
 
 
+  def resolve(self, procedure_defs) :
+    if isinstance(self.procedure, Procedure) :
+      return
+    # FIXME: linear search
+    elif type(self.procedure) is types.StringType :
+      for procedure in procedure_defs :
+        if procedure.get_procedure_name() == self.procedure :
+          self.procedure = procedure
+          return
+      raise StandardError, 'procedure %s unknown' % self.procedure
+    else :
+      raise StandardError, 'bad type'
+
+
   def apply_instruction(self, transsys_instance) :
     if not isinstance(self.procedure, Procedure) :
        raise StandardError, 'unresolved statement'
@@ -849,7 +863,8 @@ class InvocationInstruction(ApplicableInstruction) :
 
   def get_procedure_name(self) :
     if isinstance(self.procedure, Procedure) :
-      return self.procedure.get_procedure_name()
+      s = self.procedure.get_procedure_name()
+      return s
     elif isinstance(self.procedure, types.StringType) :
       return self.procedure
     else :
@@ -1655,21 +1670,6 @@ class Procedure(Instruction) :
       ti_trace = ti_trace + instruction.apply_instruction(ti)
       ti = ti_trace[-1]
     return ti_trace
-
-
-  def search_procedure(self, invocation_instruction_name, procedure_defs) :
-    """ Search Procedure 
-@param instruction: instruction name
-@type instruction: C{String}
-@param procedure_defs: procedure_defs
-@type procedure_defs: L{Procedure}
-@return: Procedure
-@rtype: C{Procedure}
-"""
-    for procedure in procedure_defs :
-      if procedure.get_procedure_name() == invocation_instruction_name :
-        break
-    return procedure
   
 
   def resolve(self, procedure_defs) :
@@ -1684,7 +1684,8 @@ class Procedure(Instruction) :
       if isinstance(instruction, PrimaryInstruction) :
         resolved_instruction_list.append(instruction)
       elif isinstance(instruction, InvocationInstruction) :
-        resolved_instruction_list.append(self.search_procedure(instruction.get_procedure_name(), procedure_defs))
+        instruction.resolve(procedure_defs)
+        resolved_instruction_list.append(instruction)
       else :
         raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
     self.set_instruction_list(resolved_instruction_list)
@@ -1787,30 +1788,12 @@ class SimExpression(object) :
     return instruction_sequence_list
   
 
-  def search_procedure(self, invocation_instruction_name, procedure_defs) :
-    """ Search Procedure 
-@param instruction: instruction name
-@type instruction: C{String}
-@param procedure_defs: procedure_defs
-@type procedure_defs: L{Procedure}
-@return: Procedure
-@rtype: C{Procedure}
-"""
-    for procedure in procedure_defs :
-      if procedure.get_procedure_name() == invocation_instruction_name :
-        break
-    return procedure
-  
-
   def resolve(self, procedure_defs) :
     """ Resolve SimExpression """
     simexpression_cols = self.get_instruction_sequence_list()
     for seq in simexpression_cols :
       for instruction in seq.instruction_sequence :
-        if isinstance(instruction, InvocationInstruction) :
-          instruction.procedure = self.search_procedure(instruction.get_procedure_name(), procedure_defs)
-        else :
-          raise StandardError, 'internal parser error: unsuitable element in unresolved instruction list: %s' % str(instruction)
+        instruction.resolve(procedure_defs)
     return simexpression_cols
      
 
@@ -1876,13 +1859,13 @@ class GeneMapping(object) :
 @return: s
 @rtype: C{String}
 """    
-    s = '  genemapping\n  {'
+    s = '  genemapping\n  {\n'
     for name, value in self.factor_list.iteritems() :
       w = ''
       for u in value :
 	w = w + u + " "
-      s = s + ('factor ' + name + " = " + w + "\n")
-    s = s + '  }\n\n'
+      s = s + ('    factor ' + name + " = " + w + ";\n")
+    s = s + '  }\n'
     return s
 
 
@@ -1988,8 +1971,8 @@ class DiscriminationSettings(object) :
     s = 'discriminationsettings' + '\n'
     s = s + '{' + '\n'
     s = s + str(self.genemapping)
-    s = s + str(self.whitelist)
     s = s + ('  distance: %s;\n' % self.get_distance())
+    s = s + str(self.whitelist)
     s = s + '}' + '\n'
     return s
 
@@ -2041,7 +2024,8 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    self.keywords = ['factor', 'gene', 'whitelistdefs', 'genemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct' ,'simexpression', 'transformation', 'distance', 'offset', 'log', 'log2', 'correlation', 'sum_squares', 'euclidean', 'measurementmatrix', 'genemapping', 'measurementprocess', 'measurementcolumns', 'discriminationsettings', 'foreach', 'stddev()', 'negmin()']
+    # FIXME: check keywords for duplicates
+    self.keywords = ['factor', 'gene', 'whitelistdefs', 'genemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct' ,'simexpression', 'transformation', 'distance', 'offset', 'log', 'log2', 'correlation', 'sum_squares', 'euclidean', 'measurementmatrix', 'measurementprocess', 'measurementcolumns', 'discriminationsettings', 'foreach', 'stddev()', 'negmin()']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
     self.gene_manufacturer_re = re.compile('"([^"]+)"')

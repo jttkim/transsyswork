@@ -30,4 +30,4 @@ else :
 o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
 s = objective_function.__str__()
-
+outfile.write('%s\n' % s)
