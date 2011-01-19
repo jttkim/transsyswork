@@ -1289,27 +1289,16 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Fitness results
 @rtype: L{ModelFitnessResult}
 """
-   
     rawdata_matrix = self.get_simulated_set(transsys_program)
-    simulated_expression_set = self.get_transform_rawdata(TransformationContext(rawdata_matrix))
+    transformed_matrix = self.measurementmatrix_def.transform(rawdata_matrix)
+    simulated_expression_set = self.map_genes(transformed_matrix)
     s = self.get_divergence(simulated_expression_set)
     return ModelFitnessResult(s)
 
 
-  def get_transform_rawdata(self, ct, all_factors = None) :
-    """
-@param ct: context transformation
-@type ct: L{TranformationContext}
-@param all_factors: factor list
-@type all_factors: C{List}
-@return: simulated_expression_set
-@rtype: L{ExpressionSet}
-"""
-    e  = self.measurementmatrix_def.get_measurementprocess().resolve()
-    sys.exit()
-    for factor in self.discriminationsettings_def.genemapping.get_factor_list() :
-      transformdata_dict[factor] = 0.0
-    return transformdata_dict
+  def map_genes(self, matrix) :
+    # extract the rows corresponding to genes in the target matrix and adjust their labels to those in the target matrix
+    pass
 
 
   def set_empirical_expression_set(self, empirical_expression_set):
@@ -1799,6 +1788,15 @@ class MeasurementMatrix(object) :
      return s
 
 
+   def transform(self, rawdata_matrix) :
+     offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
+     column_list = []
+     for measurementcolumn in self.measurementcolumn_list :
+       context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
+       column_list.append(self.measurementprocess.evaluate(context))
+     return column_list
+
+
    def get_measurementprocess(self) :
      return(self.measurementprocess)
 
@@ -1806,10 +1804,6 @@ class MeasurementMatrix(object) :
    def get_measurementcolumn_list(self) :
      return(self.measurementcolumn_list)
 
-
-   def resolve(self, lhs, rhs) :
-     if isinstance(self.measurementprocess.transformation, TransformationExprDivide) or isinstance(self.measurementprocess.transformation, TransformationExprMultiply) : 
-       self.measurementprocess.transformation.resolve()
 
 
 class GeneMapping(object) :
@@ -1859,9 +1853,9 @@ class MeasurementProcess(object) :
     return s
 
 
-  def resolve(self) :
-    self.transformation.resolve()
-    
+  def evaluate(self, context) :
+    return self.transformation.evaluate(context)
+
 
 class Measurements(object) :
   """ object Measurements
@@ -2136,8 +2130,8 @@ class MeasurementColumn(object) :
   def get_rhs_name(self, lhs_name) :
     for col in mvar_assignment_list :
       if lhs_name == col.lhs :
-        break
-    return col.rhs
+        return col.rhs
+    raise StandardError, 'no mvar assignment for %s' % lhs_name
       
 
 class TransformationContext(object) :
