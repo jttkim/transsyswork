@@ -2173,11 +2173,28 @@ class MeasurementColumn(object) :
     return col.rhs
       
 
+class TransformationContext(object) :
+  """Context for evaluating a transformation
+@ivar offset
+@type offset number
+@ivar rawmatrix matrix of raw (objective) expression values
+@ivar mvar_map map from measurement variables to rawmatrix columns
+"""
+
+  def __init__(self, offset, rawmatrix, mvar_map) :
+    self.offset = offset
+    ...
+
+
 class TransformationExpr(object) :
   """Abstract base class for transformation expressions."""
 
   def __init__(self) :
     pass
+
+
+  def evaluate(self, context) :
+    raise StandardError, 'abstract method called'
 
 
 class TransformationExprPlus(TransformationExpr) :
@@ -2189,6 +2206,12 @@ class TransformationExprPlus(TransformationExpr) :
 
   def __str__(self) :
     return '%s + %s' % (str(self.operand1), str(self.operand2))
+
+
+  def evaluate(self, context) :
+    v1 = self.operand1.evaluate(context)
+    v2 = self.operand2.evaluate(context)
+    return 'v1 + v2'
 
 
 class TransformationExprMinus(TransformationExpr) :
@@ -2273,6 +2296,10 @@ class TransformationExprMvar(TransformationExpr) :
   def resolve(self) :
     return self.name
 
+
+  def evaluate(self, context) :
+    # find the column identified self.name in the raw data matrix by going through the mvar -> matrix column mapping
+    return the column
 
 class Offset(object) :
 
