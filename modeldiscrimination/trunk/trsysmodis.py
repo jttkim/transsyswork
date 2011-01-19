@@ -1296,7 +1296,7 @@ series is the simulation of the gene expression levels for that genotype.
     return ModelFitnessResult(s)
 
 
-  def get_transform_rawdata(self, rawdata_list, all_factors = None) :
+  def get_transform_rawdatas(self, rawdata_list, all_factors = None) :
     """
 @param rawdata_list: simulated raw data
 @type rawdata_list: C{List}
@@ -1308,6 +1308,8 @@ series is the simulation of the gene expression levels for that genotype.
     simulated_expression_set = self.get_expressionset_template(all_factors)
     for columns in self.measurementmatrix_def.get_measurementcolumn_list() :
       for o in columns.mvar_assignment_list :
+        print "hello", o
+	sys.exit
         if o.lhs == 'x1' :
           x1 = self.get_rawdata_column(o.rhs, rawdata_list)
         else :
@@ -1316,6 +1318,11 @@ series is the simulation of the gene expression levels for that genotype.
       for factor in simulated_expression_set.expression_data.expression_data.keys() :
         simulated_expression_set.set_expression_value(columns.name, factor, tp[factor])
     return simulated_expression_set
+
+
+  def get_transform_rawdata(self, rawdata_list, all_factors = None) :
+    print self.measurementmatrix_def.get_measurementprocess().resolve()
+    sys.exit()
 
    
   def get_transformed_profile(self, x1, x2) :
@@ -1886,8 +1893,7 @@ class MeasurementProcess(object) :
 
 
   def resolve(self) :
-    print type(self.transformation)
-
+    self.transformation.resolve()
     
 
 class Measurements(object) :
@@ -2024,7 +2030,6 @@ class Scanner(object) :
     self.infile = f
     self.buffer = ''
     self.lineno = 0
-    # FIXME: check keywords for duplicates
     self.keywords = ['factor', 'gene', 'whitelistdefs', 'genemapping', 'procedure', 'runtimesteps', 'knockout', 'treatment','overexpress', 'setproduct' ,'simexpression', 'transformation', 'distance', 'offset', 'log', 'log2', 'correlation', 'sum_squares', 'euclidean', 'measurementmatrix', 'measurementprocess', 'measurementcolumns', 'discriminationsettings', 'foreach', 'stddev()', 'negmin()']
     self.identifier_re = re.compile('[A-Za-z_][A-Za-z0-9_]*')
     self.realvalue_re = re.compile('[+-]?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))([Ee][+-]?[0-9]+)?')
@@ -2220,6 +2225,8 @@ class TransformationExprDivide(TransformationExpr) :
 
 
   def resolve(self) :
+    print type(self.operand1)
+    print type(self.operand2)
     self.operand1.resolve()
     self.operand2.resolve()
 
@@ -2235,6 +2242,7 @@ class TransformationExprLog2(TransformationExpr) :
 
 
   def resolve(self) :
+    print self.operand.resolve()
     return math.log(self.operand.resolve(), 2)
     
   
@@ -2249,7 +2257,7 @@ class TransformationExprOffset(TransformationExpr) :
 
 
   def resolve(self) :
-    self.operand.resolve()
+    return self.operand.resolve()
 
   
 class TransformationExprMvar(TransformationExpr) :
@@ -2302,6 +2310,7 @@ class ExpressionStatStddev(ExpressionStat) :
 
 
   def resolve(self, values) :
+    print statistics(values)[1]
     return statistics(values)[1]
  
 
