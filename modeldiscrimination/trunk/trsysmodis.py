@@ -1290,59 +1290,26 @@ series is the simulation of the gene expression levels for that genotype.
 @rtype: L{ModelFitnessResult}
 """
    
-    rawdata_list = self.get_simulated_set(transsys_program)
-    simulated_expression_set = self.get_transform_rawdata(rawdata_list)
+    rawdata_matrix = self.get_simulated_set(transsys_program)
+    simulated_expression_set = self.get_transform_rawdata(TransformationContext(rawdata_matrix))
     s = self.get_divergence(simulated_expression_set)
     return ModelFitnessResult(s)
 
 
-  def get_transform_rawdatas(self, rawdata_list, all_factors = None) :
+  def get_transform_rawdata(self, ct, all_factors = None) :
     """
-@param rawdata_list: simulated raw data
-@type rawdata_list: C{List}
+@param ct: context transformation
+@type ct: L{TranformationContext}
 @param all_factors: factor list
 @type all_factors: C{List}
 @return: simulated_expression_set
 @rtype: L{ExpressionSet}
 """
-    simulated_expression_set = self.get_expressionset_template(all_factors)
-    for columns in self.measurementmatrix_def.get_measurementcolumn_list() :
-      for o in columns.mvar_assignment_list :
-        print "hello", o
-	sys.exit
-        if o.lhs == 'x1' :
-          x1 = self.get_rawdata_column(o.rhs, rawdata_list)
-        else :
-          x2 = self.get_rawdata_column(o.rhs, rawdata_list)
-      tp = self.get_transformed_profile(x1, x2)
-      for factor in simulated_expression_set.expression_data.expression_data.keys() :
-        simulated_expression_set.set_expression_value(columns.name, factor, tp[factor])
-    return simulated_expression_set
-
-
-  def get_transform_rawdata(self, rawdata_list, all_factors = None) :
-    print self.measurementmatrix_def.get_measurementprocess().resolve()
-    sys.exit()
-
-   
-  def get_transformed_profile(self, x1, x2) :
-    """ Perform matrix transformation according to columns specified in measurementmatrix_def
-@return: transformed data
-@rtype: C{dictionary}
-"""
-    transformdata_dict = {}
-    print self.measurementmatrix_def.get_measurementprocess().transformation
+    e  = self.measurementmatrix_def.get_measurementprocess().resolve()
     sys.exit()
     for factor in self.discriminationsettings_def.genemapping.get_factor_list() :
       transformdata_dict[factor] = 0.0
     return transformdata_dict
-
-
-  def get_rawdata_column(self, name, rawdata_list) :
-    for rawdatacol in rawdata_list :
-      if rawdatacol.name == name :
-        break
-    return rawdatacol
 
 
   def set_empirical_expression_set(self, empirical_expression_set):
@@ -1376,10 +1343,10 @@ series is the simulation of the gene expression levels for that genotype.
     """Produce simulated data.
 @param transsys_program: transsys program
 @type transsys_program: L{TranssysProgram}
-@return: rawdata_list
+@return: rawdata_matrix
 @rtype: C{List}
 """
-    rawdata_list = []
+    rawdata_matrix = []
     self.write_trace_header(tracefile, transsys_program)
     
     for instructionsequence in self.instructionsequence_list :
@@ -1387,9 +1354,9 @@ series is the simulation of the gene expression levels for that genotype.
       if ti_trace is not None :
         ti = ti_trace[-1]
         self.write_tp_tracefile(tp_tracefile, ti.transsys_program, instructionsequence.get_instruction_sequence_name())
-        rawdata_list.append(SimGenexColumn(instructionsequence.name, ti))
+        rawdata_matrix.append(SimGenexColumn(instructionsequence.name, ti))
         self.write_trace_simexpression(tracefile, instructionsequence.get_instruction_sequence_name(), ti_trace)
-    return rawdata_list
+    return rawdata_matrix
 
 
   def write_trace_header(self, tracefile, transsys_program) :
@@ -2181,9 +2148,8 @@ class TransformationContext(object) :
 @ivar mvar_map map from measurement variables to rawmatrix columns
 """
 
-  def __init__(self, offset, rawmatrix, mvar_map) :
-    self.offset = offset
-    ...
+  def __init__(self, rawmatrix) :
+    self.rawmatrix = rawmatrix
 
 
 class TransformationExpr(object) :
