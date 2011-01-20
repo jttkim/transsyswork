@@ -1301,8 +1301,6 @@ series is the simulation of the gene expression levels for that genotype.
     for column in matrix :
       for factor in self.discriminationsettings_def.get_genemapping().get_factor_list() :
         e.set_expression_value(column.name, factor, column.data_dict[factor])
-    print e.expression_data.expression_data
-    sys.exit()
     return e
 
 
@@ -2167,7 +2165,7 @@ class TransformationContext(object) :
   def __init__(self, rawdata_matrix, offset, mvar_map) :
     self.rawdata_matrix = rawdata_matrix
     self.offset = offset
-    mvar_map = mvar_map
+    self.mvar_map = mvar_map
 
 
 class TransformationExpr(object) :
@@ -2193,9 +2191,14 @@ class TransformationExprPlus(TransformationExpr) :
 
 
   def evaluate(self, context) :
-    v1 = self.operand1.evaluate(context)
-    v2 = self.operand2.evaluate(context)
-    return 'v1 + v2'
+    column_matrix_div = {}
+    if self.operand1 is None and self.operand2 is None :
+      raise StandardError, 'two operands were not found'
+    operando1_dict = self.operand1.evaluate(context)
+    operando2_dict = self.operand2.evaluate(context)
+    for factor in operando1_dict :
+      column_matrix_div[factor] = operando1_dict[factor] + operando2_dict[factor]
+    return column_matrix_div
 
 
 class TransformationExprMinus(TransformationExpr) :
@@ -2209,6 +2212,17 @@ class TransformationExprMinus(TransformationExpr) :
     return '%s - %s' % (str(self.operand1), str(self.operand2))
 
 
+  def evaluate(self, context) :
+    column_matrix_div = {}
+    if self.operand1 is None and self.operand2 is None :
+      raise StandardError, 'two operands were not found'
+    operando1_dict = self.operand1.evaluate(context)
+    operando2_dict = self.operand2.evaluate(context)
+    for factor in operando1_dict :
+      column_matrix_div[factor] = operando1_dict[factor] - operando2_dict[factor]
+    return column_matrix_div
+
+
 class TransformationExprMultiply(TransformationExpr) :
 
   def __init__(self, operand1, operand2) :
@@ -2218,6 +2232,17 @@ class TransformationExprMultiply(TransformationExpr) :
 
   def __str__(self) :
     return '%s * %s' % (str(self.operand1), str(self.operand2))
+
+
+  def evaluate(self, context) :
+    column_matrix_div = {}
+    if self.operand1 is None and self.operand2 is None :
+      raise StandardError, 'two operands were not found'
+    operando1_dict = self.operand1.evaluate(context)
+    operando2_dict = self.operand2.evaluate(context)
+    for factor in operando1_dict :
+      column_matrix_div[factor] = operando1_dict[factor] * operando2_dict[factor]
+    return column_matrix_div
 
 
 class TransformationExprDivide(TransformationExpr) :
@@ -2253,10 +2278,10 @@ class TransformationExprLog2(TransformationExpr) :
 
 
   def evaluate(self, context) :
-    column_matrix_offset = self.operand.apply(context)
-    column_matrix_log = copy.deepcopy(column_matrix_offset)
-    for factor in column_matrix_offset :
-      column_matrix_log[factor] = math.log(column_matrix_offset[factor], 2)
+    column_matrix = self.operand.apply(context)
+    column_matrix_log = copy.deepcopy(column_matrix)
+    for factor in column_matrix :
+      column_matrix_log[factor] = math.log(column_matrix[factor], 2)
     return column_matrix_log
       
   
@@ -2289,8 +2314,12 @@ class TransformationExprMvar(TransformationExpr) :
 
 
   def evaluate(self, context) :
+    for i in context.mvar_map :
+      if i.lhs == self.name :
+        colname = i.rhs
+
     for column_matrix in context.rawdata_matrix  :
-      if column_matrix.name == self.name :
+      if column_matrix.name == colname :
         break
     return column_matrix.transsys_instance
 

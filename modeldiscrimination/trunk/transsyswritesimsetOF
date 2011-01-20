@@ -61,9 +61,13 @@ objective_function = o.parse_objectivespec()
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
 if all_factors :
-  e = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile, transsys_program.factor_names())
+  rawdata_matrix = objective_function.get_simulated_set(transsys_program,tracefile, tp_tracefile, transsys_program.factor_names())
+  transformed_matrix = objective_function.measurementmatrix_def.transform(rawdata_matrix)
+  e = objective_function.map_genes(transformed_matrix)
 else :
-  e = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile)
+  rawdata_matrix = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile)
+  transformed_matrix = objective_function.measurementmatrix_def.transform(rawdata_matrix)
+  e = objective_function.map_genes(transformed_matrix)
 
 if noise > 0.0 :
   if rndseed is not None :
