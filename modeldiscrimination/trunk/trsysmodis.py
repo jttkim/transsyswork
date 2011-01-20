@@ -1297,8 +1297,13 @@ series is the simulation of the gene expression levels for that genotype.
 
 
   def map_genes(self, matrix) :
-    # extract the rows corresponding to genes in the target matrix and adjust their labels to those in the target matrix
-    pass
+    e = self.get_expressionset_template()
+    for column in matrix :
+      for factor in self.discriminationsettings_def.get_genemapping().get_factor_list() :
+        e.set_expression_value(column.name, factor, column.data_dict[factor])
+    print e.expression_data.expression_data
+    sys.exit()
+    return e
 
 
   def set_empirical_expression_set(self, empirical_expression_set):
@@ -1399,7 +1404,7 @@ series is the simulation of the gene expression levels for that genotype.
     return self.file
 
 
-  def get_expressionset_template(self, factor_list) :
+  def get_expressionset_template(self, factor_list = None) :
     """ Create expression set according to spec file 
 @param factor_list: factor list
 @type factor_list: C{List}
@@ -1770,9 +1775,22 @@ class SimExpression(object) :
     return ti_trace
 
 
+class TransformedData(object) :
+  
+  def __init__(self, name, data_dict) :
+    self.name = name
+    self.data_dict = data_dict
+
+
 class MeasurementMatrix(object) :
  
    def __init__(self, measurementprocess, measurementcolumn_list) :
+     """
+@param measurementprocess: measurement process
+@type measurementprocess: L{MeasurementProcess}
+@param measurementcolumn_list: measurement column list - mapping
+@type measurementcolumn_list: List of L{MeasurementColumn}
+"""
      self.measurementprocess = measurementprocess
      self.measurementcolumn_list = measurementcolumn_list
 
@@ -1789,11 +1807,17 @@ class MeasurementMatrix(object) :
 
 
    def transform(self, rawdata_matrix) :
+     """
+@param rawdata_matrix: rawdata matrix 
+@type rawdata_matrix: List of L{SimGenexColumn}
+@return: column_list
+@rtype: C{List}
+"""
      offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
      column_list = []
      for measurementcolumn in self.measurementcolumn_list :
        context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
-       column_list.append(self.measurementprocess.evaluate(context))
+       column_list.append(TransformedData(measurementcolumn.name, self.measurementprocess.evaluate(context)))
      return column_list
 
 
@@ -2127,12 +2151,10 @@ class MeasurementColumn(object) :
     return s
     
 
-  def get_rhs_name(self, lhs_name) :
-    for col in mvar_assignment_list :
-      if lhs_name == col.lhs :
-        return col.rhs
-    raise StandardError, 'no mvar assignment for %s' % lhs_name
-      
+  def get_mvar_mapping(self) :
+    return self.mvar_assignment_list
+
+
 
 class TransformationContext(object) :
   """Context for evaluating a transformation
@@ -2142,8 +2164,10 @@ class TransformationContext(object) :
 @ivar mvar_map map from measurement variables to rawmatrix columns
 """
 
-  def __init__(self, rawmatrix) :
-    self.rawmatrix = rawmatrix
+  def __init__(self, rawdata_matrix, offset, mvar_map) :
+    self.rawdata_matrix = rawdata_matrix
+    self.offset = offset
+    mvar_map = mvar_map
 
 
 class TransformationExpr(object) :
@@ -2207,11 +2231,15 @@ class TransformationExprDivide(TransformationExpr) :
     return '%s / %s' % (str(self.operand1), str(self.operand2))
 
 
-  def resolve(self) :
-    print type(self.operand1)
-    print type(self.operand2)
-    self.operand1.resolve()
-    self.operand2.resolve()
+  def evaluate(self, context) :
+    column_matrix_div = {}
+    if self.operand1 is None and self.operand2 is None :
+      raise StandardError, 'two operands were not found'
+    operando1_dict = self.operand1.evaluate(context)
+    operando2_dict = self.operand2.evaluate(context)
+    for factor in operando1_dict :
+      column_matrix_div[factor] = operando1_dict[factor] / operando2_dict[factor]
+    return column_matrix_div
 
 
 class TransformationExprLog2(TransformationExpr) :
@@ -2224,10 +2252,13 @@ class TransformationExprLog2(TransformationExpr) :
     return 'log2(%s)' % str(self.operand)
 
 
-  def resolve(self) :
-    print self.operand.resolve()
-    return math.log(self.operand.resolve(), 2)
-    
+  def evaluate(self, context) :
+    column_matrix_offset = self.operand.apply(context)
+    column_matrix_log = copy.deepcopy(column_matrix_offset)
+    for factor in column_matrix_offset :
+      column_matrix_log[factor] = math.log(column_matrix_offset[factor], 2)
+    return column_matrix_log
+      
   
 class TransformationExprOffset(TransformationExpr) :
 
@@ -2239,8 +2270,12 @@ class TransformationExprOffset(TransformationExpr) :
     return 'offset(%s)' % str(self.operand)
 
 
-  def resolve(self) :
-    return self.operand.resolve()
+  def apply(self, context) :
+    column_matrix = {}
+    column_matrix_ti = self.operand.evaluate(context)
+    for factor in column_matrix_ti.transsys_program.factor_list :
+      column_matrix[factor.name] = column_matrix_ti.get_factor_concentration(factor.name) + context.offset
+    return column_matrix
 
   
 class TransformationExprMvar(TransformationExpr) :
@@ -2253,13 +2288,12 @@ class TransformationExprMvar(TransformationExpr) :
     return self.name
 
 
-  def resolve(self) :
-    return self.name
-
-
   def evaluate(self, context) :
-    # find the column identified self.name in the raw data matrix by going through the mvar -> matrix column mapping
-    return the column
+    for column_matrix in context.rawdata_matrix  :
+      if column_matrix.name == self.name :
+        break
+    return column_matrix.transsys_instance
+
 
 class Offset(object) :
 
@@ -2273,20 +2307,34 @@ class Offset(object) :
       return 'offset: %f;' % self.offsetvalue
     else :
       return 'offset: %f * %s' % (self.offsetvalue, str(self.expressionstat))
-  
 
-  def resolve(self, values) :
-    for v in values :
-      if self.expressionstat is None :
-        v = v + self.offsetvalue
-      else :
-        v = v + (self.offsetvalue * self.expressionstat.resolve(values))
+
+  def get_offset_value(self, context) :
+    """ 
+@param context: context
+@type context: C{List}
+@return: ov
+@rtype: C{Float}
+"""
+    expression_values = []
+    for array in context :
+      for factor in array.transsys_instance.transsys_program.factor_list :
+        expression_values.append(array.transsys_instance.get_factor_concentration(factor.name))
+    if self.expressionstat is None :
+      ov = self.offsetvalue
+    else :
+      ov = self.offsetvalue * self.expressionstat.estimate(expression_values)
+    return ov
   
 
 class ExpressionStat(object) :
   """Abstract base class for statistical characteristics of expression values."""
 
   def __init__(self) :
+    pass
+
+  
+  def estimate(self) :
     pass
 
 
@@ -2296,8 +2344,7 @@ class ExpressionStatStddev(ExpressionStat) :
     return 'stddev()'
 
 
-  def resolve(self, values) :
-    print statistics(values)[1]
+  def estimate(self, values) :
     return statistics(values)[1]
  
 
@@ -2306,7 +2353,11 @@ class ExpressionStatNegmin(ExpressionStat) :
   def __str__(self) :
     return 'negmin()'
 
-  
+
+  def estimate(self, values) :
+    return statistics(values)[1]
+ 
+
 class EmpiricalObjectiveFunctionParser(object) :
   """ Object specification 
 """
