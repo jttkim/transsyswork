@@ -2278,8 +2278,8 @@ class TransformationExprLog2(TransformationExpr) :
 
 
   def evaluate(self, context) :
-    column_matrix = self.operand.apply(context)
-    column_matrix_log = copy.deepcopy(column_matrix)
+    column_matrix = self.operand.evaluate(context)
+    column_matrix_log = {}
     for factor in column_matrix :
       column_matrix_log[factor] = math.log(column_matrix[factor], 2)
     return column_matrix_log
@@ -2295,7 +2295,7 @@ class TransformationExprOffset(TransformationExpr) :
     return 'offset(%s)' % str(self.operand)
 
 
-  def apply(self, context) :
+  def evaluate(self, context) :
     column_matrix = {}
     column_matrix_ti = self.operand.evaluate(context)
     for factor in column_matrix_ti.transsys_program.factor_list :
@@ -2317,7 +2317,6 @@ class TransformationExprMvar(TransformationExpr) :
     for i in context.mvar_map :
       if i.lhs == self.name :
         colname = i.rhs
-
     for column_matrix in context.rawdata_matrix  :
       if column_matrix.name == colname :
         break
