@@ -24,6 +24,12 @@ transsys sgx
     diffusibility: 0;
   }
 
+  factor c4
+  {
+    decay: 0.1;
+    diffusibility: 0;
+  }
+
   factor housekeeper
   {
     decay: 0.1;
@@ -64,6 +70,20 @@ transsys sgx
     product
     {
       default: c3;
+    }
+  }
+
+  gene c4gene
+  {
+    promoter
+    {
+      constitutive: 0.1;
+      c1: activate(0.01, 1.0);
+      c2: repress(0.01, 1.0);
+    }
+    product
+    {
+      default: c4;
     }
   }
 

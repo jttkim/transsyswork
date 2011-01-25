@@ -22,6 +22,10 @@ procedure t060
   halfhour;
 }
 
+procedure t070
+{
+}
+
 procedure ko_g0
 {
   knockout: g0;
@@ -77,6 +81,7 @@ simexpression g0_MeJA
   ko_g0;
   equilibration;
   MeJA_treatment;
+  t070;
   foreach: t030 t060;
 }
 

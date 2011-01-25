@@ -45,9 +45,14 @@ procedure ko_c3
   knockout: c3gene;
 }
 
+procedure ko_c4
+{
+  knockout: c3gene;
+}
+
 simexpression all
 {
-  foreach: wildtype ko_housekeeping ko_c1 ko_c2 ko_c3;
+  foreach: wildtype ko_housekeeping ko_c1 ko_c2 ko_c3 ko_c4;
   equilibration;
   foreach: notreat hormtreat;
   treatmenttime;
@@ -68,11 +73,13 @@ measurementmatrix
     koc1_notreat: x1 = all_ko_c1_notreat, x2 = all_wildtype_notreat;
     koc2_notreat: x1 = all_ko_c2_notreat, x2 = all_wildtype_notreat;
     koc3_notreat: x1 = all_ko_c3_notreat, x2 = all_wildtype_notreat;
+    koc4_notreat: x1 = all_ko_c4_notreat, x2 = all_wildtype_notreat;
     wt_hormtreat: x1 = all_wildtype_hormtreat, x2 = all_wildtype_hormtreat;
     kohk_hormtreat: x1 = all_ko_housekeeping_hormtreat, x2 = all_wildtype_hormtreat;
     koc1_hormtreat: x1 = all_ko_c1_hormtreat, x2 = all_wildtype_hormtreat;
     koc2_hormtreat: x1 = all_ko_c2_hormtreat, x2 = all_wildtype_hormtreat;
     koc3_hormtreat: x1 = all_ko_c3_hormtreat, x2 = all_wildtype_hormtreat;
+    koc4_hormtreat: x1 = all_ko_c4_hormtreat, x2 = all_wildtype_hormtreat;
   }
 }
 
@@ -84,14 +91,15 @@ discriminationsettings
     factor c1 = "c1";
     factor c2 = "c2";
     factor c3 = "c3";
+    factor c4 = "c4";
   }
 
   distance: correlation;
 
   whitelistdefs
   {
-    factor: housekeeper c1 c2 c3;
-    gene: housekeepinggene c1gene c2gene c3gene;
+    factor: housekeeper c1 c2 c3 c4;
+    gene: housekeepinggene c1gene c2gene c3gene c4gene;
   }
 }
 
