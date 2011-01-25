@@ -20,8 +20,8 @@ epsdevice <- function(epsFilename)
 plotProfile <- function(d, geneName)
 {
   p <- as.numeric(d[geneName, ]);
-  n <- c("-\n-", "-\nhk", "-\nc1", "-\nc2", "-\nc3", "+\n-", "+\nhk", "+\nc1", "+\nc2", "+\nc3");
-  barplot(p, names = n, ylim = c(-8, 0), main = geneName);
+  n <- c("-\n-", "-\nhk", "-\nc1", "-\nc2", "-\nc3", "-\nc4", "+\n-", "+\nhk", "+\nc1", "+\nc2", "+\nc3", "+\nc4" );
+  barplot(p, names = n, ylim = c(-8, 2), main = geneName);
 }
 
 
