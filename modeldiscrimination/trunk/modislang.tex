@@ -79,7 +79,7 @@ of genes $g_1$ and $g_2$.
 The sum of distances of expression profiles is a distance between two
 expression sets.
 
-The transsys framework provides a basis for simulating regulatory
+The transsys framework \cite{Kim2001,transsyshome} provides a basis for simulating regulatory
 networks with different genetic properties, and for deriving loss or
 gain of function variants of a given regulatory network by removing or
 adding genes, respectively. Different environmental conditions can be
@@ -112,92 +112,42 @@ can be freely chosen.
 
 \subsection{Language Structure}
 
+Syntactic features:
+
+\begin{itemize}
+\item Blocks should be in curly braces rather than in
+  \computercode{something} \ldots \computercode{endsomething}.
+\item Statements should be delimited by \computercode{;} so that
+  newlines are not necessary or considered as terminators or
+  separators.
+\item \computercode{simexpression} blocks are really procedures, so
+  they are replaced with procedures.
+\item review keywords
+\end{itemize}
+
 \subsubsection{The Top Level}
 
 \begin{ebnfrule}
-objectivespec ::= knockout_treatment_magic knockout_treatment_objectivespec
+objectivespec ::= SimGenex
 \end{ebnfrule}
-The \computercode{knockout\_treatment\_magic} is a string that
+The \computercode{SimGenex} is a string that
 identifies the file as an objective function specification. The
-\computercode{knockout\_treatment\_objectivespec} contains the
+\computercode{SimGenex} states the
 objective function specification.
 
 \begin{ebnfrule}
-simgenex_def ::= procedure_defs simexpression_def expressionset_def discriminationsettings_def
-\end{ebnfrule}
-An objective function specification is comprised of a set of global
-settings, a gene mapping, procedures, definitions of simulated gene
-expression samples, and finally specifications of how simulations of
-the empirical data, called \newterm{arrays}, are computed from the
-simulated gene expression samples.
+simgenex_def ::= procedure_defs simexpression_defs measurementmatrix_def 
+discriminationsettings_def \end{ebnfrule}
 
-
-\subsubsection{Global Settings}
-
-\todo{the name ``global settings'' is rather unspecific, this is due
-  to the fact that the settings in here are quite heterogeneous and
-  not really a modular unit.}
-
-\begin{ebnfrule}
-globalsettings ::= globalsettings_header globalsettings_body globalsettings_footer
-
-globalsettings_header ::= "globasettingdefs" 
-globalsettings_body ::= transformation_def distancemeasure_def offset_def
-globalsettings_footer ::= "endglobalsettingdefs" 
-
-transformation_def ::= "transformation:" transformation_type 
-transformation_type ::= "log" | "none"
-
-distancemeasure_def ::= "distance:" distance_type 
-distance_type ::= "correlation" | "euclidean" | "sum_squares" 
-
-offset_def ::= "offset:" realnumber
-\end{ebnfrule}
-
-\todo{the order of applying offsets and log transformation matters,
-  and this order bears no relation to the order specified for the
-  language. The language spec should be updated; the offset and
-  transformation specs should perhaps go into the array block (see
-  comment below).}
-
-The \computercode{globalsettings} contain the parameteters
-\begin{itemize}
-\item \computercode{transformation} sets the transformation of the
-  expression levels. The \computercode{log} transformation applies the
-  $\log_2$ function to expression values. \todo{verify: is it the log
-    to base 2, or another log?. AVC. It's log2}
-\item \computercode{distance} selects the method for computing
-  distances between expression profiles.
-\item \computercode{offset} specifies an offset to be added to
-  expression levels. The offset can either be specified as an absolute
-  value, or as a multiple of the standard deviation of the set of all
-  expression levels. \todo{confirm that this precisely defines the
-    implementation of the standard deviation variant. AVC. Yes It does}
-\end{itemize}
-
-\begin{ebnfrule}
-genemapping_def ::= genemapping_header genemapping_body genemapping_footer 
-genemapping_header ::= "genemapping" 
-genemapping_body ::= (factor_def )+   
-genemapping_footer ::= "endgenemapping"  
-factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ 
-\end{ebnfrule}
-The gene mapping maps transsys factor names (notice: not gene names)
-to identifiers that label the profiles in the empirical matrix, (the
-so-called gene manfacturer identifiers \todo{not really a fortunate
-  term. AVC. Can we not use a more generic name is case PCR or other
-  technologies are use to measure gene expression. ie.
-  other\_identifier}).
-
-The identifiers of the right hand side must be names of factors in the
-candidate program.
-
-No factor may be mapped more than once.
-
-If there are multiple profiles in the empirical matrix that correspond to
-one factor, these may be specified as a whitespace separated list. In
-this case, the average profile is used for comparison.
-
+The core of a SimGenex program describes how to use a transsys GRN
+model to produce a simulated gene expression matrix from the  
+definition of a set \computercode{simexpressions} of primary operations
+that are sufficiently general to simulate most standard experimental 
+\computercode{procedures}. The \computercode{measurementmatrix} 
+block describes how to transform the primary simulated matrix into a 
+\newterm{measurement matrix} by e.g.\ computing log-ratios. Finally, the 
+\computercode{discriminationsettings} block configures computation of the 
+distance of the measurement matrix to a target matrix.
 
 \subsubsection{Procedures}
 \label{section_procedures}
@@ -330,6 +280,30 @@ model of the gene regulatory network in the biological object, the
 expression levels in the transsys instance are expected to be similar
 to those measured in the biological object.
 
+Like procedures, simexpressions may be composed of primary instructions 
+and procedure invocations. In addition, they also may contain 
+\computercode{foreach} instructions. Such simexpressions define multiple 
+columns in the simulated matrix. The \computercode{foreach} instruction 
+enables very compact specifications of setups in which a number of strains are
+subjected to the same set of experimental conditions. For example, the
+declaration
+
+\begin{alltt}
+simexpression s
+\{
+  foreach: wildtype komutant;
+  equilibration;
+  foreach mock real;
+  onehour;
+\}
+\end{alltt}
+specifies four columns in which the genotypes \computercode{wildtype}
+and \computercode{komutant} are subjected to \computercode{mock} and
+the \computercode{real} treatment. each. \computercode{wildtype}. The
+procedures \computercode{komutant}, \computercode{mock} and
+\computercode{real} have to be defined in order for the above code
+fragment to work.
+
 The sequence of identifiers in the body of a simexpression is resolved
 to a sequence of primary instructions, as described for procedures in
 section \ref{section_procedures}. The sequence of primary operations
@@ -337,55 +311,106 @@ is applied to a transsys instance of the unmodified candidate program,
 with all expression levels starting at $0$. (Note: Future extensions
 may provide mechanisms for specifying the initial state of the instance.)
 
-Identifiers in a simexpression body must identify
-procedures. Invocation of other simexpressions is an error.
+Identifiers in a simexpression body must identify procedures. 
+Invocation of other simexpressions is an error.
 
 
-\subsubsection{Arrays}
+\subsubsection{Computing the Simulated Matrix}
 
 \begin{ebnfrule}
-arraymapping_def ::= arraymapping_header arraymapping_body arraymapping_footer
-arraymapping_header ::= "arraymapping" 
-arraymapping_body ::= (arraymapping_spec)+
-# identifier following "array" identifies an array in the empirical data set
-# identifier following ":" identifies a simexpression
-# identifier following "/" identifies a simexpression to be used as a ratio reference
-arraymapping_spec ::= "array" identifier ":" identifier ( "/" identifier)? 
-arraymapping_footer ::= "endarraymapping" 
+measurementmatrix_def ::= "measurementmatrix" "\{" measurementprocess_def 
+measurementcolums_def "\}"
 \end{ebnfrule}
 
-\todo{It seems to me that it was not ideal to call these things
-  arrays, because (1) gene expression can be measured by techniques
-  other than microarrays and (2) arrays really correspond to
-  simexpressions (perhaps with experimental noise added) -- one would
-  say that e.g.\ logratios are computed based on the measurements of
-  an array and the measurements of a reference array. Arrays should
-  rather be called expression matrix columns -- is that a good or at
-  least reasonable name?}
+As in the wet lab scenario, the columns of a matrix simulated by
+SimGenex need to be transformed following the same protocols that were
+applied to compute the target matrix of empirical data. SimGenex
+uses the following blocks within the
+\computercode{measurementmatrix} section to specify such procedures:
 
-Arrays are columns in the simulated expression matrix. They are
-computed by subjecting the expression levels in one or more
-simexpressions to mathematical operations, resulting in a column
-containing one value for each mapped factor of the candidate program.
-The idea is that the mathematical operations should be the same as
-those applied to the raw empirical data that have resulted in the
-empirical expression matrix.
+\begin{itemize}
+\item\computercode {measurementprocess}: specifies how individual gene
+  expression values are normalised. \computercode{offset} how
+  expression values are transformed to simulate a column in a gene
+  expression matrix \computercode{transformation}
 
-At this time, the only operations are copying a simexpression or
-computing the element-wise ratio of two simexpressions. The latter
-serves to realise logratios.
+\begin{ebnfrule}
 
-Array mapping operations are applied to values that have already been
-subjected to offset adding and log transformation.
+measurementprocess_def ::= "measurementprocess" "\{" offset_def transformation_def "\}"
+offset_def ::= "offset:" realnumber ";"
+        | "offset:" realnumber * expressionstat ";"
+expressionstat ::= "negmin()" | "stddev()"
+transformation ::= "transformation:" transformation_expr ";"
+transformation_expr ::= transformation_term "+" transformation_expr
+        | transformation_term "-" transformation_expr
+        | transformation_term
+transformation_term ::= transformation_unary "*" transformation_term
+        | transformation_unary "*" transformation_term
+        | transformation_unary
+transformation_unary ::= "log2(" transformation_expression ")"
+        | "offset(" transformation_expr ")"
+        | "(" transformation_expr ")"
+        | identifier
 
-\todo{Consider consolidating the language by offset and logratio
-  transformations into the arraymapping block? This would leave only
-  the distance function specification in the globalsettings, which
-  would be a step closer to separating the specification of the
-  simulation from that of the distance measure.}
-\cite{Parkinson2009}
+\end{ebnfrule}
 
-\subsection{WhiteList}
+\item \computercode{measurementcolumns}: specifies the columns in the
+  simulated expression matrix. Columns are computed by subjecting the
+  expression levels in one or more simexpressions to mathematical
+  operations, resulting in a column containing one value for each
+  mapped factor of the candidate program. The idea is that the
+  mathematical operations should be the same as those applied to the
+  raw empirical data that have resulted in the empirical expression
+  matrix.
+
+\begin{ebnfrule}
+measurementcolumns_def ::=  "measurementcolumns" "\{" 
+measurementcolumn_statement* "\}"
+measurementcolumn_statement ::= identifier ":" mvar_assignment_list ";"
+mvar_assignment_list ::= mvar_assignment_list "," mvar_assignment
+        | mvar_assignment
+mvar_assignment ::= identifier "=" identifier
+\end{ebnfrule}
+\end{itemize}
+
+
+\subsubsection{Discrimination Settings and Gene mapping}
+
+\begin{ebnfrule}
+  discriminationsettings_def ::= "discriminationdettings" 
+  "\{"  genemapping distance_def whitelist_def "\}"
+\end{ebnfrule}
+
+\begin{ebnfrule}
+genemapping_def ::= genemapping_header genemapping_body genemapping_footer 
+genemapping_header ::= "genemapping" 
+genemapping_body ::= (factor_def )+   
+genemapping_footer ::= "endgenemapping"  
+factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ 
+\end{ebnfrule}
+
+\computercode{genemapping} specifies names of genes in the computational 
+model that can be mapped to names in the target matrix, which may e.g.\ be IDs 
+designated by the microarray provider. 
+
+If there are multiple profiles in the empirical matrix that correspond to
+one factor, these may be specified as a whitespace separated list. In
+this case, the average profile is used for comparison.
+
+The identifiers of the right hand side must be names of factors in the
+candidate program. No factor may be mapped more than once.
+
+\begin{ebnfrule}
+distancemeasure_def ::= "distance:" distance_type 
+distance_type ::= "correlation" | "euclidean" | "sum_squares" 
+\end{ebnfrule}
+
+SimGenex allows the specification of a \computercode{distance} measure
+to compare the simulated matrix to a target matrix which can e.g.\ be
+used to discriminate the best GRN model from among a number of
+candidates. In addition, as in the real scenario, SimGenex allows the
+specification of a mapping scheme.
+
 
 \begin{ebnfrule}
 whitelist_def ::= whitelist_header whitelist_body whitelist_footer
@@ -396,6 +421,16 @@ whitelist_footer ::= "endwhitelistdefs"
 whitelist_factor_def ::= "factor" ":" (identifier)+
 whitelist_gene_def ::= "gene: " (identifier)+ 
 \end{ebnfrule}
+
+%Beyond configuring matrix distance, the \computercode{discriminationsettings} 
+%section may provide further
+%configuration to be used in the process of discriminating GRN models.
+
+\computercode{whitelist} specifies which factors or genes a discriminator may adjust. 
+This feature is useful where parts of the GRN model are unknown, and the discriminator should
+therefore explore various alternatives for the unknown parts. As an
+example, where numerical parameters are unknown, these can be set by
+numerical optimisation.
 
 WhiteList terms are those factors or genes, in a transsys program, whose
 initial conditions must not be changed by the optimiser when performing
@@ -408,7 +443,7 @@ to specify under which conditions a biochemical reaction might take place.
 \begin{ebnfrule}
 ----- terminals --------------------------------------------------------------------
 
-knockout_treatment_magic ::= "KnockoutTreatmentObjectiveSpecification-0.1" 
+SimGenex_magic ::= "SimGenex-0.1" 
 
 
 gene_manufacturer_identifier ::= doublequote character_but_not_doublequote+ doublequote
@@ -475,51 +510,7 @@ the program is deterministic, simulators could use that method to
 automatically activate the prefix optimisation as appropriate.
 
 
-\subsection{SimGenex 2.0}
-
-Syntactic features:
-
-\begin{itemize}
-\item Blocks should be in curly braces rather than in
-  \computercode{something} \ldots \computercode{endsomething}.
-\item Statements should be delimited by \computercode{;} so that
-  newlines are not necessary or considered as terminators or
-  separators.
-\item \computercode{simexpression} blocks are really procedures, so
-  they are replaced with procedures.
-\item review keywords
-\end{itemize}
-
-EBNF of SimGenex 2.0, without the individual transformation:
-
-\begin{ebnfrule}
-expressionset_def ::= "expressionset" "\{" genemapping_def measurementprocess_def measurements_def "\}"
-genemapping_def ::= "\{" (factor_def)+ "\}"
-factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ ";"
-measurementprocess_def ::= "measurementprocess" "\{" offset_def transformation_def "\}"
-offset_def ::= "offset:" realnumber ";"
-        | "offset:" realnumber * expressionstat ";"
-expressionstat ::= "negmin()" | "stddev()"
-transformation ::= "transformation:" transformation_expr ";"
-transformation_expr ::= transformation_term "+" transformation_expr
-        | transformation_term "-" transformation_expr
-        | transformation_term
-transformation_term ::= transformation_unary "*" transformation_term
-        | transformation_unary "*" transformation_term
-        | transformation_unary
-transformation_unary ::= "log2(" transformation_expression ")"
-        | "offset(" transformation_expr ")"
-        | "(" transformation_expr ")"
-        | identifier
-measurementcolumns_def ::=  "measurementcolumns" "\{" measurementcolumn_statement* "\}"
-measurementcolumn_statement ::= identifier ":" mvar_assignment_list ";"
-mvar_assignment_list ::= mvar_assignment_list "," mvar_assignment
-        | mvar_assignment
-mvar_assignment ::= identifier "=" identifier
-discriminationsettings_def ::= "\{"  distance_def whitelist_def "\}"
-\end{ebnfrule}
-
-\subsubsection{Example SimGenex 2.0 Code}
+\section{Example SimGenex 2.0 Code}
 
 \begin{footnotesize}
 \begin{verbatim}
