@@ -22,7 +22,7 @@ procedure treatmenttime
 
 procedure wildtype
 {
-  runtimesteps: 1;
+#  runtimesteps: 1;
 }
 
 procedure ko_housekeeping
