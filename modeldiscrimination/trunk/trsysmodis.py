@@ -579,6 +579,7 @@ gene in that array.
   def write_expression_data(self) :
     """ Write expression data  """
     x = file('%s_expr.txt'%self.basename,'w')
+    x.write('row.names' )
     for group in self.expression_data.array_name :
       x.write('\t%s'%group )
     x.write('\n')
@@ -755,6 +756,10 @@ gene in that array.
 
 
 class Instruction(object) :
+  """
+@ivar transsys_instace: Transsys Instance
+@type transsys_instance: L{TranssysInstance}
+"""
 
   def __init__(self) :
     pass
@@ -774,6 +779,12 @@ The trace is guaranteed to contain at least one instance.
 
 
   def make_instruction_sequence_list(self, prefix_list) :
+    """
+@param prefix_list: list of InstructionSequence
+@type prefix_list: list of L{IntructionSequence}
+@return: instruction_sequence_list
+@type: list of L{IntructionSequence}
+"""
     instruction_sequence_list = []
     for prefix in prefix_list[:] :
       instruction_sequence = prefix.get_copy()
@@ -783,6 +794,10 @@ The trace is guaranteed to contain at least one instance.
 
 
 class ForeachInstruction(Instruction) :
+  """
+@ivar instruction_list: lists of Invocation Instructions
+@type instruction_list: lists of L{InvocationInstruction}
+"""
 
   def __init__(self, instruction_list) :
     self.instruction_list = instruction_list
@@ -796,6 +811,12 @@ class ForeachInstruction(Instruction) :
 
 
   def make_header_list(self, prefix_list) :
+    """
+@param prefix_list: list of InstructionSequence
+@type prefix_list: list of L{IntructionSequence}
+@return: header_list
+@type: list of C{String}
+"""
     header_list = []
     for prefix in prefix_list :
       for procedure in self.instruction_list :
@@ -804,6 +825,13 @@ class ForeachInstruction(Instruction) :
 
 
   def make_instruction_sequence_list(self, prefix_list) :
+    """
+@param prefix_list: list of InstructionSequence
+@type prefix_list: list of L{IntructionSequence}
+@return: instruction_sequence_list
+@type: list of L{InstructionSequence}
+"""
+
     instruction_sequence_list = []
     for prefix in prefix_list :
       for instruction in self.instruction_list :
@@ -814,6 +842,10 @@ class ForeachInstruction(Instruction) :
 
 
   def resolve(self, procedure_dict) :
+    """
+@param procedure_dict: Dictionay containing procedures
+@type procedure_dict: dictionary of L{Procedures}
+"""
     for instruction in self.instruction_list :
       instruction.resolve(procedure_dict)
 
@@ -826,6 +858,8 @@ class ApplicableInstruction(Instruction) :
 
 class InvocationInstruction(ApplicableInstruction) :
   """Instruction to invoke a procedure.
+@ivar procedure: procedure
+@type procedure: L{Procedure}
 """
 
   def __init__(self, procedure) :
@@ -837,6 +871,10 @@ class InvocationInstruction(ApplicableInstruction) :
 
 
   def resolve(self, procedure_defs) :
+    """
+@param procedure_defs: List of Procedures
+@type procedure_defs: list of L{Procedure}
+"""
     if isinstance(self.procedure, Procedure) :
       return
     # FIXME: linear search
@@ -851,6 +889,11 @@ class InvocationInstruction(ApplicableInstruction) :
 
 
   def apply_instruction(self, transsys_instance) :
+    """
+@param transsys_instance: Transsys Instance
+@type transsys_instance: L{TranssysInstance}
+@return: list of L{TranssysInstance}
+"""
     if not isinstance(self.procedure, Procedure) :
        raise StandardError, 'unresolved statement'
     ti = transsys_instance
@@ -908,9 +951,11 @@ class KnockoutInstruction(PrimaryInstruction) :
     
 
   def apply_instruction(self, transsys_instance) :
-    """ Knock gene name out
-@param transsys_program: transsys program
-@type transsys_program: Object{transsys_program}
+    """ Knock gene name outi
+@param transsys_instance: Transsys Instance
+@type transsys_instance: L{TranssysInstance}
+@return: list of Transsys Instance
+@rtype: list of L{TranssysInstance}
 """
     knockout_tp = copy.deepcopy(transsys_instance.transsys_program)
     knockout_tp = knockout_tp.get_knockout_copy(self.gene_name)
@@ -933,7 +978,7 @@ class TreatmentInstruction(PrimaryInstruction) :
 @param factor_name: factor name
 @type factor_name: C{String}
 @param factor_concentration: concentration
-@type factor_concentration: double
+@type factor_concentration: C{Double}
 """
     super(TreatmentInstruction, self).__init__()
     if isinstance(factor_name, types.StringType) :
@@ -949,7 +994,9 @@ class TreatmentInstruction(PrimaryInstruction) :
   def apply_instruction(self, transsys_instance) :
     """Apply treatment
 @param transsys_instance: transsys instance
-@type transsys_instance: Instace
+@type transsys_instance: L{TranssysInstace}
+@return: list of Transsys Instance
+@rtype: list of L{TranssysInstance}
 @raise StandardError: If factor does not exist
 """ 
     factor_index = transsys_instance.transsys_program.find_factor_index(self.factor_name)
@@ -965,13 +1012,14 @@ class TreatmentInstruction(PrimaryInstruction) :
 
 
 class RuntimestepsInstruction(PrimaryInstruction) :
-  """ Class to simulate timesteps """
+  """ Class to simulate timesteps 
+@ivar time_steps: time steps
+@type time_steps: C{Int}
+"""
+
 
   def __init__(self, time_steps) :
-    """Constructor
-@param time_steps: time steps
-@type time_steps: Int
-"""
+    
     super(RuntimestepsInstruction, self).__init__()
     self.time_steps = time_steps
 
@@ -984,15 +1032,9 @@ class RuntimestepsInstruction(PrimaryInstruction) :
   def apply_instruction(self, transsys_instance) :
     """Equilibrate and output gene expression
 @param transsys_instance: transsys instance
-@type transsys_instance: Instace
-@param factor_names: factor names
-@type factor_names: Array
-@param file: file
-@type: File{}
-@param array_name: array name
-@type array_name: array name
-@return: gene_expression
-@rtype: array
+@type transsys_instance: L{TranssysInstance}
+@return: ts
+@rtype: L{TranssysInstance}
 """
     ts = transsys_instance.time_series(int(self.time_steps + 1))
     return ts
@@ -1009,7 +1051,7 @@ class OverexpressionInstruction(PrimaryInstruction) :
 @param factor_name: factor name
 @type factor_name: C{String}
 @param constitute_value: constitute value
-@type constitute_value: c{float}
+@type constitute_value: C{float}
 """
     super(OverexpressionInstruction, self).__init__()
     if isinstance(factor_name, types.StringType) :
@@ -1025,7 +1067,9 @@ class OverexpressionInstruction(PrimaryInstruction) :
   def apply_instruction(self, transsys_instance) :
     """ Overexpress gene
 @param transsys_program: transsys program
-@type transsys_program: Object{transsys_program}
+@type transsys_instance: L{TranssysInstance}
+@return: list of Transsys Instance
+@rtype: list of L{TranssysInstance}
 """
     tp = copy.deepcopy(transsys_instance.transsys_program)
     factor = tp.find_factor(self.factor_name)
@@ -1072,6 +1116,8 @@ class SetproductInstruction(PrimaryInstruction) :
     """ Overexpress gene
 @param transsys_program: transsys program
 @type transsys_program: Object{transsys_program}
+@return: list of Transsys Instance
+@rtype: list of L{TranssysInstance}
 """
     tp = copy.deepcopy(transsys_instance.transsys_program)
     gene = tp.find_gene(self.gene_name)
@@ -1223,14 +1269,14 @@ of the gene expression levels for that genotype.
 
 
 class SimGenexColumn(object) :
-  
-  def __init__(self, name, transsys_instance) :
-    """
+  """
 @param name: instruction sequence name
 @type name: C{String}
 @param transsys_instance: transsys_instance
 @type transsys_instance: L{TranssysInstance}
 """
+
+  def __init__(self, name, transsys_instance) :
     self.name = name
     self.transsys_instance = transsys_instance
 
@@ -1242,19 +1288,19 @@ created, equilibrated according to some C{equilibration_length}
 time steps, added a treatment according to some rules C{String} 
 and finally equilibrated again. The instance at the end of this time 
 series is the simulation of the gene expression levels for that genotype.
+@param procedure_defs: procedure definition.
+@type procedure_defs: list of C{Procedure}
+@param simexpression_defs: simexpression definition.
+@type simexpression_defs: list of C{SimExpression}
+@param measurementmatrix_def: measurementmatrix definitions.
+@type measurementmatrix_def: L{MeasurementMatrix}
+@param discriminationsettings_def: discriminationsettings definitions
+@type discriminationsettings_def: L{DiscriminationSettings}
 """ 
 
+
   def __init__(self, procedure_defs, simexpression_defs, measurementmatrix_def, discriminationsettings_def) :
-    """ Constructor 
-@param procedure_defs: procedure definition.
-@type procedure_defs: C{List}
-@param simexpression_defs: array definition.
-@type simexpression_defs: C{List}
-@param measurementmatrix_def: measurementmatrix definitions.
-@type measurementmatrix_def: C{List}
-@param discriminationsettings_def: discriminationsettings definitions
-@type discriminationsettings_def: C{List}
-"""
+    """ Constructor  """
     self.empirical_expression_set = None
     self.procedure_defs = procedure_defs
     self.simexpression_defs = simexpression_defs
@@ -1273,7 +1319,7 @@ series is the simulation of the gene expression levels for that genotype.
   def get_instructionsequence_list(self) :
     """ Get instruction sequence list from simexpression_defs
 @return: instructionsequence_list
-@rtype: C{List}
+@rtype: list of {InstructionSequence}
 """
     instructionsequence_list = []
     for simexpression in self.simexpression_defs :
@@ -1297,6 +1343,12 @@ series is the simulation of the gene expression levels for that genotype.
 
 
   def map_genes(self, matrix) :
+    """
+@param matrix: List of TranssysInstances 
+@type matrix: list of {TranssysInstances}
+@return: expression set
+@rtype: L{ExpressionSet}
+"""
     e = self.get_expressionset_template()
     for column in matrix :
       for factor in self.discriminationsettings_def.get_genemapping().get_factor_list() :
@@ -1467,9 +1519,9 @@ series is the simulation of the gene expression levels for that genotype.
 def distance_sum_squares(array1, array2) :
   """ Calculates the Sum Square Distance of two arrays
 @param array1: data set
-@type array1: array of C{float}
+@type array1: list of C{float}
 @param array2: data set
-@type array2: array of C{float}
+@type array2: list of C{float}
 @return: distance estimation
 @rtype: C{float}
 """
@@ -1491,9 +1543,9 @@ def distance_sum_squares(array1, array2) :
 def distance_euclidean(array1, array2) :
   """ Calculate the Sum Square distance of two arrays
 @param array1: data set
-@type array1: array of C{float}
+@type array1: list of C{float}
 @param array2: data set
-@type array2: array of C{float}
+@type array2: list of C{float}
 @return: distance estimation
 @rtype: C{float}
 """
@@ -1515,9 +1567,9 @@ def distance_euclidean(array1, array2) :
 def distance_correl(array1, array2) :
   """ Calculate Pearson correlation distance of two arrays
 @param array1: data set
-@type array1: array of C{float}
+@type array1: list of C{float}
 @param array2: data set
-@type array2: array of C{float}
+@type array2: list of C{float}
 @return: distance estimation
 @rtype: C{float}
 """
@@ -1542,9 +1594,9 @@ def distance_correl(array1, array2) :
 def distance_correl_sq(array1, array2) :
   """ Calculate Squared Pearson Correlation distance of two arrays
 @param array1: data set
-@type array1: array of C{float}
+@type array1: list of C{float}
 @param array2: data set
-@type array2: array of C{float}
+@type array2: list of C{float}
 @return: distance estimation
 @rtype: C{float}
 """
@@ -1563,8 +1615,8 @@ def distance_correl_sq(array1, array2) :
 
 def statistics(l) :
   """ Calculates the Statistic Mean of an array of elements 
-@param l: array of values
-@type l: array of C{float}
+@param l: list of values
+@type l:  list of C{float}
 @return: Statistic mean measurement
 @rtype: C{float}
 """
@@ -1592,29 +1644,40 @@ class ModelFitnessResult(transsys.optim.FitnessResult) :
 
 
 class Procedure(Instruction) :
-  """Object Procedure """
-
+  """Object Procedure
+@ivar procedure_name: procedure name
+@type procedure_name: C{String}
+@ivar instruction_list: instruction list
+@type instruction_list: list of C{Instruction} objects
+"""
 
   def __init__(self, procedure_name, instruction_list) :
-    """  Constructor
-@param procedure_name: procedure name
-@type procedure_name: C{String}
-@param instruction_list: instruction list
-@type instruction_list: list of C{Instruction} objexts
-"""
+    """  Constructor """
     self.instruction_list = instruction_list
     self.procedure_name = procedure_name
 
 
   def get_procedure_name(self) :
-   return(self.procedure_name)
+    """
+@return: procedure name
+@rtype: C{String}
+"""
+    return(self.procedure_name)
 
   
   def get_instruction_list(self) :
+    """
+@return: instruction list
+@rtype: list of L{Instruction}
+"""
     return(self.instruction_list)
 
 
   def set_instruction_list(self, instruction_list) :
+    """
+@param instruction_list: list of instructions
+@type instruction_list: list of L{Instruction} 
+"""
     self.instruction_list = instruction_list
     
 
@@ -1630,6 +1693,12 @@ class Procedure(Instruction) :
 
   # FIXME: this is really an application of the invocation
   def apply_instruction(self, transsys_instance) :
+    """
+@param transsys_instance: transsys_instance
+@type transsys_instance: L{TranssysInstance}
+@return: ti_trace
+@rtype: list of L{TranssysInstance}
+"""
     ti = transsys_instance
     ti_trace = []
     for instruction in self.instruction_list :
@@ -1640,10 +1709,8 @@ class Procedure(Instruction) :
 
   def resolve(self, procedure_defs) :
     """ Resolve instruction list
-@param unresolved_instruction_list: unresolved_instruction_list
-@type unresolved_instruction_list: L{unresolved_instruction_list}
 @param procedure_defs: procedure_defs
-@type procedure_defs: dictionary{}
+@type procedure_defs: list of {InvocationInstruction}
 """
     resolved_instruction_list = []
     for instruction in self.instruction_list :
@@ -1658,7 +1725,12 @@ class Procedure(Instruction) :
 
 
 class InstructionSequence(object) :
-
+  """
+@ivar name: instruction sequence name
+@type name: C{String}
+@ivar instruction_sequence: list of Invocation Instruction
+@type instruction_sequence: List of L{InvocationInstruction}
+"""
 
   def __init__(self, name, instruction_sequence = None) :
     self.name = name
@@ -1667,52 +1739,85 @@ class InstructionSequence(object) :
     else :
       self.instruction_sequence = instruction_sequence[:]
 
+
   def get_copy(self) :
+    """
+@return: self.name
+@rtype: C{String}
+@return: self.instruction_sequence
+@rtype: List of L{InvocationInstruction}
+"""
     return InstructionSequence(self.name, self.instruction_sequence)
 
 
   def get_instruction_sequence_name(self) :
+    """
+@return: self.name
+@rtype: C{String}
+"""
     return self.name
 
 
   def append_instruction(self, instruction) :
+    """
+@param instruction: instruction
+@type instruction: L{InvocationInstruction}
+"""
     self.instruction_sequence.append(instruction)
 
 
   def simulate(self, transsys_program) :
+    """
+@param transsys_program: transsys_program
+@param transsys_program: L{TranssysProgram}
+@return: ti_trace
+@rtype: {TranssysInstance}
+"""
     tp = copy.deepcopy(transsys_program)
     ti = transsys.TranssysInstance(transsys_program)
     ti_trace = []
     for instruction in self.instruction_sequence :
       ti_trace = ti_trace + instruction.apply_instruction(ti)
-      ti = ti_trace[-1]
+      if len(ti_trace) != 0 :
+        ti = ti_trace[-1]
     return ti_trace
 
 
 class SimExpression(object) :
-  """ Object SimExpression """
-
-
-  def __init__(self, simexpression_name, instruction_list) :
-    """ Constructor
+  """ Object SimExpression
 @param simexpression_name: simexpression name
 @type simexpression_name: C{String}
 @param instruction_list: instruction list
-@type instruction_list: list of C{Instruction} instances
+@type instruction_list: list of L{Instruction} instances
 """
+
+  def __init__(self, simexpression_name, instruction_list) :
+    """ Constructor """
     self.simexpression_name = simexpression_name
     self.instruction_list = instruction_list
 
 
   def get_simexpression_name(self) :
-   return(self.simexpression_name)
+    """
+@return: self.simexpression_name
+@rtype: C{String}
+"""
+    return(self.simexpression_name)
 
   
   def get_instruction_list(self) :
+    """
+@return: self.instruction_list
+@rtype: list of L{InvocationInstruction}
+"""
     return(self.instruction_list)
 
 
   def set_instruction_list(self, instruction_list) :
+    """
+@param: self.instruction_list
+@type: list of L{InvocationInstruction}
+"""
     self.instruction_list = instruction_list
 
 
@@ -1727,6 +1832,10 @@ class SimExpression(object) :
 
 
   def get_foreach_list(self) :
+    """
+@return: foreach_list
+@rtype: list of L{InvocationInstruction}
+"""
     foreach_list = []
     for instruction in self.instruction_list :
       if isinstance(instruction, ForeachInstruction) :
@@ -1735,6 +1844,10 @@ class SimExpression(object) :
 
 
   def get_simulated_column_header_list(self) :
+    """
+@return: column_header_list
+@rtype: list of C{String}
+"""
     column_header_list = [self.simexpression_name]
     for f in self.get_foreach_list() :
       column_header_list = f.make_header_list(column_header_list)
@@ -1742,10 +1855,18 @@ class SimExpression(object) :
 
 
   def contains_column(self, name) :
+    """
+@param name: Simexpression name
+@type name: C{String}
+"""
     return name in self.get_simulated_column_header_list()
 
 
   def get_instruction_sequence_list(self) :
+    """
+@return: instruction_sequence_list
+@rtype: list of L{InstructionSequence} 
+"""
     instruction_sequence_list = [InstructionSequence(self.simexpression_name)]
     for instruction in self.instruction_list :
       instruction_sequence_list = instruction.make_instruction_sequence_list(instruction_sequence_list)
@@ -1755,7 +1876,12 @@ class SimExpression(object) :
   
 
   def resolve(self, procedure_defs) :
-    """ Resolve SimExpression """
+    """ Resolve SimExpression 
+@param procedure_defs: list of procedures
+@type: list of L{Procedure}
+@return: simexpression_cols
+@rtype: list of L{InstructionSequence}
+"""
     simexpression_cols = self.get_instruction_sequence_list()
     for seq in simexpression_cols :
       for instruction in seq.instruction_sequence :
@@ -1764,6 +1890,12 @@ class SimExpression(object) :
      
 
   def simulate(self, transsys_program) :
+    """
+@param transsys_program: transsys program
+@type transsys_program: L{TranssysProgram}
+@return: ti_trace
+@rtype: L{TranssysInstance}
+"""
     tp = copy.deepcopy(transsys_program)
     ti = transsys.TranssysInstance(transsys_program)
     ti_trace = []
@@ -1774,7 +1906,13 @@ class SimExpression(object) :
 
 
 class TransformedData(object) :
-  
+  """
+@ivar name: name
+@type name: C{Tring}
+@ivar data_dict: simulated gene expression values
+@type data_dict: dictionary of C{Float}
+"""
+
   def __init__(self, name, data_dict) :
     self.name = name
     self.data_dict = data_dict
