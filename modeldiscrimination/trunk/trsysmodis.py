@@ -1967,18 +1967,21 @@ class MeasurementMatrix(object) :
 
 
 class GeneMapping(object) :
-  """  Object GeneMapping """
-
-
-  def __init__(self, factor_list):
-    """ Constructor
+  """  Object GeneMapping
 @param factor_list: factor list
 @type factor_list: Dictionary{S}
 """
+
+  def __init__(self, factor_list):
+    """ Constructor """
     self.factor_list = factor_list
    
 
   def get_factor_list(self) :
+    """
+@return: self.factor_list.keys()
+@rtype: list of C{String}
+"""
     return(self.factor_list.keys())
 
 
@@ -1998,7 +2001,12 @@ class GeneMapping(object) :
 
 
 class MeasurementProcess(object) :
-  
+  """
+@ivar offset: offset
+@type offset: C{Float}
+@ivar transformation: transformation
+@type transformation: L{TransformationContext}
+"""
   
   def __init__(self, offset, transformation) :
     self.offset = offset
@@ -2070,9 +2078,16 @@ class Measurements(object) :
 
 
 class DiscriminationSettings(object) :
+  """
+@ivar genemapping: gene mapping
+@type genemapping: L{GeneMapping}
+@ivar distance: distance
+@type distance: C{String}
+@ivar whitelist: whitelist
+@type whitelist: L{WhiteList}
+"""
 
   def __init__(self, genemapping, distance, whitelist) :
-    """ FIXME: verbose """
     self.distance = distance
     self.whitelist = whitelist
     self.genemapping =  genemapping
@@ -2105,14 +2120,14 @@ class DiscriminationSettings(object) :
 
 
 class WhiteList(object) :
-  """  Object WhiteList """
-
-
-  def __init__(self, factor_list, gene_list):
-    """ Constructor
+  """ Object WhiteList 
 @param whitelist_dict: whitelist_dict
 @type whitelist_dict: Dictionary{S}
 """
+
+
+  def __init__(self, factor_list, gene_list):
+    """ Constructor """
     self.factor_list = factor_list
     self.gene_list = gene_list
    
@@ -2272,6 +2287,12 @@ class MvarAssignment(object) :
 
 
 class MeasurementColumn(object) :
+  """
+@ivar name: Column name
+@type name: C{String}
+@ivar mvar_assignment_list: assignment list
+@type mvar_assignment_list: L{MvarAssignment}
+"""
 
   def __init__(self, name, mvar_assignment_list) :
     self.name = name
@@ -2318,6 +2339,10 @@ class TransformationExpr(object) :
 
 
 class TransformationExprPlus(TransformationExpr) :
+  """
+@ivar operand1: operand 1
+@ivar operand2: operand 2
+"""
 
   def __init__(self, operand1, operand2) :
     self.operand1 = operand1
@@ -2329,17 +2354,27 @@ class TransformationExprPlus(TransformationExpr) :
 
 
   def evaluate(self, context) :
-    column_matrix_div = {}
+    """
+@param context: Transformation context
+@type context: L{TransformationConext}
+@return: column_matrix_plus
+@rtype: dictionary of C{float}
+"""
+    column_matrix_plus = {}
     if self.operand1 is None and self.operand2 is None :
       raise StandardError, 'two operands were not found'
     operando1_dict = self.operand1.evaluate(context)
     operando2_dict = self.operand2.evaluate(context)
     for factor in operando1_dict :
-      column_matrix_div[factor] = operando1_dict[factor] + operando2_dict[factor]
-    return column_matrix_div
+      column_matrix_plus[factor] = operando1_dict[factor] + operando2_dict[factor]
+    return column_matrix_plus
 
 
 class TransformationExprMinus(TransformationExpr) :
+  """
+@ivar operand1: operand 1
+@ivar operand2: operand 2
+"""
 
   def __init__(self, operand1, operand2) :
     self.operand1 = operand1
@@ -2351,17 +2386,27 @@ class TransformationExprMinus(TransformationExpr) :
 
 
   def evaluate(self, context) :
-    column_matrix_div = {}
+    """
+@param context: Transformation context
+@type context: L{TransformationConext}
+@return: column_matrix_minus
+@rtype: dictionary of C{float}
+"""
+    column_matrix_minus = {}
     if self.operand1 is None and self.operand2 is None :
       raise StandardError, 'two operands were not found'
     operando1_dict = self.operand1.evaluate(context)
     operando2_dict = self.operand2.evaluate(context)
     for factor in operando1_dict :
-      column_matrix_div[factor] = operando1_dict[factor] - operando2_dict[factor]
-    return column_matrix_div
+      column_matrix_minus[factor] = operando1_dict[factor] - operando2_dict[factor]
+    return column_matrix_minus
 
 
 class TransformationExprMultiply(TransformationExpr) :
+  """
+@ivar operand1: operand 1
+@ivar operand2: operand 2
+"""
 
   def __init__(self, operand1, operand2) :
     self.operand1 = operand1
@@ -2373,17 +2418,27 @@ class TransformationExprMultiply(TransformationExpr) :
 
 
   def evaluate(self, context) :
-    column_matrix_div = {}
+    """
+@param context: Transformation context
+@type context: L{TransformationConext}
+@return: column_matrix_mul
+@rtype: dictionary of C{float}
+"""
+    column_matrix_mul = {}
     if self.operand1 is None and self.operand2 is None :
       raise StandardError, 'two operands were not found'
     operando1_dict = self.operand1.evaluate(context)
     operando2_dict = self.operand2.evaluate(context)
     for factor in operando1_dict :
-      column_matrix_div[factor] = operando1_dict[factor] * operando2_dict[factor]
-    return column_matrix_div
+      column_matrix_mul[factor] = operando1_dict[factor] * operando2_dict[factor]
+    return column_matrix_mul
 
 
 class TransformationExprDivide(TransformationExpr) :
+  """
+@ivar operand1: operand 1
+@ivar operand2: operand 2
+"""
 
   def __init__(self, operand1, operand2) :
     self.operand1 = operand1
@@ -2395,6 +2450,12 @@ class TransformationExprDivide(TransformationExpr) :
 
 
   def evaluate(self, context) :
+    """
+@param context: Transformation context
+@type context: L{TransformationConext}
+@return: column_matrix_div
+@rtype: dictionary of C{float}
+"""
     column_matrix_div = {}
     if self.operand1 is None and self.operand2 is None :
       raise StandardError, 'two operands were not found'
@@ -2406,6 +2467,9 @@ class TransformationExprDivide(TransformationExpr) :
 
 
 class TransformationExprLog2(TransformationExpr) :
+  """
+@ivar operand1: operand 1
+"""
 
   def __init__(self, operand) :
     self.operand = operand
@@ -2416,6 +2480,12 @@ class TransformationExprLog2(TransformationExpr) :
 
 
   def evaluate(self, context) :
+    """
+@param context: Transformation context
+@type context: L{TransformationConext}
+@return: column_matrix_log
+@rtype: dictionary of C{float}
+"""
     column_matrix = self.operand.evaluate(context)
     column_matrix_log = {}
     for factor in column_matrix :
@@ -2424,6 +2494,9 @@ class TransformationExprLog2(TransformationExpr) :
       
   
 class TransformationExprOffset(TransformationExpr) :
+  """
+@ivar operand1: operand 1
+"""
 
   def __init__(self, operand) :
     self.operand = operand
@@ -2434,6 +2507,12 @@ class TransformationExprOffset(TransformationExpr) :
 
 
   def evaluate(self, context) :
+    """
+@param context: Transformation context
+@type context: L{TransformationConext}
+@return: column_matrix_log
+@rtype: dictionary of C{float}
+"""
     column_matrix = {}
     column_matrix_ti = self.operand.evaluate(context)
     for factor in column_matrix_ti.transsys_program.factor_list :
@@ -2442,6 +2521,9 @@ class TransformationExprOffset(TransformationExpr) :
 
   
 class TransformationExprMvar(TransformationExpr) :
+  """
+@ivar operand1: operand 1
+"""
 
   def __init__(self, name) :
     self.name = name
@@ -2452,6 +2534,12 @@ class TransformationExprMvar(TransformationExpr) :
 
 
   def evaluate(self, context) :
+    """
+@param context: Transformation context
+@type context: L{TransformationConext}
+@return: column_matrix.transsys_instance
+@rtype: L{TranssysInstance}
+"""
     for i in context.mvar_map :
       if i.lhs == self.name :
         colname = i.rhs
@@ -2462,6 +2550,12 @@ class TransformationExprMvar(TransformationExpr) :
 
 
 class Offset(object) :
+  """
+@ivar offsetvalue: offset value
+@type offsetvalue: C{Float}
+@ivar expressionstat: statistical characteristics of expression values
+@type expressionstat: L{ExpressionStat}
+"""
 
   def __init__(self, offsetvalue, expressionstat = None) :
     self.offsetvalue = offsetvalue
@@ -2521,21 +2615,29 @@ class ExpressionStatNegmin(ExpressionStat) :
 
 
   def estimate(self, values) :
-    return statistics(values)[1]
+    """
+@param values: expression values
+@type values: list of C{float}
+@return: min(values)
+@rtype: C{float} 
+"""
+    if min(values) > 0 : 
+      return 0
+    else : 
+      return min(values)
  
 
 class EmpiricalObjectiveFunctionParser(object) :
   """ Object specification 
+@param f: Spec file
+@type f: c{file}
 """
 
   magic = "SimGenex-2.0" 
 
 
   def __init__(self, f) :
-    """  Constructor
-@param f: Spec file
-@type f: file
-"""
+    """  Constructor """
     self.scanner = Scanner(f)
 
 
@@ -2551,8 +2653,6 @@ class EmpiricalObjectiveFunctionParser(object) :
       raise StandardError, 'line %d: expected token "%s" but got "%s"' % (self.scanner.lineno, expected_token, t)
     return v
 
-
-### Whitelist
 
   def parse_identifier_list(self) :
     identifier_list = []
@@ -2780,8 +2880,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     return MeasurementProcess(offset, transformation) 
 
 
-### Genemapping
-
   def parse_genemapping_body(self):
     """ Parse genemapping body
 @return: genemapping dictionary
@@ -2827,7 +2925,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     return MeasurementMatrix(measurementprocess, measurementcolumns)
 
 
-##SimExpression
 
   def parse_simexpression_header(self) :
     """Parse simexpression header
@@ -3050,8 +3147,6 @@ class EmpiricalObjectiveFunctionParser(object) :
     return temp_procedure_list
 
 
-## resolve spec
-  
   def verify_simexpression_cols(self, simexpression_defs, mesurementmatrix_def) :
     """ Verify that columns defined in the measurementmatrix are created in the simexpression_defs"""
     measurementmatrixcols = []
@@ -3074,9 +3169,6 @@ class EmpiricalObjectiveFunctionParser(object) :
   def resolve_spec(self, simexpression_defs, mesurementmatrix_def) :  
     """ Resolve spec """
     self.verify_simexpression_cols(simexpression_defs, mesurementmatrix_def)
-
-
-## parse_simgenex
 
 
   def parse_simgenex(self) :
