@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <title>Transsys model discrimination</title>
-    <link rel="stylesheet" type="text/css" href="/css/site.css" />
+<link rel="stylesheet" type="text/css" href="http://www.transsys.net/css/site.css" />
 </head>
 <body>
     <table>
@@ -14,7 +14,7 @@
             {% endfor %}
         </ul>
     {% endif %}
-    <form action="djangotest.cgi" method="post">
+    <form action="trsysmodis.cgi" method="post">
         <tr><td><h3><p>Candidate 1: </p></h3></tr></td>
         <tr><td><p><textarea name="candidate1" rows="10" cols="50">{{ candidate1 }}</textarea></p></tr></td>
         <tr><td><h3><p>Candidate 2: </p></h3></tr></td>
@@ -23,7 +23,6 @@
         <tr><td><textarea name="targetdata" rows="10" cols="50">{{ targetdata }}</textarea></p></tr></td>
         <tr><td><h3><p>SimGenex specification: </tp></h3>
         <tr><td><textarea name="simgenexspec" rows="10" cols="50">{{ simgenexspec }}</textarea></p></tr></td>
-	<tr><td><p>Please allow three newlines after after the last line of your simgenexspec</p></tr></td>
         <tr><td><h3><p>Random restarts: </p></h3>
         <tr><td><p><input type=text name="restarts" rows="1" cols="3">{{ restarts }}</input></p></tr></td>
         <p>

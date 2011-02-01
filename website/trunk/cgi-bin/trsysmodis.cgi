@@ -46,7 +46,7 @@ dfplot <- function(d)
   par(mfrow = c(2, 1));
   for (columnName in colnames(d))
   {
-    plot(d[, columnName], type = "l", xlab="fitness", ylab="restarts", main=columnName);
+    plot(d[, columnName], col="blue", type = "l", xlab="restarts", ylab="fitness", ylim=c(0, 4), xlim=c(1,nrow(d)+1), main=columnName);
   }
 }
 
@@ -198,15 +198,6 @@ def cgiFormResponse(modelDict = None) :
   print t.render(c)
 
 
-def parseSimgenex(spec) :
-  x = spec.replace('\r','')
-  #x = spec.split('\r')
-  print_http_headers()
-  print "%s"%x
-  #for arrayval in x[:1] :
-  #  print "%s"%arrayval
-
-
 def getExprData(x):
   expr_dict = {}
   x = x.split('\r\n')
@@ -270,8 +261,7 @@ def extractModelDicts() :
     errorList.append('target data not specified')
   if 'simgenexspec' in formdata :
     seString = formdata['simgenexspec'].value
-    x = seString.replace('\r','')
-    specFile = StringIO.StringIO(x)
+    specFile = StringIO.StringIO(seString)
     o = trsysmodis.EmpiricalObjectiveFunctionParser(specFile)
     modelDict['simgenexspec'] = o.parse_objectivespec()
   else :
@@ -289,7 +279,7 @@ def extractModelDicts() :
 def discriminate(modelDict) :
   resultDict = {}
   objective_function = modelDict['simgenexspec']
-  objective_function.set_expression_set(modelDict['targetdata'])
+  objective_function.set_empirical_expression_set(modelDict['targetdata'])
   optimiser = transsys.optim.GradientOptimiser()
   optimiser.termination_relative_improvement = 0.1
   restarts = modelDict['restarts']
