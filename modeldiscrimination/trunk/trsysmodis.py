@@ -78,7 +78,7 @@ class ExpressionData(object) :
     else :
       raise StandardError, '%s was not found' % factor_name
 
-
+#FIXME: Obsolete
   def shift_data(self, offset) :
     """Shift data by offset (i.e. add offset)
 @param offset: the offset
@@ -89,6 +89,7 @@ class ExpressionData(object) :
       self.expression_data[key] = map(lambda t: t + (offset * average ), self.expression_data[key] )
 
 
+#FIXME: Obsolete
   def shift_to_stddev(self, sd_multiplier) :
     """
 Transform expression data by shifting such that the minimum expression
@@ -128,6 +129,7 @@ expression levels across the data set.
     return profile
 
 
+#FIXME: Obsolete
   def get_ratioprofile(self, arraymapping, factor_name) :
     """ Retrieve expression profile of factor_name
 @param factor_name: factor name
@@ -156,6 +158,7 @@ expression levels across the data set.
     return profile2
       
 
+#FIXME: Obsolete
   def get_logratioprofile(self, wt, gene_name) :
     """ Retrieve gene_name logratio expression vector
 @param gene_name: gene name
@@ -207,6 +210,7 @@ All expression values in the newly added array are initialised with C{None}.
     i = self.array_name.index(array_name)
 
 
+#FIXME: Obsolete
   def logratio(self, x, r) :
     """Compute the log ratio of expression level C{x} and reference level C{r}.
     This method applies the logratio offset, a pseudocount-like offset
@@ -225,6 +229,7 @@ All expression values in the newly added array are initialised with C{None}.
     return math.log((x / r) , 2.0)
 
 
+#FIXME: Obsolete
   def nonzerodata(self) :
     """ Check if a gene whose average expression  profile is zero
  @return: either the average expression profile of the zero profile gene or the last gene in the array
@@ -236,6 +241,7 @@ All expression values in the newly added array are initialised with C{None}.
     return statistics(self.expression_data[key])[0] 
     
 
+#FIXME: Obsolete
 class FeatureData(object) :
   """ Create feature data object
 @ivar array_name: array name
@@ -244,11 +250,13 @@ class FeatureData(object) :
 @type feature_data: C{}
 """
 
+#FIXME: Obsolete
   def __init__(self) :
     self.array_name = None
     self.feature_data = {}
 
   
+#FIXME: Obsolete
   def read (self, x) :
     """  Load gene expression data
 @param x: Input file
@@ -268,6 +276,7 @@ class FeatureData(object) :
       l = x.readline()
 
 
+#FIXME: Obsolete
   def get_gene_name(self) :
     """ Retrieve gene names from gene expression data
 @return: array
@@ -279,6 +288,7 @@ class FeatureData(object) :
     return gene_name
 
 
+#FIXME: Obsolete
   def get_feature_list(self, array_name) :
     """ Retrieve array_name's list of features 
 @param array_name: array name
@@ -293,6 +303,7 @@ class FeatureData(object) :
     return feature_list
     
 
+#FIXME: Obsolete
 class PhenoData(object) :
   """Create pheno data object
 @ivar array_name: array name
@@ -301,11 +312,13 @@ class PhenoData(object) :
 @type pheno_data: C{}
 """
 
+#FIXME: Obsolete
   def __init__(self) :
     self.array_name = []
     self.pheno_data = {}
  
 
+#FIXME: Obsolete
   def read (self, x) :
     """  Load gene expression data
 @param x: Input file
@@ -325,6 +338,7 @@ class PhenoData(object) :
     y = self.pheno_data.keys()
 
 
+#FIXME: Obsolete
   def get_array_name(self) :
     """ Retrieve array names from pheno data
 @return: array
@@ -336,6 +350,7 @@ class PhenoData(object) :
     return array_name
 
 
+#FIXME: Obsolete
   def get_gene_name(self) :
     """ Retrieve attribute names from pheno data
 @return: array
@@ -346,6 +361,7 @@ class PhenoData(object) :
     return attribute_name
 
 
+#FIXME: Obsolete
   def get_attribute_list(self, array_name) :
     """ Retrieve array_name's list of features 
 @param array_name: array name
@@ -404,6 +420,7 @@ Notice that the current contents of this instance are lost.
       self.verify_integrity()
   
 
+#FIXME: Obsolete
   def verify_integrity(self) :
     """Check for integrite of expression, pheno and feature data sets 
 """
@@ -439,6 +456,7 @@ gene in that array.
     profile = self.expression_data.get_profile(gene_name)
     return profile
 
+#FIXME: Obsolete
 #FIXME: It seems this function is not longer needed
   def get_logratioprofile(self, wt, gene_name) :
     """Retrieve the gene expression profile of a specific gene in this set.
@@ -456,6 +474,7 @@ gene in that array.
     return profile
 
 
+#FIXME: Obsolete
   def get_ratioprofile(self, arraymapping_defs, gene_name) :
     """Retrieve the gene expression profile of a specific gene in this set.
 The profile is represented as a dictionary with keys being the
@@ -472,6 +491,7 @@ gene in that array.
     return profile
 
 
+#FIXME: Obsolete
   def shift_data(self, offset) :
     """Shift expression data by offset.
 @param offset: the offset
@@ -480,6 +500,7 @@ gene in that array.
     self.expression_data.shift_data(offset)
 
 
+#FIXME: Obsolete
   def divergence(self, other, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
@@ -499,6 +520,7 @@ gene in that array.
     return d
 
 
+#FIXME: Obsolete
   def logratio_divergence(self, other, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
@@ -519,6 +541,7 @@ gene in that array.
     return d
 
 
+#FIXME: Obsolete
   def logratio_divergence_treat(self, other, arraymapping_defs, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
@@ -542,6 +565,7 @@ gene in that array.
 
 
 
+#FIXME: Obsolete
   def divergence_treat(self, other, arraymapping_defs, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
@@ -559,6 +583,7 @@ gene in that array.
     return d
 
 
+#FIXME: Obsolete
   def distance_divergence(self, selfProfile, otherProfile, distance_function) :
     """ Divergence distance
 @param selfProfile: Empirical data
@@ -590,6 +615,7 @@ gene in that array.
       x.write('\n')
  
 
+#FIXME: Obsolete
   def write_pheno_data (self) :
     """ Write pheno data  """
     p = file('%s_pheno.txt'%self.basename,'w')
@@ -604,6 +630,7 @@ gene in that array.
       p.write('\n')
  
 
+#FIXME: Obsolete
   def write_feature_data (self) :       
     """ Write feature data  """
     f = file('%s_feature.txt'%self.basename,'w')
@@ -655,6 +682,7 @@ gene in that array.
     self.expression_data.set_value(array_name, factor_name, v)
 
 
+#FIXME: Obsolete
   def get_meanexpressionset(self) :
     """Average of expression profile matrix.
 @return: average
@@ -669,6 +697,7 @@ gene in that array.
     return averagematrix
 
 
+#FIXME: Obsolete
   def get_wildtype_array_name(self) :
     """Retrieve the name of the array of the wild type from the empirical data.
 @return: array
@@ -681,6 +710,7 @@ gene in that array.
     return array_wt
 
 
+#FIXME: Obsolete
   def get_knockout_gene_name_list(self) :
     """Retrieve the name of the array of the wild type from the empirical data.
 @return: array
@@ -695,6 +725,7 @@ gene in that array.
     return gene_list
 
 
+#FIXME: Obsolete
   def get_knockout_name(self, array_name) :
     """Retrieve knockout gene name.
 @param array_name: array name
@@ -708,6 +739,7 @@ gene in that array.
     return v
 
 
+#FIXME: Obsolete
   def get_knockout_array_name(self, gene_name) :
     """Retrieve the name of the array of the wild type from the empirical data.
 @param gene_name: gene name
@@ -1162,6 +1194,7 @@ The objective function is parametrised by gene expression measurements.
 
 
 
+#FIXME: Obsolete
 class KnockoutObjective(EmpiricalObjective) : 
   """Objective function
 based on empirical data from the wild type and knockout mutants.
@@ -1185,6 +1218,7 @@ of the gene expression levels for that genotype.
 @type sd_multiplier: C{float}
 """ 
 
+#FIXME: Obsolete
   def __init__(self, expression_set, equilibration_length, logratio_mode = None, distance_function = None, sd_multiplier = None) :
     """Constructor.
 """
@@ -1196,6 +1230,7 @@ of the gene expression levels for that genotype.
     self.expression_set = self.transform_expression_set(self.expression_set)
 
 
+#FIXME: Obsolete
   def transform_expression_set(self, expression_set) :
     """ Transform expression set
 @param expression_set: expression set
@@ -1206,6 +1241,7 @@ of the gene expression levels for that genotype.
     return expression_set
 
 
+#FIXME: Obsolete
   def __call__(self, transsys_program) :
     """ Call
 @param transsys_program: transsys program
@@ -1220,6 +1256,7 @@ of the gene expression levels for that genotype.
     return ModelFitnessResult(s)
 
 
+#FIXME: Obsolete
   def get_simulated_set(self, transsys_program) :
     """Produce raw (ie without any transformations applied) simulated data.
     
@@ -1248,6 +1285,7 @@ of the gene expression levels for that genotype.
     return e
 
 
+#FIXME: Obsolete
   def get_measurement(self, ti) :
     """Get time series value 
 @param ti: time series step
@@ -1689,22 +1727,6 @@ class Procedure(Instruction) :
     s = s + '}\n\n'
     return s
 
-
-  # FIXME: this is really an application of the invocation
-  def apply_instruction(self, transsys_instance) :
-    """
-@param transsys_instance: transsys_instance
-@type transsys_instance: L{TranssysInstance}
-@return: ti_trace
-@rtype: list of L{TranssysInstance}
-"""
-    ti = transsys_instance
-    ti_trace = []
-    for instruction in self.instruction_list :
-      ti_trace = ti_trace + instruction.apply_instruction(ti)
-      ti = ti_trace[-1]
-    return ti_trace
-  
 
   def resolve(self, procedure_defs) :
     """ Resolve instruction list
@@ -3087,7 +3109,7 @@ class EmpiricalObjectiveFunctionParser(object) :
   def parse_instruction(self) :
     """Check procedure lexicon
 @return: Object 
-@rtype: L{}
+@rtype: L{Procedure}
 """
     t = self.scanner.lookahead()
     if t == 'treatment' :

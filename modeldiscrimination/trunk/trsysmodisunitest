@@ -16,6 +16,7 @@ class TestSequenceFunctions(unittest.TestCase):
     self.optimiserfile = open('optspec.dat', 'r')
     self.specfile = open('sgx.txt', 'r')
     self.model_01 = open('sgx.tra', 'r')
+    self.model_02 = open('sgx_01.tra', 'r')
     self.rndseed = 1
     self.cwd = os.getcwd()
     self.simulated_data = None
@@ -40,6 +41,7 @@ class TestSequenceFunctions(unittest.TestCase):
     transsys_program = transsys.TranssysProgramParser(self.model_01).parse()
     obj = objective_function(transsys_program)
     opt_result = optimiser.optimise(transsys_program, objective_function)
+    self.assertTrue(opt_result.objectiveOptimum.fitness < 0.3)
 
 
   def test_individual_pythonscripts(self, type = 1) :
