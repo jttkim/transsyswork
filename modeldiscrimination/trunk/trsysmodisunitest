@@ -7,100 +7,42 @@ import transsys
 import sys
 import os
 
+
 class TestSequenceFunctions(unittest.TestCase):
+
 
   def setUp(self):
     self.transformerfile = open('transformerfile.dat', 'r')
     self.optimiserfile = open('optspec.dat', 'r')
-    self.specfile = open('modeldisdummy.txt', 'r')
+    self.specfile = open('sgx.txt', 'r')
+    self.model_01 = open('sgx.tra', 'r')
     self.rndseed = 1
     self.cwd = os.getcwd()
-    # sys.stderr.write('setup\n')
+    self.simulated_data = None
+    self.simulated_data = open('out_expr.txt', 'r')
 
 
-  def test_make_expressionset(self) :
-    # sys.stderr.write('expresssionset test\n')
-    self.get_data()
-    e = open('test_target_expr.txt', 'r')
-    p = open('test_target_pheno.txt', 'r')
-    f = open('test_target_feature.txt', 'r')
-    expression_set = trsysmodis.ExpressionSet()
-    expression_set.read(e, p, f)
-    
-
-  def test_make_expressionset_exp(self) :
-    # sys.stderr.write('expressinset_exp\n')
-    self.get_data()
-    e = open('test_target_expr.txt', 'r')
-    p = open('test_target_pheno.txt', 'r')
-    f = open('test_target_feature.txt', 'r')
-    expression_set = trsysmodis.ExpressionSet()
-    expression_set.read_exp(e)
-
-
-  def test_knockout_objectivefunction(self) :
-    self.get_data()
-    e = open('test_target_expr.txt', 'r')
-    p = open('test_target_pheno.txt', 'r')
-    f = open('test_target_feature.txt', 'r')
-    model = open('test_targettopology.tra', 'r')
-    expression_set = trsysmodis.ExpressionSet()
-    expression_set.read(e, p, f)
-    equilibration_length = 100
-    logratio_mode = True
-    f_distance = 'correlation'
-    logratio_offset = 0.01
-    transsys_program = transsys.TranssysProgramParser(model).parse()
-    # sys.stderr.write('knockout_objectivefunction\n')
-    objective_function = trsysmodis.KnockoutObjective(expression_set, equilibration_length, logratio_mode, f_distance, logratio_offset)
-    obj = objective_function(transsys_program)
-
-
-  def test_SimulationOverexpression(self) :
-    self.assertRaises(myExcTwo, trsysmodis.SimulationOverexpression(1.0, 'g0000'))
-
-  
-  def test_SimulationKnockOut(self) :
-    self.assertRaises(myExcTwo, trsysmodis.SimulationKnockout(1.0))
-
-
-  def test_SimulationTreatment(self) :
-    self.assertRaises(myExcTwo, trsysmodis.SimulationTreatment(1.0, 'g0000'))
-
-
-  def test_SimulationTimeSteps(self) :
-    self.assertRaises(myExcTwo, trsysmodis.SimulationTimeSteps())
-
-
-  def test_read_data(self) :
-    o = trsysmodis.ExpressionData()
-    self.assertRaises(myExcTwo, o.read())
-
-  def test_read_specparser(self) :
-    self.asserrtRaises(myExcTwo, trsysmodis.EmpiricalObjectiveFunctionParser())
+  def test_EmpiricalObjectiveFunctionParser(self) :
+    self.assertRaises(TypeError, trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile))
 
 
   def test_objectivefunctionparser(self) :
-    self.get_data(1)
-    self.modelkt = open('test_targettopology.tra', 'r')
-    # sys.stderr.write('objectivefunctionparser\n')
-    e = open('toy_target_expr.txt', 'r')
     expression_set = trsysmodis.ExpressionSet()
-    expression_set.read(e, None, None)
+    expression_set.read(self.simulated_data)
     o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
     objective_function = o.parse_objectivespec()
-    objective_function.set_expression_set(expression_set)
+    objective_function.set_empirical_expression_set(expression_set)
     optimiser = transsys.optim.parse_optimiser(self.optimiserfile)
     optimiser.transformer = transsys.optim.parse_parameter_transformer(self.transformerfile)
     rng = random.Random(self.rndseed)
     optimiser.rng = rng
     optimiser.randomInitRange = 1.0
-    transsys_program = transsys.TranssysProgramParser(self.modelkt).parse()
+    transsys_program = transsys.TranssysProgramParser(self.model_01).parse()
     obj = objective_function(transsys_program)
     opt_result = optimiser.optimise(transsys_program, objective_function)
 
 
-  def get_data(self, type=None) :
+  def test_individual_pythonscripts(self, type = 1) :
     # Generate data: nodes=7, edges=14, noise=0.0
     os.system('python transsysrandomprogram -n test -m 1 -p rtptest.dat')
     os.system('python transsysrandomprogram -n test -m 1 -p rtptest.dat')
@@ -110,12 +52,8 @@ class TestSequenceFunctions(unittest.TestCase):
     if type is None :
       os.system('python transsyswritesimset -s 2 -N 0.0 -e 100 test_target.tra test_target')
     else :
-      os.system('python transsyswritesimsetOF -o modeldisdummy.txt -s 2 -N 0.0 test_target.tra toy_target')
-  
-
-class myExcTwo(Exception):
-   "exception two"
-  
+     os.system('python transsyswritesimsetOF -o sgx.txt sgx.tra out')
+ 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
 unittest.TextTestRunner(verbosity=2).run(suite)

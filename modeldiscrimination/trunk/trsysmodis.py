@@ -384,7 +384,7 @@ Notice that the current contents of this instance are lost.
     self.expression_data.read(x)
 
 
-  def read(self, x, p, f) :
+  def read(self, x = None, p = None, f = None) :
     """Read the content of this expression set from files.
 
 Notice that the current contents of this instance are lost.
@@ -579,7 +579,6 @@ gene in that array.
   def write_expression_data(self) :
     """ Write expression data  """
     x = file('%s_expr.txt'%self.basename,'w')
-    x.write('row.names' )
     for group in self.expression_data.array_name :
       x.write('\t%s'%group )
     x.write('\n')
@@ -2636,8 +2635,11 @@ class EmpiricalObjectiveFunctionParser(object) :
   magic = "SimGenex-2.0" 
 
 
-  def __init__(self, f) :
+  def __init__(self, f = None) :
     """  Constructor """
+
+    if not isinstance(f, file):
+      raise TypeError, "%s is not a proper spec file"%f
     self.scanner = Scanner(f)
 
 
