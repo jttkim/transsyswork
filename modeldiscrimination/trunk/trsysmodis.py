@@ -30,18 +30,26 @@ class ExpressionData(object) :
     self.expression_data = {}
 
 
-  def read(self, x = None) :
-    """Load gene expression data
-@param x: Input file
-@type x: C{file}
+  def read(self, f) :
+    """Load gene expression data matrix.
+
+Rows represent genes, columns represent expression states (arrays,
+assays, measurements, ...). One row per line. Lines are split into
+words at white space. The first line contains headers, i.e. column
+names. The first word of each line gives the gene / factor name.
+
+Notice that there is no quoting or escaping mechanism, so names cannot
+contain spaces. It is strongly recommended that names conform to the
+normal identifier rules.
+
+This method does not rigorously check input for validity.
+
+@param f: Input file
+@type f: C{file}
 """
-    # FIXME: description of input file format?
-    # FIXME: no use in providing default value None if that unconditionally raises an exception anyway...
-    if x is None :
-      raise StandardError, 'No file provided'
-    l = x.readline()
+    l = f.readline()
     self.array_name = l.strip().split()
-    l = x.readline()
+    l = f.readline()
     while l :
       word_list = l.strip().split()
       factor_name = word_list[0]
@@ -49,7 +57,7 @@ class ExpressionData(object) :
       for word in word_list[1:] :
         data_list.append(float(word))
       self.expression_data[factor_name] = data_list
-      l = x.readline()
+      l = f.readline()
 
 
   def get_value(self, array_name, factor_name) :
@@ -80,9 +88,14 @@ class ExpressionData(object) :
     else :
       raise StandardError, '%s was not found' % factor_name
 
-#FIXME: Obsolete
+
   def shift_data(self, offset) :
-    """Shift data by offset (i.e. add offset)
+    """Deprecated -- Shift data by offset (i.e. add offset computed by multiplying
+the C{offset} parameter by the average expression level).
+
+Notice that the naming of parameters and the method is not
+particularly fortunate.
+
 @param offset: the offset
 @type offset: C{float}
 """
@@ -91,9 +104,8 @@ class ExpressionData(object) :
       self.expression_data[key] = map(lambda t: t + (offset * average ), self.expression_data[key] )
 
 
-#FIXME: Obsolete
   def shift_to_stddev(self, sd_multiplier) :
-    """
+    """Deprecated --
 Transform expression data by shifting such that the minimum expression
 level is C{s * sd_multiplier}, where C{s} is the standard deviation of
 expression levels across the data set.
@@ -120,7 +132,7 @@ expression levels across the data set.
     """ Retrieve gene_name expression vector
 @param gene_name: gene name
 @type gene_name: C{String}
-@return: dictionary
+@return: dictionary with column names as keys and expression levels as values
 @rtype: C{dictionary}
 """
     values = []
@@ -131,63 +143,12 @@ expression levels across the data set.
     return profile
 
 
-#FIXME: Obsolete
-  def get_ratioprofile(self, arraymapping, factor_name) :
-    """ Retrieve expression profile of factor_name
-@param factor_name: factor name
-@type factor_name: C{String}
-@param arraymapping: arraymapping_defs
-@type arraymapping: L{Measurements}
-@return: dictionary
-@rtype: C{dictionary}
-"""
-    profile = {}
-    profile2 = {}
-    profile = self.get_profile(factor_name)
-    for array in arraymapping :
-      perturbation = array.get_resolve_perturbation().get_simexpression_name()
-      if array.get_resolve_reference() is not None :
-        reference = array.get_resolve_reference().get_simexpression_name()
-        #FIXMEAVC: probably a bug?
-        # FIXME: JTK let's consider dumping this obsolete method altogether
-	#if profile[perturbation] == 0.0 and  profile[reference] == 0.0 :
-	if profile[reference] == 0.0 :
-	  value = 1.0
-	else :
-	  value =  profile[perturbation] / profile[reference]
-      else :
-	value =  profile[perturbation]
-      profile2[array.get_array_name()] = value
-    return profile2
-      
+  def get_gene_name_list(self) :
+    """Retrieve a list of gene names from gene expression data.
 
-#FIXME: Obsolete
-  def get_logratioprofile(self, wt, gene_name) :
-    """ Retrieve gene_name logratio expression vector
-@param gene_name: gene name
-@type gene_name: C{String}
-@return: dictionary
-@rtype: C{dictionary}
-""" 
-    profile = {}
-    profile2 = {}
-    wt_index = self.array_name.index(wt)
-    wt_value = self.expression_data[gene_name][wt_index]
-    profile = self.get_profile(gene_name)
-    t = copy.deepcopy(self.array_name)
-    del t[wt_index]
-    profile_c = copy.deepcopy(profile)
-    del profile_c[wt]
-    profile_c[gene_name] = map(lambda t: self.logratio(t, wt_value),profile_c.values())
-    for (i, name,) in enumerate(t):
-       profile2[name] = profile_c[gene_name][i]
-    return profile2
-
-
-  #FIXME: is this appropriately named? Gets a list of gene names, not a (singular) name
-  def get_gene_name(self) :
-    """ Retrieve gene names from gene expression data
-@return: gene name
+Used to be called C{get_gene_name}.
+    
+@return: gene name list
 @rtype: C{String}
 """
     gene_name = []
@@ -196,82 +157,49 @@ expression levels across the data set.
     return gene_name
 
 
-  # FIXME: jtk: is this obsolete now? Doesn't do anything anyway... or should this become a generic method that gets passed a profile-wise divergence function?
-  def divergence(self) :
-    """
+  def add_column(self, column_name) :
+    """Add an column.
+
+Used to be called C{add_array}.
+
+All expression values in the newly added column are initialised with C{None}.
+@param column_name: column name
+@type column_name: C{String}
 """
-    pass
+    if column_name in self.column_name :
+      raise StandardError, '%s already in column list' % column_name
+    self.column_name.append(column_name)
+    i = self.column_name.index(column_name)
 
 
-  def add_array(self, array_name) :
-    """Add an array.
-All expression values in the newly added array are initialised with C{None}.
-@param array_name: array name
-@type array_name: C{String}
-"""
-    if array_name in self.array_name :
-      raise StandardError, '%s already in array list' % array_name
-    self.array_name.append(array_name)
-    i = self.array_name.index(array_name)
-
-
-#FIXME: Obsolete
-  def logratio(self, x, r) :
-    """Compute the log ratio of expression level C{x} and reference level C{r}.
-    This method applies the logratio offset, a pseudocount-like offset
-    that can be used to "fix" zero control levels (which would result in
-    divisions by zero) and / or (bogus!) negative expression levels. The
-    formula is C{log((x + offset) / (r + offset))}, where the base for the
-    logarithm is 2.
-
-    @param x: expression level
-    @type x: C{float}
-    @param r: reference expression level
-    @type r: C{float}
-    @return: the log ratio
-    @rtype: C{float}
-    """
-    return math.log((x / r) , 2.0)
-
-
-#FIXME: Obsolete
-  def nonzerodata(self) :
-    """ Check if a gene whose average expression  profile is zero
- @return: either the average expression profile of the zero profile gene or the last gene in the array
- @rtype: C{float}
- """
-    for key in self.expression_data.keys() :
-      if statistics(self.expression_data[key])[0] < 0 :
-        break
-    return statistics(self.expression_data[key])[0] 
-    
-
-#FIXME: Obsolete
-# FIXME: jtk: is this really obsolete??? It's a member of ExpressionSet (!!)
+#FIXME: features should be attached to expression data with references.
 class FeatureData(object) :
   """ Create feature data object
-@ivar array_name: array name
-@type array_name: Array[]
+@ivar feature_name: array name
+@type feature_name: Array[]
 @ivar feature_data: feature data
 @type feature_data: C{}
 """
 
-#FIXME: Obsolete
   def __init__(self) :
-    self.array_name = None
+    self.feature_name = []
     self.feature_data = {}
 
   
-#FIXME: Obsolete
-  def read (self, x) :
-    """  Load gene expression data
-@param x: Input file
-@type x: C{file}
+  def read (self, f) :
+    """Load feature data from a file.
+
+File format: header line contains feature names, following lines
+contain gene names, followed by feature values. Notice that gene names
+must match row names in the associated expression matrix.
+
+@param f: Input file
+@type f: C{file}
 """
 
-    l = x.readline()
-    self.array_name = l.strip().split()
-    l = x.readline()
+    l = f.readline()
+    self.feature_name = l.strip().split()
+    l = f.readline()
     while l :
       word_list = l.strip().split()
       gene_name = word_list[0]
@@ -279,12 +207,14 @@ class FeatureData(object) :
       for word in word_list[1:] :
         data_list.append(word)
       self.feature_data[gene_name] = data_list
-      l = x.readline()
+      l = f.readline()
 
 
-#FIXME: Obsolete
-  def get_gene_name(self) :
-    """ Retrieve gene names from gene expression data
+  def get_gene_name_list(self) :
+    """ Retrieve list of gene names from this feature data instance.
+
+Used to be called C{get_gene_name}.
+
 @return: array
 @rtype: array of C{String}
 """
@@ -294,71 +224,65 @@ class FeatureData(object) :
     return gene_name
 
 
-#FIXME: Obsolete
-  def get_feature_list(self, array_name) :
-    """ Retrieve array_name's list of features 
-@param array_name: array name
-@type array_name: C{String}
-@return: feature list
-@rtype: array of C{String}
+  #FIXME: retrieves attributes -- names need fixing on basis of expressionset semantics
+  def get_feature_list(self, gene_name) :
+    """Deprecated -- Retrieve list of features for named feature.
+@param feature_name: array name
+@type feature_name: C{String}
+@return: feature list, or C{None} if there is no gene
+@rtype: array of C{String}, or C{None}
 """
-    
-    feature_list = []
-    if self.feature_data[array_name] :
-      feature_list = self.feature_data[array_name]
-    return feature_list
+    if self.feature_data[gene_name] :
+      return self.feature_data[gene_name]
+    else :
+      return None
     
 
-#FIXME: Obsolete
-#FIXME: jtk: used as member of ExpressionSet -- not really obsolete therefore
+#FIXME: should be attached to expression data (matrix columns) using references
 class PhenoData(object) :
   """Create pheno data object
-@ivar array_name: array name
-@type array_name: Array[]
+@ivar pheno_name: array name
+@type pheno_name: Array[]
 @ivar pheno_data: pheno data
 @type pheno_data: C{}
 """
 
-#FIXME: Obsolete
-#FIXME: jtk: perhaps not really obsolete. What are the semantics of array_name and pheno_data?
   def __init__(self) :
-    self.array_name = []
+    self.pheno_name = []
     self.pheno_data = {}
  
 
-#FIXME: Obsolete
-  def read (self, x) :
-    """  Load gene expression data
-@param x: Input file
-@type x: C{file}
+  def read (self, f) :
+    """Load gene expression data.
+
+@param f: Input file
+@type f: C{file}
 """
-    l = x.readline()
-    self.array_name = l.strip().split()
-    l = x.readline()
+    l = f.readline()
+    self.pheno_name = l.strip().split()
+    l = f.readline()
     while l :
       word_list = l.strip().split()
-      array_name = word_list[0]
+      pheno_name = word_list[0]
       data_list = []
       for word in word_list[1:] :
         data_list.append(word)
-      self.pheno_data[array_name] = data_list
-      l = x.readline()
-    y = self.pheno_data.keys()
+      self.pheno_data[pheno_name] = data_list
+      l = f.readline()
 
 
-#FIXME: Obsolete
-  def get_array_name(self) :
+  def get_pheno_name(self) :
     """ Retrieve array names from pheno data
 @return: array
 @rtype: array of C{String}
 """ 
-    array_name = []
+    pheno_name = []
     for i in self.pheno_data :
-      array_name.append(i)
-    return array_name
+      pheno_name.append(i)
+    return pheno_name
 
 
-#FIXME: Obsolete
+  #FIXME: really pertains to column names
   def get_gene_name(self) :
     """ Retrieve attribute names from pheno data
 @return: array
@@ -369,16 +293,15 @@ class PhenoData(object) :
     return attribute_name
 
 
-#FIXME: Obsolete
-  def get_attribute_list(self, array_name) :
-    """ Retrieve array_name's list of features 
-@param array_name: array name
-@type array_name: String
+  def get_attribute_list(self, pheno_name) :
+    """ Retrieve pheno_name's list of features 
+@param pheno_name: array name
+@type pheno_name: String
 @return: dictionary
 @rtype: array of C{String}
 """
     feature_list = []
-    feature_list.append(self.pheno_data[array_name])
+    feature_list.append(self.pheno_data[pheno_name])
     return feature_list
 
 
@@ -392,25 +315,21 @@ class ExpressionSet(object) :
 @type feature_data: L{FeatureData}
 """
 
-  #FIXME: how are expression data, pheno data and feature data associated?
+  # association of pheno data and feature data to expression data is
+  # defined by row names / feature names and column names / pheno
+  # names.
+  
   def __init__(self) :
-    self.expression_data = ExpressionData()
-    self.pheno_data = PhenoData()
-    self.feature_data = FeatureData()
+    self.expression_data = None
+    self.pheno_data = None
+    self.feature_data = None
 
 
-  def read_exp(self, x) :
+  def read(self, x, p = None, f = None) :
     """Read the content of this expression set from files.
 
-Notice that the current contents of this instance are lost.
-@param x: Input file, gene expression data
-@type x: C{file}
-"""
-    self.expression_data.read(x)
-
-
-  def read(self, x = None, p = None, f = None) :
-    """Read the content of this expression set from files.
+Note: C{read_exp} is gone, is equivalent to this method with just C{x}
+specified.
 
 Notice that the current contents of this instance are lost.
 @param x: Input file, gene expression data
@@ -425,22 +344,20 @@ Notice that the current contents of this instance are lost.
      self.pheno_data.read(p)
     if f is not None :
       self.feature_data.read(f)
-    if p != None and f != None :
-      self.verify_integrity()
+    self.verify_integrity()
   
 
-#FIXME: Obsolete
-#FIXME: jtk: what does integrity mean here? might still be somewhat useful?
+#checks referential integrity but does not actually resolve to references
   def verify_integrity(self) :
-    """Check for integrite of expression, pheno and feature data sets 
+    """Check for integrite of expression, pheno and feature data sets.
 """
     if len(self.expression_data.expression_data) == 0 :
-        raise StandardError, 'your gene expression file is empty'
+      raise StandardError, 'your gene expression file is empty'
     if len(self.pheno_data.pheno_data) == 0 :
-        raise StandardError, 'your pheno file is empty'
+      raise StandardError, 'your pheno file is empty'
     if len(self.feature_data.feature_data) == 0 :
-        raise StandardError, 'your feature file is empty'
-    
+      raise StandardError, 'your feature file is empty'
+      
     for i in self.expression_data.get_gene_name() :
       if i not in self.feature_data.feature_data : 
         raise StandardError, 'indexes of expression data and feature data are not comparable'
@@ -450,8 +367,6 @@ Notice that the current contents of this instance are lost.
        raise StandardError, 'indexes of expression data and pheno data are not comparable'
 
    
-#FIXME: It seems this function is not longer needed as values are taken from the arraymapping_defs
-#FIXME: jtk: still a reasonable method for ExpressionSet, though -- let's keep it
   def get_profile(self, gene_name) :
     """Retrieve the gene expression profile of a specific gene in this set.
 The profile is represented as a dictionary with keys being the
@@ -463,45 +378,7 @@ gene in that array.
 @return: dictionary
 @rtype: C{dictionary}
 """
-    profile = {}
-    profile = self.expression_data.get_profile(gene_name)
-    return profile
-
-#FIXME: Obsolete
-#FIXME: It seems this function is not longer needed
-#FIXME: jtk: this is really obsolete as ExpressionSet is not responsible for computing logratios.
-  def get_logratioprofile(self, wt, gene_name) :
-    """Retrieve the gene expression profile of a specific gene in this set.
-The profile is represented as a dictionary with keys being the
-array identifiers and values being the expression levels of the
-gene in that array.
-
-@param gene_name: gene name
-@type gene_name: C{String}
-@return: dictionary
-@rtype: C{dictionary}
-"""
-    profile = {}
-    profile = self.expression_data.get_logratioprofile(wt, gene_name)
-    return profile
-
-
-#FIXME: Obsolete
-#FIXME: jtk: see above
-  def get_ratioprofile(self, arraymapping_defs, gene_name) :
-    """Retrieve the gene expression profile of a specific gene in this set.
-The profile is represented as a dictionary with keys being the
-array identifiers and values being the expression levels of the
-gene in that array.
-
-@param gene_name: gene name
-@type gene_name: C{String}
-@return: dictionary
-@rtype: C{dictionary}
-"""
-    profile = {}
-    profile = self.expression_data.get_ratioprofile(arraymapping_defs, gene_name)
-    return profile
+    return self.expression_data.get_profile(gene_name)
 
 
 #FIXME: Obsolete
@@ -514,19 +391,18 @@ gene in that array.
     self.expression_data.shift_data(offset)
 
 
-#FIXME: Obsolete
   def divergence(self, other, distance_function) :
     """Divergence measurement.
 @param other: the other expression set
 @type other: ExpressionSet
+@param distance_function: name of distance function
+@type distance_function: C{String}
 @return: divergence between this expression set and the other expression set
 @rtype: C{float}
 """
 # FIXME: use better exception messages below -- it's not always the case that the self.X instance's handling is as cumbersome...
     if self.feature_data == None :
       raise StandardError, ' Empirical data does not exist'
-    if other == None :
-      raise StandardError, ' Simulated does not exist'
     d = 0.0
     for factor_name in self.expression_data.expression_data.keys() :
       selfProfile = self.get_profile(factor_name)
@@ -535,71 +411,7 @@ gene in that array.
     return d
 
 
-#FIXME: Obsolete
-#FIXME: jtk: this is obsolete indeed, as expression sets are no longer responsible for logratio computation
-  def logratio_divergence(self, other, distance_function) :
-    """Divergence measurement.
-@param other: the other expression set
-@type other: ExpressionSet
-@return: divergence between this expression set and the other expression set
-@rtype: C{float}
-"""
-    if self.feature_data == None :
-      raise StandardError, ' Empirical dataset does not exist'
-    if other == None :
-      raise StandardError, ' Simulated dataset does not exist'
-    d = 0.0
-    wt = self.get_wildtype_array_name()
-    for factor_name in self.expression_data.expression_data.keys() :
-      selfProfile = self.get_logratioprofile(wt, factor_name)
-      otherProfile = other.get_logratioprofile(wt, factor_name)
-      d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
-    return d
-
-
-#FIXME: Obsolete jtk: yes. Out of historical interest: what were the _treat variants of divergence for?
-  def logratio_divergence_treat(self, other, arraymapping_defs, distance_function) :
-    """Divergence measurement.
-@param other: the other expression set
-@type other: ExpressionSet
-@param arraymapping_defs: arraymapping_defs
-@type arraymapping_defs: L{Measurements}
-@param distance_function: specification to calculate distance
-@type distance_function: C{String}
-@return: divergence between this expression set and the other expression set
-@rtype: C{float}
-"""
-    d = 0.0
-    for factor_name in self.expression_data.expression_data.keys() :
-      selfProfile = self.get_ratioprofile(arraymapping_defs, factor_name)
-      otherProfile = other.get_ratioprofile(arraymapping_defs, factor_name)
-      for array in selfProfile :
-        selfProfile[array] = math.log(selfProfile[array], 2)
-        otherProfile[array] = math.log(otherProfile[array], 2)
-      d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
-    return d
-
-
-
-#FIXME: Obsolete
-  def divergence_treat(self, other, arraymapping_defs, distance_function) :
-    """Divergence measurement.
-@param other: the other expression set
-@type other: ExpressionSet
-@param distance_function: specification to calculate distance
-@type distance_function: C{String}
-@return: divergence between this expression set and the other expression set
-@rtype: C{float}
-"""
-    d = 0.0
-    for factor_name in self.expression_data.expression_data.keys() :
-      selfProfile = self.get_ratioprofile(arraymapping_defs, factor_name)
-      otherProfile = other.get_ratioprofile(arraymapping_defs, factor_name)
-      d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
-    return d
-
-
-#FIXME: Obsolete
+#FIXME: "static" method -- consider absorbing this into divergence method
   def distance_divergence(self, selfProfile, otherProfile, distance_function) :
     """ Divergence distance
 @param selfProfile: Empirical data
@@ -617,26 +429,31 @@ gene in that array.
       raise StandardError, ' % distance not found' % distance_function
 
 
-  def write_expression_data(self) :
-    """Write expression data."""
+  def write_expression_data(self, f) :
+    """Write expression data.
+
+@param f: the output file
+@type f: file
+"""
     #FIXME: where does the basename instance variable come from?
-    x = file('%s_expr.txt' % self.basename, 'w')
     for group in self.expression_data.array_name :
-      x.write('\t%s'%group )
-    x.write('\n')
+      f.write('\t%s'%group )
+    f.write('\n')
     for factor in self.expression_data.get_gene_name() :
-      x.write('%s'%factor)
+      f.write('%s'%factor)
       for iname in self.expression_data.array_name :
         index =  self.expression_data.array_name.index(iname)
-        x.write('\t%e'%self.expression_data.expression_data[factor][index])
-      x.write('\n')
+        f.write('\t%e'%self.expression_data.expression_data[factor][index])
+      f.write('\n')
  
 
-#FIXME: Obsolete jtk: don't quite think so -- even if writing expression sets is currently not used, it's always nice to have a full write / read facility in place.
-  def write_pheno_data (self) :
-    """Write pheno data."""
+  def write_pheno_data (self, f) :
+    """Write pheno data.
+
+@param f: the output file
+@type f: file
+"""
     #FIXME: where does the basename instance variable come from?
-    p = file('%s_pheno.txt' % self.basename, 'w')
     for group in self.pheno_data.array_name :
       p.write('\t%s'%group )
     p.write('\n')
@@ -649,10 +466,13 @@ gene in that array.
  
 
 #FIXME: Obsolete
-  def write_feature_data (self) :       
-    """Write feature data."""
-    #FIXME: where does the basename instance variable come from?
-    f = file('%s_feature.txt' % self.basename, 'w')
+  def write_feature_data (self, f) :       
+    """Write feature data.
+
+
+@param f: the output file
+@type f: file
+"""
     for group in self.feature_data.array_name :
       f.write('\t%s'%group)
     f.write('\n')
@@ -665,24 +485,26 @@ gene in that array.
 
   def write_all(self, basename) :
     """ Call methods to write expression, pheno and feature data
+
+Used to be aliased C{write_simulated_set} and C{write_data}.
+
 @param basename: file's basename onto which data are written 
 @type basename: C{String}
 """
     if basename == None :
       raise StandardError, 'Cannot write simulated expression data, basename is not provided'
-    # FIXME: jtk: ah, this is where basename comes from. Should be a parameter to the individual write_*_data methods, not an instance variable.
-    # as a general principle, let's document all instance variables in the class docstring and initialise all instance variables in __init__
-    self.basename = basename
+    x = file('%s_expr.txt' % basename, 'w')
     self.write_expression_data()
     if len(self.pheno_data.pheno_data) > 0 :
+      p = file('%s_pheno.txt' % basename, 'w')
       self.write_pheno_data()
     if len(self.feature_data.feature_data) > 0 :
-      self.write_feature_data()
+      f = file('%s_feature.txt' % basename, 'w')
+      self.write_feature_data(f)
 
 
-  #FIXME: is this still used? might be obsolete.
   def apply_noise(self, rng, aver, sigma) :
-    """ Write noisy_simulated_set.
+    """Write noisy_simulated_set.
 @param rng: randon number generator
 @type rng: C{float}
 @param aver: expression profile matrix average
@@ -696,15 +518,15 @@ gene in that array.
         self.expression_data.expression_data[key][i] = self.expression_data.expression_data[key][i] + rng.gauss(0,noiseadd)
 
 
-  def add_array(self, array_name) :
-    self.expression_data.add_array(array_name)
+  def add_column(self, array_name) :
+    self.expression_data.add_column(array_name)
 
 
   def set_expression_value(self, array_name, factor_name, v) :
     self.expression_data.set_value(array_name, factor_name, v)
 
 
-#FIXME: Obsolete
+  #FIXME: consider moving logic to ExpressionData
   def get_meanexpressionset(self) :
     """Average of expression profile matrix.
 @return: average
@@ -717,97 +539,6 @@ gene in that array.
       averagematrix = averagematrix + average
     averagematrix = averagematrix / len(self.expression_data.expression_data.keys())
     return averagematrix
-
-
-#FIXME: Obsolete jtk: yes, think so too
-  def get_wildtype_array_name(self) :
-    """Retrieve the name of the array of the wild type from the empirical data.
-@return: array
-@rtype: array of C{String}
-"""
-    array_wt = '' 
-    for array_name, v in self.pheno_data.pheno_data.iteritems() :
-      if 'wildtype' in v :
-        array_wt = array_name
-    return array_wt
-
-
-#FIXME: Obsolete
-  def get_knockout_gene_name_list(self) :
-    """Retrieve the name of the array of the wild type from the empirical data.
-@return: array
-@rtype: array of C{String}
-""" 
-    gene_list = []
-    index = self.pheno_data.array_name.index('gene')
-
-    for arrayn, v in self.pheno_data.pheno_data.iteritems() :
-      if 'knockout' in v :
-        gene_list.append(v[index])
-    return gene_list
-
-
-#FIXME: Obsolete
-  def get_knockout_name(self, array_name) :
-    """Retrieve knockout gene name.
-@param array_name: array name
-@type array_name: C{String}
-@return: gene name
-@rtype: C{String}
-""" 
-
-    array_index = self.pheno_data.array_name.index('gene')
-    v = self.pheno_data.pheno_data[array_name][array_index]
-    return v
-
-
-#FIXME: Obsolete
-  def get_knockout_array_name(self, gene_name) :
-    """Retrieve the name of the array of the wild type from the empirical data.
-@param gene_name: gene name
-@type gene_name: C{String}
-""" 
-
-    for array_name, v in self.pheno_data.pheno_data.iteritems() :
-      if gene_name in v :
-        gene_list = array_name
-    return gene_list
-
-
-  #FIXME: jtk: what does this do? An expression set can just write itself, it has no concept of whether it's "simulated" or "empirical" or whatever.
-  def write_simulated_set(self, basename) :
-    """ Writes in a simulated expression set.
-@param basename: base name for files (expression data, pheno data, feature data file)
-@type basename: C{String}
-"""
-    self.write_all(basename)
-
-
-  #FIXME: do I understand correctly that this method modifies the instance by adding noise? writing methods should generally not change the instance.
-  def write_noisy_simulated_set(self, basename, rng, sigma) :
-    """Write a noisy simulated expression set.
-@param basename: expression data basename
-@type basename: C{String}
-@param rng: random number generator
-@type rng: random
-@param sigma: sigma
-@type sigma: C{float}
-""" 
-
-    if sigma == None :
-      raise StandardError, 'Percentage of noise to be added was not specified'
-
-    average = self.get_meanexpressionset()
-    self.apply_noise(rng, average, sigma)
-    self.write_all(basename)
-
-
-  def write_data(self, basename) :
-    """ Writes in a simulated expression set.
-@param basename: base name for files (expression data, pheno data, feature data file)
-@type basename: C{String}
-    """
-    self.write_all(basename)
 
 
 class Instruction(object) :
@@ -1310,7 +1041,7 @@ of the gene expression levels for that genotype.
     ti = transsys.TranssysInstance(transsys_program)
     ti_wildtype = self.get_measurement(ti)
     wildtype_array_name = self.expression_set.get_wildtype_array_name()
-    e.add_array(wildtype_array_name)
+    e.add_column(wildtype_array_name)
     map(lambda t: e.set_expression_value(wildtype_array_name, t.name, ti_wildtype.get_factor_concentration(t.name)),transsys_program.factor_list)
     for gene_array in self.expression_set.get_knockout_gene_name_list() :
       knockout_tp = copy.deepcopy(transsys_program)
@@ -1319,7 +1050,7 @@ of the gene expression levels for that genotype.
       ti = transsys.TranssysInstance(knockout_tp)
       ti_knockout = self.get_measurement(ti)
       array_name = self.expression_set.get_knockout_array_name(gene_name)
-      e.add_array(array_name)
+      e.add_column(array_name)
       map(lambda t: e.set_expression_value(array_name, t.name, ti_knockout.get_factor_concentration(t.name)),transsys_program.factor_list)
     return e
 
@@ -1550,7 +1281,7 @@ series is the simulation of the gene expression levels for that genotype.
       e.expression_data.expression_data[factor] = values
     
     for colname in self.measurementmatrix_def.get_measurementcolumn_list() :
-      e.add_array(colname.name)
+      e.add_column(colname.name)
     return e
 
 

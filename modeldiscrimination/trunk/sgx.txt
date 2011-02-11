@@ -47,7 +47,7 @@ procedure ko_c3
 
 procedure ko_c4
 {
-  knockout: c3gene;
+  knockout: c4gene;
 }
 
 simexpression all
