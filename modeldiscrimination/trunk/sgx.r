@@ -14,6 +14,7 @@ readExpr <- function(exprName)
 epsdevice <- function(epsFilename)
 {
   postscript(epsFilename, width = 8, height = 6, paper = "special", onefile = FALSE, horizontal = FALSE);
+  par(cex = 1.5);
 }
 
 
@@ -21,7 +22,7 @@ plotProfile <- function(d, geneName)
 {
   p <- as.numeric(d[geneName, ]);
   n <- c("-\n-", "-\nhk", "-\nc1", "-\nc2", "-\nc3", "-\nc4", "+\n-", "+\nhk", "+\nc1", "+\nc2", "+\nc3", "+\nc4" );
-  barplot(p, names = n, ylim = c(-8, 2), main = geneName);
+  barplot(p, names = n, ylim = c(-8, 4), main = geneName);
 }
 
 
@@ -34,3 +35,7 @@ profilePlots <- function(d)
     dev.off();
   }
 }
+
+d <- readExpr("out_expr.txt");
+profilePlots(d);
+
