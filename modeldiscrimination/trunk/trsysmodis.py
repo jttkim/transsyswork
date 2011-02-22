@@ -18,7 +18,7 @@ import StringIO
 
 
 class ExpressionData(object) :
-  """ Create expression data object
+  """Create expression data object
 @ivar array_name: array name
 @type array_name: Array[]
 @ivar expression_data: gene expression data
@@ -543,10 +543,9 @@ Used to be aliased C{write_simulated_set} and C{write_data}.
 
 class Instruction(object) :
   """Abstract base class to represent instructions in procedures and simexpressions of a SimGenex program.
-@ivar transsys_instace: Transsys Instance
-@type transsys_instance: L{transsys.TranssysInstance}
 """
-  #FIXME: what's the transsys_instance variable for? instructions aren't linked to transsys instances directly.
+
+
   def __init__(self) :
     pass
 
@@ -554,14 +553,23 @@ class Instruction(object) :
   def apply_instruction(self, transsys_instance) :
     """Apply this instruction and return a trace of transsys instances.
 
-The trace is guaranteed to contain at least one instance.
-# FIXME: no parameter and return value documentation
+Notice that the trace may be empty (e.g. running 0 timesteps), it is
+not guaranteed to contain at least one instance.
+@param transsys_instance: the transsys instance to apply this instruction to
+@type transsys_instance: C{transsys.TranssysInstance}
+@return: trace of transsys instances generating while applying this instruction
+@rtype: list of C{transsys.TransysInstance}
 """
     raise StandardError, 'abstract method called'
 
 
-  #FIXME: parameter is called procedure_dict elswhere -- unify.
+
   def resolve(self, procedure_defs) :
+    """Resolve procedure identifiers into actual procedures.
+
+@param procedure_defs: list of procedures
+@type procedure_defs: C{list} of C{Procedure}
+"""
     pass
 
 
@@ -594,6 +602,7 @@ class ForeachInstruction(Instruction) :
 """
 
   def __init__(self, instruction_list) :
+    #FIXME: should invoke superclass constructor
     self.instruction_list = instruction_list
 
 
@@ -605,7 +614,10 @@ class ForeachInstruction(Instruction) :
 
 
   def make_header_list(self, prefix_list) :
-    """Comment.
+    """Constsruct list of column names.
+
+"Header" pertains to the header line in the R-readable table.
+
 @param prefix_list: list of InstructionSequence
 @type prefix_list: list of L{InstructionSequence}
 @return: header_list
@@ -624,10 +636,8 @@ class ForeachInstruction(Instruction) :
 @param prefix_list: list of InstructionSequence
 @type prefix_list: list of L{InstructionSequence}
 @return: instruction_sequence_list
-@type: list of L{InstructionSequence}
+@ttype: list of L{InstructionSequence}
 """
-# FIXME: the last type above is the rtype, I presume?
-
     instruction_sequence_list = []
     for prefix in prefix_list :
       for instruction in self.instruction_list :
@@ -637,14 +647,13 @@ class ForeachInstruction(Instruction) :
     return instruction_sequence_list
 
 
-  #FIXME: unify
-  def resolve(self, procedure_dict) :
+  def resolve(self, procedure_defs) :
     """
-@param procedure_dict: Dictionay containing procedures
-@type procedure_dict: dictionary of L{Procedure}
+@param procedure_defs: Dictionay containing procedures
+@type procedure_defs: dictionary of L{Procedure}
 """
     for instruction in self.instruction_list :
-      instruction.resolve(procedure_dict)
+      instruction.resolve(procedure_defs)
 
 
 class ApplicableInstruction(Instruction) :
