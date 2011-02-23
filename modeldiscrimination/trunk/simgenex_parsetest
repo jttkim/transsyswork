@@ -31,3 +31,18 @@ p = trsysmodis.EmpiricalObjectiveFunctionParser(infile)
 s = p.parse_objectivespec()
 sys.stderr.write('getting string\n')
 outfile.write('%s\n' % str(s))
+for simexpression in s.simexpression_defs :
+  print str(simexpression)
+  ilist = simexpression.get_instruction_list()
+  print ilist
+  iseq_list = simexpression.get_instruction_sequence_list()
+  for iseq in iseq_list :
+    print str(iseq)
+    
+#   for instruction in ilist :
+#     if isinstance(instruction, trsysmodis.ForeachInstruction) :
+#       prefix_list = [trsysmodis.InstructionSequence('test')]
+#       iseq_list = instruction.make_instruction_sequence_list(prefix_list)
+#       for iseq in iseq_list :
+#         print str(iseq)
+#       print

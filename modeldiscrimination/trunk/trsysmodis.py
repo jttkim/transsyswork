@@ -544,7 +544,7 @@ Used to be aliased C{write_simulated_set} and C{write_data}.
 class Instruction(object) :
   """Abstract base class to represent instructions in procedures and simexpressions of a SimGenex program.
 """
-
+#FIXME: put superclass constructor invocations into Instruction hierarchy
 
   def __init__(self) :
     pass
@@ -597,19 +597,19 @@ all instruction sequences represented by the instructions of that list.
 class ForeachInstruction(Instruction) :
   """Class to represent a SimGenex C{foreach} instruction.
 
-@ivar instruction_list: lists of Invocation Instructions
-@type instruction_list: lists of L{InvocationInstruction}
+@ivar invocation_instruction_list: lists of Invocation Instructions
+@type invocation_instruction_list: C{list} of L{InvocationInstruction}
 """
 
-  def __init__(self, instruction_list) :
+  def __init__(self, invocation_instruction_list) :
     #FIXME: should invoke superclass constructor
-    self.instruction_list = instruction_list
+    self.invocation_instruction_list = invocation_instruction_list
 
 
   def __str__(self) :
     s = 'foreach:'
-    for instruction in self.instruction_list :
-      s = s + ' %s' % instruction.get_procedure_name()
+    for invocation_instruction in self.invocation_instruction_list :
+      s = s + ' %s' % invocation_instruction.get_procedure_name()
     return s
 
 
@@ -618,16 +618,18 @@ class ForeachInstruction(Instruction) :
 
 "Header" pertains to the header line in the R-readable table.
 
+Intended for use during validation of identifiers in transformations.
+
 @param prefix_list: list of InstructionSequence
 @type prefix_list: list of L{InstructionSequence}
 @return: header_list
-@type: list of C{String}
+@rtype: list of C{String}
 """
-# FIXME: the last type above is the rtype, I presume?
+# FIXME: look out for duplication of this code (and eliminate if possible)
     header_list = []
     for prefix in prefix_list :
-      for procedure in self.instruction_list :
-        header_list.append('%s_%s' % (prefix, procedure.get_procedure_name()))
+      for invocation_instruction in self.invocation_instruction_list :
+        header_list.append('%s_%s' % (prefix, invocation_instruction.get_procedure_name()))
     return header_list
 
 
@@ -640,9 +642,9 @@ class ForeachInstruction(Instruction) :
 """
     instruction_sequence_list = []
     for prefix in prefix_list :
-      for instruction in self.instruction_list :
+      for invocation_instruction in self.invocation_instruction_list :
         instruction_sequence = prefix.get_copy()
-        instruction_sequence.append_instruction(instruction)
+        instruction_sequence.append_instruction(invocation_instruction)
         instruction_sequence_list.append(instruction_sequence)
     return instruction_sequence_list
 
@@ -652,11 +654,13 @@ class ForeachInstruction(Instruction) :
 @param procedure_defs: Dictionay containing procedures
 @type procedure_defs: dictionary of L{Procedure}
 """
-    for instruction in self.instruction_list :
-      instruction.resolve(procedure_defs)
+    for invocation_instruction in self.invocation_instruction_list :
+      invocation_instruction.resolve(procedure_defs)
 
 
 class ApplicableInstruction(Instruction) :
+  """Base class for instructions that can be applied to a transsys instance.
+"""
 
   def __init__(self) :
     pass
@@ -669,6 +673,7 @@ class InvocationInstruction(ApplicableInstruction) :
 """
 
   def __init__(self, procedure) :
+    # FIXME: should probably call superclass constructor
     self.procedure = procedure
 
 
@@ -684,6 +689,7 @@ class InvocationInstruction(ApplicableInstruction) :
     if isinstance(self.procedure, Procedure) :
       return
     # FIXME: linear search
+    # FIXME: does not check for multiple procedures with same name, not the responsibility of this method -- but whose?
     elif type(self.procedure) is types.StringType :
       for procedure in procedure_defs :
         if procedure.get_procedure_name() == self.procedure :
@@ -1541,6 +1547,16 @@ class InstructionSequence(object) :
       self.instruction_sequence = instruction_sequence[:]
 
 
+  def __str__(self) :
+    s = 'InstructionSequence(%s, [' % self.name
+    glue = ''
+    for instruction in self.instruction_sequence :
+      s = s + glue + str(instruction)
+      glue = ', '
+    s = s + '])'
+    return s
+
+
   def get_copy(self) :
     """
 @return: self.name
@@ -1573,15 +1589,14 @@ class InstructionSequence(object) :
 @param transsys_program: transsys_program
 @param transsys_program: L{transsys.TranssysProgram}
 @return: ti_trace
-@rtype: {transsys.TranssysInstance}
+@rtype: C{list} of C{transsys.TranssysInstance}
 """
+    # FIXME: this is now coded up using a loop pattern matching the object of simulation, check that all trace producing loops are like this
     tp = copy.deepcopy(transsys_program)
-    ti = transsys.TranssysInstance(transsys_program)
-    ti_trace = []
+    ti_trace = [transsys.TranssysInstance(transsys_program)]
     for instruction in self.instruction_sequence :
+      ti = ti_trace[-1]
       ti_trace = ti_trace + instruction.apply_instruction(ti)
-      if len(ti_trace) != 0 :
-        ti = ti_trace[-1]
     return ti_trace
 
 
@@ -1646,7 +1661,14 @@ class SimExpression(object) :
 
 
   def get_simulated_column_header_list(self) :
-    """
+    """Determine the list of column names produced by this simexpression.
+
+Notice that simexpressions produce multiple columns if they contain
+C{foreach} instructions.
+
+This method for finding out the column name list on its own is
+intended for use during validation of identifiers in transformations.
+
 @return: column_header_list
 @rtype: list of C{String}
 """
