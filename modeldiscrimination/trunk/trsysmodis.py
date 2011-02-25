@@ -19,14 +19,14 @@ import StringIO
 
 class ExpressionData(object) :
   """Create expression data object
-@ivar array_name: array name
-@type array_name: Array[]
+@ivar column_name_list: list of column names
+@type column_name_list: list of C{string}
 @ivar expression_data: gene expression data
-@type expression_data: C{}
+@type expression_data: dictionary
 """
 #FIXME: what's the type of expression_data?
   def __init__(self) :
-    self.array_name = []
+    self.column_name_list = []
     self.expression_data = {}
 
 
@@ -48,7 +48,7 @@ This method does not rigorously check input for validity.
 @type f: C{file}
 """
     l = f.readline()
-    self.array_name = l.strip().split()
+    self.column_name_list = l.strip().split()
     l = f.readline()
     while l :
       word_list = l.strip().split()
@@ -60,31 +60,31 @@ This method does not rigorously check input for validity.
       l = f.readline()
 
 
-  def get_value(self, array_name, factor_name) :
+  def get_value(self, column_name, factor_name) :
     """Accessor.
-@param array_name: array name
-@type array_name: C{String}
+@param column_name: column name
+@type column_name: C{String}
 @param factor_name: factor name 
 @type factor_name: C{String} 
 @return: expression value
 @rtype: C{float}
 """
-    array_index = self.array_name_list.index(array_name)
-    return self.expression_data[factor_name][array_index]
+    column_index = self.column_name_list.index(column_name)
+    return self.expression_data[factor_name][column_index]
 
 
-  def set_value(self, array_name, factor_name, v) :
+  def set_value(self, column_name, factor_name, v) :
     """Mutator.
-@param array_name: array name
-@type array_name: C{String}
+@param column_name: column name
+@type column_name: C{String}
 @param factor_name: factor name 
 @type factor_name: C{String}
 @param v: expression value
 @type v: C{int}
 """ 
     if factor_name in self.expression_data.keys() :
-      array_index = self.array_name.index(array_name)
-      self.expression_data[factor_name][array_index] = v
+      column_index = self.column_name_list.index(column_name)
+      self.expression_data[factor_name][column_index] = v
     else :
       raise StandardError, '%s was not found' % factor_name
 
@@ -137,9 +137,9 @@ expression levels across the data set.
 """
     values = []
     profile = {}
-    for array_name in self.array_name :
-      array_index = self.array_name.index(array_name)
-      profile[array_name] = self.expression_data[gene_name][array_index]
+    for column_name in self.column_name_list :
+      column_index = self.column_name_list.index(column_name)
+      profile[column_name] = self.expression_data[gene_name][column_index]
     return profile
 
 
@@ -166,17 +166,18 @@ All expression values in the newly added column are initialised with C{None}.
 @param column_name: column name
 @type column_name: C{String}
 """
-    if column_name in self.column_name :
+    if column_name in self.column_name_list :
       raise StandardError, '%s already in column list' % column_name
-    self.column_name.append(column_name)
-    i = self.column_name.index(column_name)
+    self.column_name_list.append(column_name)
+    for gene_name in self.expression_data.keys() :
+      self.expression_data[gene_name].append(None)
 
 
 #FIXME: features should be attached to expression data with references.
 class FeatureData(object) :
   """ Create feature data object
-@ivar feature_name: array name
-@type feature_name: Array[]
+@ivar feature_name: feature name
+@type feature_name: list of C{string}
 @ivar feature_data: feature data
 @type feature_data: C{}
 """
@@ -319,10 +320,11 @@ class ExpressionSet(object) :
   # defined by row names / feature names and column names / pheno
   # names.
   
-  def __init__(self) :
-    self.expression_data = None
-    self.pheno_data = None
-    self.feature_data = None
+  def __init__(self, expression_data = None, pheno_data = None, feature_data = None) :
+    self.expression_data = expression_data
+    self.pheno_data = pheno_data
+    self.feature_data = feature_data
+    self.verify_integrity()
 
 
   def read(self, x, p = None, f = None) :
@@ -339,11 +341,17 @@ Notice that the current contents of this instance are lost.
 @param f: Input file, feature data
 @type f: C{file}
 """
-    self.expression_data.read(x)
+    expression_data = ExpressionData()
+    expression_data.read(x)
+    self.expression_data = expression_data
     if p is not None :
-     self.pheno_data.read(p)
+      pheno_data = PhenoData()
+      pheno_data.read()
+      self.pheno_data = pheno_data
     if f is not None :
-      self.feature_data.read(f)
+      feature_data = FeatureData()
+      feature_data.read()
+      self.feature_data = feature_data
     self.verify_integrity()
   
 
@@ -351,20 +359,23 @@ Notice that the current contents of this instance are lost.
   def verify_integrity(self) :
     """Check for integrite of expression, pheno and feature data sets.
 """
+    if self.expression_data is None :
+      return
     if len(self.expression_data.expression_data) == 0 :
-      raise StandardError, 'your gene expression file is empty'
-    if len(self.pheno_data.pheno_data) == 0 :
-      raise StandardError, 'your pheno file is empty'
-    if len(self.feature_data.feature_data) == 0 :
-      raise StandardError, 'your feature file is empty'
-      
-    for i in self.expression_data.get_gene_name() :
-      if i not in self.feature_data.feature_data : 
-        raise StandardError, 'indexes of expression data and feature data are not comparable'
-
-    for ipheno in self.pheno_data.array_name :
-      if i not in self.expression_data.expression_data : 
-       raise StandardError, 'indexes of expression data and pheno data are not comparable'
+      #FIXME: is this really an invalid state?
+      raise StandardError, 'empty expression data'
+    if self.pheno_data is not None :
+      if len(self.pheno_data.pheno_data) == 0 :
+        raise StandardError, 'empty pheno data'
+      for ipheno in self.pheno_data.array_name :
+        if i not in self.expression_data.expression_data : 
+          raise StandardError, 'indexes of expression data and pheno data are not comparable'
+    if self.feature_data is not None :
+      if len(self.feature_data.feature_data) == 0 :
+        raise StandardError, 'empty feature data'
+      for i in self.expression_data.get_gene_name_list() :
+        if i not in self.feature_data.feature_data : 
+          raise StandardError, 'indexes of expression data and feature data are not comparable'
 
    
   def get_profile(self, gene_name) :
@@ -439,7 +450,7 @@ gene in that array.
     for group in self.expression_data.array_name :
       f.write('\t%s'%group )
     f.write('\n')
-    for factor in self.expression_data.get_gene_name() :
+    for factor in self.expression_data.get_gene_name_list() :
       f.write('%s'%factor)
       for iname in self.expression_data.array_name :
         index =  self.expression_data.array_name.index(iname)
@@ -476,7 +487,7 @@ gene in that array.
     for group in self.feature_data.array_name :
       f.write('\t%s'%group)
     f.write('\n')
-    for group in self.expression_data.get_gene_name() :
+    for group in self.expression_data.get_gene_name_list() :
       f.write('%s'%group)
       for element in self.feature_data.get_feature_list(group) :
         f.write('\t%s'%element)
@@ -553,15 +564,29 @@ class Instruction(object) :
   def apply_instruction(self, transsys_instance) :
     """Apply this instruction and return a trace of transsys instances.
 
+This method returns a list of C{TranssysInstance} instances. All
+instances are distinct; specifically they have distinct states (factor
+concentration lists). References to the transsys programs are shared.
+
+The C{TranssysInstance} instance referred to by the
+C{transsys_instance} parameter will not be modified. Clients therefore
+may pass in the last element of a trace and be certain that the last
+element is not affected by the application of an instruction.
+
+Ideally, time steps contained in the transsys instances should reflect
+applications of C{runtimesteps} -- this is not guaranteed at this
+stage, however.
+
 Notice that the trace may be empty (e.g. running 0 timesteps), it is
 not guaranteed to contain at least one instance.
+
 @param transsys_instance: the transsys instance to apply this instruction to
 @type transsys_instance: C{transsys.TranssysInstance}
 @return: trace of transsys instances generating while applying this instruction
 @rtype: list of C{transsys.TransysInstance}
 """
+    #FIXME: make sure time steps reflect runtimesteps applications
     raise StandardError, 'abstract method called'
-
 
 
   def resolve(self, procedure_defs) :
@@ -708,11 +733,10 @@ class InvocationInstruction(ApplicableInstruction) :
 """
     if not isinstance(self.procedure, Procedure) :
        raise StandardError, 'unresolved statement'
-    ti = transsys_instance
-    ti_trace = []
+    ti_trace = [transsys_instance.clone()]
     for instruction in self.procedure.get_instruction_list() :
-      ti_trace = ti_trace + instruction.apply_instruction(ti)
       ti = ti_trace[-1]
+      ti_trace = ti_trace + instruction.apply_instruction(ti)
     return ti_trace
 
 
@@ -741,14 +765,8 @@ class PrimaryInstruction(ApplicableInstruction) :
     raise StandardError, 'abstract method called'
 
 
-  def check_savefile_magic(self, s) :
-      return s.strip() == self.savefile_magic
-
-
 class KnockoutInstruction(PrimaryInstruction) :
   """Abstract function to simulate knockout, treatment"""
-
-  magic = "knockout"
 
   def __init__(self, gene_name) :
     """Constructor
@@ -760,6 +778,11 @@ class KnockoutInstruction(PrimaryInstruction) :
       self.gene_name = gene_name
     else :
       raise StandardError, '%s is not a string' %gene_name
+
+
+  def __str__(self) :
+    s = 'knockout: %s' % self.gene_name  
+    return s
     
 
   def apply_instruction(self, transsys_instance) :
@@ -771,19 +794,14 @@ class KnockoutInstruction(PrimaryInstruction) :
 """
     knockout_tp = copy.deepcopy(transsys_instance.transsys_program)
     knockout_tp = knockout_tp.get_knockout_copy(self.gene_name)
-    transsys_instance.transsys_program = knockout_tp
-    return [transsys_instance]
-
-
-  def __str__(self) :
-    s = self.magic + ": " + self.gene_name  
-    return s
+    ti = transsys_instance.clone()
+    ti.time_step = None
+    ti.transsys_program = knockout_tp
+    return [ti]
 
 
 class TreatmentInstruction(PrimaryInstruction) :
   """ Class to simulate treatment"""
-
-  magic = "treatment"
 
   def __init__(self, factor_name, factor_concentration) :
     """Constructor
@@ -803,6 +821,11 @@ class TreatmentInstruction(PrimaryInstruction) :
       raise StandardError, '%s is not a numeric expression' %factor_concentration
 
 
+  def __str__(self) :
+    s = 'treatment: %s = %f' % (self.factor_name, self.factor_concentration)  
+    return s
+
+
   def apply_instruction(self, transsys_instance) :
     """Apply treatment
 @param transsys_instance: transsys instance
@@ -811,20 +834,20 @@ class TreatmentInstruction(PrimaryInstruction) :
 @rtype: list of L{transsys.TranssysInstance}
 @raise StandardError: If factor does not exist
 """ 
-    factor_index = transsys_instance.transsys_program.find_factor_index(self.factor_name)
+    ti = transsys_instance.clone()
+    ti.time_step = None
+    factor_index = ti.transsys_program.find_factor_index(self.factor_name)
     if factor_index == -1 :
-      raise StandardError, 'factor "%s" not found' %self.factor_name
-    transsys_instance.factor_concentration[factor_index] = self.factor_concentration
-    return [transsys_instance]
-
-
-  def __str__(self) :
-    s = self.magic + ": " + self.factor_name + " = " + ("%s" %self.factor_concentration)  
-    return s
+      raise StandardError, 'factor "%s" not found' % self.factor_name
+    ti.factor_concentration[factor_index] = self.factor_concentration
+    return [ti]
 
 
 class RuntimestepsInstruction(PrimaryInstruction) :
-  """ Class to simulate timesteps 
+  """Class to simulate timesteps.
+
+Notice that running 0 timesteps will still add an instance to the trace.
+
 @ivar time_steps: time steps
 @type time_steps: C{Int}
 """
@@ -855,8 +878,6 @@ class RuntimestepsInstruction(PrimaryInstruction) :
 class OverexpressionInstruction(PrimaryInstruction) :
   """ Class simulate factor overexpression line """
 
-  magic = "overexpress"
-
 
   def __init__(self, factor_name, constitute_value) :
     """Constructor
@@ -876,6 +897,11 @@ class OverexpressionInstruction(PrimaryInstruction) :
       raise StandardError, '%s is not a numeric expression' %constitute_value
 
 
+  def __str__(self) :
+    s = 'overexpress: %s = %f' % (self.factor_name, self.constitute_value)
+    return s
+
+
   def apply_instruction(self, transsys_instance) :
     """ Overexpress gene
 @param transsys_program: transsys program
@@ -893,19 +919,13 @@ class OverexpressionInstruction(PrimaryInstruction) :
       newgene = '%s_overexpress_%d' % (self.factor_name, n)
       n = n + 1
     tp.gene_list.append(transsys.Gene(newgene, factor, [transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(self.constitute_value))]))
-    transsys_instance.transsys_program = tp
-    return [transsys_instance]
-
-
-  def __str__(self) :
-    s = self.magic + ": " + self.factor_name + " = " + ("%s" %self.constitute_value)  
-    return s
+    ti = transsys_instance.clone()
+    ti.transsys_program = tp
+    return [ti]
 
 
 class SetproductInstruction(PrimaryInstruction) :
   """ Class simulate set product """
-
-  magic = "setproduct"
 
   def __init__(self, gene_name, factor_name) :
     """Constructor 
@@ -923,6 +943,11 @@ class SetproductInstruction(PrimaryInstruction) :
       self.factor_name = factor_name
     else :
       raise StandardError, '%s is not a string' %factor_name
+
+
+  def __str__(self) :
+    s = 'setproduct: %s %s' % (self.gene_name, self.factor_name)
+    return s
    
 
   def apply_instruction(self, transsys_instance) :
@@ -936,18 +961,11 @@ class SetproductInstruction(PrimaryInstruction) :
     tp = copy.deepcopy(transsys_instance.transsys_program)
     gene = tp.find_gene(self.gene_name)
     factor = tp.find_factor(self.factor_name)
-    gene_name_list = map(lambda gene: gene.name, tp.gene_list)
     gene.product = factor
-    transsys_instance.transsys_program = tp
-    return [transsys_instance]
+    ti = transsys_instance.clone()
+    ti.transsys_program = tp
+    return [ti]
 
-
-  def __str__(self) :
-    s = self.magic + ": " + self.gene_name + " " + self.factor_name 
-    return s
-
-
-# jtk: bookmark -- went through code up to here. Details of instruction implementations may need another audit.
 
 class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
   """Abstract base class for objective functions based on empirical
@@ -1286,15 +1304,15 @@ series is the simulation of the gene expression levels for that genotype.
 """
     if factor_list is None :
       factor_list = self.discriminationsettings_def.genemapping.get_factor_list()
-    e = ExpressionSet()
+    # FIXME: should not interf
+    expression_data = ExpressionData()
     l = len(self.measurementmatrix_def.get_measurementcolumn_list())
-
     for factor in factor_list :
       values = []
       for j in range(0, l) :
         values.append('None')
-      e.expression_data.expression_data[factor] = values
-    
+      expression_data.expression_data[factor] = values
+    e = ExpressionSet(expression_data)
     for colname in self.measurementmatrix_def.get_measurementcolumn_list() :
       e.add_column(colname.name)
     return e
@@ -1307,7 +1325,8 @@ series is the simulation of the gene expression levels for that genotype.
     simexpression_name_spec = []
     for col in self.measurementmatrix_def.get_measurementcolumn_list() :
       simexpression_name_spec.append(col.name)
-    array_name_eset = self.empirical_expression_set.expression_data.array_name
+    # FIXME: shouldn't be called array_name_eset -- really is a column name list
+    array_name_eset = self.empirical_expression_set.expression_data.column_name_list
     if (len(self.measurementmatrix_def.get_measurementcolumn_list()) != len(array_name_eset)) :
       raise StandardError, 'Arrays vary in length spec: %s, empirical data: %s' %(len(simexpression_name_spec), len(array_name_eset))
 
@@ -1320,8 +1339,8 @@ series is the simulation of the gene expression levels for that genotype.
     """ Validate spec file genemapping consistency """
 
     gene_name_spec = self.discriminationsettings_def.get_genemapping().get_factor_list()
-    if (len(gene_name_spec) != len(self.empirical_expression_set.expression_data.get_gene_name())) :
-      raise StandardError, 'Arrays vary in length spec: %s, empirical data: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name()))
+    if (len(gene_name_spec) != len(self.empirical_expression_set.expression_data.get_gene_name_list())) :
+      raise StandardError, 'Arrays vary in length spec: %s, empirical data: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name_list()))
 
   
   def __str__(self) :
@@ -1593,7 +1612,7 @@ class InstructionSequence(object) :
 """
     # FIXME: this is now coded up using a loop pattern matching the object of simulation, check that all trace producing loops are like this
     tp = copy.deepcopy(transsys_program)
-    ti_trace = [transsys.TranssysInstance(transsys_program)]
+    ti_trace = [transsys.TranssysInstance(tp)]
     for instruction in self.instruction_sequence :
       ti = ti_trace[-1]
       ti_trace = ti_trace + instruction.apply_instruction(ti)
@@ -1720,6 +1739,7 @@ intended for use during validation of identifiers in transformations.
 @return: ti_trace
 @rtype: L{transsys.TranssysInstance}
 """
+    raise StandardError, 'called obsolete method'
     tp = copy.deepcopy(transsys_program)
     ti = transsys.TranssysInstance(transsys_program)
     ti_trace = []
