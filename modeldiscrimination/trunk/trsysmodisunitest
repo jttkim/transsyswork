@@ -44,7 +44,20 @@ ArctanFunction
 minValue: 0.1
 maxValue: 10.0
 """
-    self.optimiserfile = open('optspec.dat', 'r')
+    self.optimiserspec = """GradientOptimiser-0.1.1
+initial_stepsize: 1.0
+delta: 1.0e-1
+stepsize_shrink: 0.5
+termination_stepsize: None
+termination_objective: None
+termination_iteration: None
+termination_numEvaluations: None
+termination_improvement: None
+termination_relative_improvement: 0.01
+stepsize_max: 0.01
+eliminateFlatComponents: False
+ParameterTransformer
+"""
     self.specfile = open('sgx.txt', 'r')
     self.model_01 = open('sgx.tra', 'r')
     self.model_02 = open('sgx_01.tra', 'r')
@@ -64,7 +77,7 @@ maxValue: 10.0
     o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
     objective_function = o.parse_objectivespec()
     objective_function.set_empirical_expression_set(expression_set)
-    optimiser = transsys.optim.parse_optimiser(self.optimiserfile)
+    optimiser = transsys.optim.parse_optimiser(StringIO.StringIO.(self.optimiserspec))
     optimiser.transformer = transsys.optim.parse_parameter_transformer(StringIO.StringIO(self.transformerspec))
     rng = random.Random(self.rndseed)
     optimiser.rng = rng

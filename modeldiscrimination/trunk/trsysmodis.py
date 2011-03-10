@@ -967,147 +967,6 @@ class SetproductInstruction(PrimaryInstruction) :
     return [ti]
 
 
-class EmpiricalObjective(transsys.optim.AbstractObjectiveFunction) :
-  """Abstract base class for objective functions based on empirical
-expression sets.
-The objective function is parametrised by gene expression measurements.
-""" 
-
-  # consider setting the expression set via a mutator rather than at construction.
-  # rationale: expression sets have to be consistent with simulated experimentation,
-  # therefore setting an expression set before the simulated experimentation is
-  # specified is premature -- the expression set can be checked for suitability
-  # only after the experimentation is specified, and the mutator should do that.
-  def __init__(self, expression_set) :
-    """Constructor.
-@param expression_set: the expression st
-@type expression_set: L{ExpressionSet}
-"""
-    self.expression_set = copy.deepcopy(expression_set)
-
-
-  def __call__(self, transsys_program) :
-    """Abstract method"""
-    raise StandardError, 'abstract method called'
-
-
-  def get_simulated_set(self, transsys_program) :
-    """Abstract method """
-    raise StandardError, 'abstract method called'
-
-
-
-#FIXME: Obsolete
-class KnockoutObjective(EmpiricalObjective) : 
-  """Objective function
-based on empirical data from the wild type and knockout mutants.
-
-Knockouts are simulated by knocking out genes in the transsys program,
-using the C{get_knockout_copy} provided by the
-C{transsys.TranssysProgram} class.
-
-For each genotype (wild type and knockouts), a transsys instance is
-created and a time series of C{equilibration_length} time steps is
-generated. The instance at the end of this time series is the simulation
-of the gene expression levels for that genotype.
-
-@ivar equilibration_length: length of the equilibration period.
-@type equilibration_length: C{int}
-@ivar distance_function: metric distance.
-@type distance_function: C{function}, must take two profiles and return a non-negative distance as a @C{float}
-@ivar logratio_mode: switch for setting logratio mode
-@type logratio_mode: boolean
-@ivar sd_multiplier: if set, shift expression levels so that minimum level is sd_multiplier * stddev of expression levels.
-@type sd_multiplier: C{float}
-""" 
-
-#FIXME: Obsolete
-  def __init__(self, expression_set, equilibration_length, logratio_mode = None, distance_function = None, sd_multiplier = None) :
-    """Constructor.
-"""
-    super(KnockoutObjective, self).__init__(expression_set)
-    self.equilibration_length = equilibration_length
-    self.logratio_mode = logratio_mode
-    self.sd_multiplier = sd_multiplier
-    self.distance_function = distance_function
-    self.expression_set = self.transform_expression_set(self.expression_set)
-
-
-#FIXME: Obsolete
-  def transform_expression_set(self, expression_set) :
-    """ Transform expression set
-@param expression_set: expression set
-@type expression_set: L{ExpressionSet}
-"""
-    if self.logratio_mode :
-      expression_set.expression_data.shift_to_stddev(self.sd_multiplier)
-    return expression_set
-
-
-#FIXME: Obsolete
-  def __call__(self, transsys_program) :
-    """ Call
-@param transsys_program: transsys program
-@type transsys_program: c{transsys_program} 
-"""
-    e = self.get_simulated_set(transsys_program)
-    self.transform_expression_set(e)
-    if self.logratio_mode :
-      s = self.expression_set.logratio_divergence(e, self.distance_function)
-    else :
-      s = self.expression_set.divergence(e, self.distance_function)
-    return ModelFitnessResult(s)
-
-
-#FIXME: Obsolete
-  def get_simulated_set(self, transsys_program) :
-    """Produce raw (ie without any transformations applied) simulated data.
-    
-@param transsys_program: transsys program
-@type transsys_program: transsys program
-@return: Expression set
-@rtype: C{ExpressionSet}
-"""
-    e = ExpressionSet()
-    e = copy.deepcopy(self.expression_set)
-    e.expression_data.array_name = []
-    ti = transsys.TranssysInstance(transsys_program)
-    ti_wildtype = self.get_measurement(ti)
-    wildtype_array_name = self.expression_set.get_wildtype_array_name()
-    e.add_column(wildtype_array_name)
-    map(lambda t: e.set_expression_value(wildtype_array_name, t.name, ti_wildtype.get_factor_concentration(t.name)),transsys_program.factor_list)
-    for gene_array in self.expression_set.get_knockout_gene_name_list() :
-      knockout_tp = copy.deepcopy(transsys_program)
-      for gene_name in gene_array.split(';') : 
-        knockout_tp = knockout_tp.get_knockout_copy(gene_name)
-      ti = transsys.TranssysInstance(knockout_tp)
-      ti_knockout = self.get_measurement(ti)
-      array_name = self.expression_set.get_knockout_array_name(gene_name)
-      e.add_column(array_name)
-      map(lambda t: e.set_expression_value(array_name, t.name, ti_knockout.get_factor_concentration(t.name)),transsys_program.factor_list)
-    return e
-
-
-#FIXME: Obsolete
-  def get_measurement(self, ti) :
-    """Get time series value 
-@param ti: time series step
-@type ti: C{int}
-@return: factor concentration
-@rtype: array of C{float}
-"""
-
-    ts = ti.time_series(self.equilibration_length)
-    ti_wt = ts[-1]
-    return ti_wt
-
-
-# EmpiricalObjective should be refactored to separate specification
-# of experimentation from specification of data
-# SimGenex should be a subclass of EmpiricalObjective
-
-
-
 class SimGenexColumn(object) :
   """
 @param name: instruction sequence name
@@ -1147,7 +1006,6 @@ series is the simulation of the gene expression levels for that genotype.
     self.measurementmatrix_def = measurementmatrix_def
     self.discriminationsettings_def = discriminationsettings_def
     self.resolve_procedure()
-    self.instructionsequence_list = self.get_instructionsequence_list()
 
 
   def resolve_procedure(self) :
@@ -1157,7 +1015,7 @@ series is the simulation of the gene expression levels for that genotype.
 
 
   def get_instructionsequence_list(self) :
-    """ Get instruction sequence list from simexpression_defs
+    """Get instruction sequence list from simexpression_defs
 @return: instructionsequence_list
 @rtype: list of {InstructionSequence}
 """
@@ -1169,21 +1027,23 @@ series is the simulation of the gene expression levels for that genotype.
 
 
   def __call__(self, transsys_program) :
-    """
+    """Compute the divergence between the expression matrix simulated
+from a transsys program to the empirical data.
+    
 @param transsys_program: transsys program   
 @type transsys_program: L{transsys.TranssysProgram}
 @return: Fitness results
-@rtype: L{ModelFitnessResult}
+@rtype: L{SimgenexFitnessResult}
 """
     rawdata_matrix = self.get_simulated_set(transsys_program)
     transformed_matrix = self.measurementmatrix_def.transform(rawdata_matrix)
     simulated_expression_set = self.map_genes(transformed_matrix)
     s = self.get_divergence(simulated_expression_set)
-    return ModelFitnessResult(s)
+    return SimgenexFitnessResult(s)
 
 
   def map_genes(self, matrix) :
-    """
+    """Construct expression set based on the matrix.
 @param matrix: List of transsys.TranssysInstances 
 @type matrix: list of {transsys.TranssysInstances}
 @return: expression set
@@ -1234,7 +1094,7 @@ series is the simulation of the gene expression levels for that genotype.
     rawdata_matrix = []
     self.write_trace_header(tracefile, transsys_program)
     
-    for instructionsequence in self.instructionsequence_list :
+    for instructionsequence in self.get_instructionsequence_list() :
       ti_trace = instructionsequence.simulate(transsys_program)
       if ti_trace is not None :
         ti = ti_trace[-1]
@@ -1348,7 +1208,7 @@ series is the simulation of the gene expression levels for that genotype.
 @return: Object spec string
 @rtype: C{String}
 """
-    s = ("%s\n\n" %EmpiricalObjectiveFunctionParser.magic)
+    s = ("%s\n\n" % SimGenexObjectiveFunctionParser.magic)
     for procedure in self.procedure_defs :
       s = s + ("%s" % str(procedure))
     for simexpression in self.simexpression_defs :
@@ -1475,17 +1335,17 @@ def statistics(l) :
   return ave_vec, sd_vec
 
 
-class ModelFitnessResult(transsys.optim.FitnessResult) :
-  """ ModelFitnessResult class
+class SimgenexFitnessResult(transsys.optim.FitnessResult) :
+  """ SimgenexFitnessResult class
 @param fitness: Fitness result value
 @type fitness: C{float}
 """
 
   def __init__(self, fitness) :
-    super(ModelFitnessResult, self).__init__(fitness)
+    super(SimgenexFitnessResult, self).__init__(fitness)
 
 
-class Procedure(Instruction) :
+class Procedure(object) :
   """Object Procedure
 @ivar procedure_name: procedure name
 @type procedure_name: C{String}
@@ -1610,7 +1470,6 @@ class InstructionSequence(object) :
 @return: ti_trace
 @rtype: C{list} of C{transsys.TranssysInstance}
 """
-    # FIXME: this is now coded up using a loop pattern matching the object of simulation, check that all trace producing loops are like this
     tp = copy.deepcopy(transsys_program)
     ti_trace = [transsys.TranssysInstance(tp)]
     for instruction in self.instruction_sequence :
@@ -1731,23 +1590,6 @@ intended for use during validation of identifiers in transformations.
         instruction.resolve(procedure_defs)
     return simexpression_cols
      
-
-  def simulate(self, transsys_program) :
-    """
-@param transsys_program: transsys program
-@type transsys_program: L{transsys.TranssysProgram}
-@return: ti_trace
-@rtype: L{transsys.TranssysInstance}
-"""
-    raise StandardError, 'called obsolete method'
-    tp = copy.deepcopy(transsys_program)
-    ti = transsys.TranssysInstance(transsys_program)
-    ti_trace = []
-    for instruction in self.instruction_list :
-      ti_trace = ti_trace + instruction.apply_instruction(ti)
-      ti = ti_trace[-1]
-    return ti_trace
-
 
 class TransformedData(object) :
   """
@@ -2471,7 +2313,7 @@ class ExpressionStatNegmin(ExpressionStat) :
       return min(values)
  
 
-class EmpiricalObjectiveFunctionParser(object) :
+class SimGenexObjectiveFunctionParser(object) :
   """ Object specification 
 @param f: Spec file
 @type f: c{file}
