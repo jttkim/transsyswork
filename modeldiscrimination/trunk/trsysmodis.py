@@ -72,6 +72,11 @@ This method does not rigorously check input for validity.
     column_index = self.column_name_list.index(column_name)
     return self.expression_data[factor_name][column_index]
 
+  def add_column(self, column_name) :
+    self.column_name_list.append(column_name)
+    for factor_name in self.expression_data.keys() :
+      self.expression_data[factor_name].append(None)
+
 
   def set_value(self, column_name, factor_name, v) :
     """Mutator.
@@ -242,8 +247,8 @@ Used to be called C{get_gene_name}.
 #FIXME: should be attached to expression data (matrix columns) using references
 class PhenoData(object) :
   """Create pheno data object
-@ivar pheno_name: array name
-@type pheno_name: Array[]
+@ivar pheno_name: names of pheno properties
+@type pheno_name: dictionary mapping expression data column names to lists of property values.
 @ivar pheno_data: pheno data
 @type pheno_data: C{}
 """
@@ -255,6 +260,13 @@ class PhenoData(object) :
 
   def read (self, f) :
     """Load gene expression data.
+
+Pheno data is expected in a tabular / "data frame" format. The first row
+contains the headers of the table. These are the names of the pheno
+properties.
+
+In each row, the first entry is the name of the expression data column,
+and the subsequent entries are the pheno property values.
 
 @param f: Input file
 @type f: C{file}
@@ -281,6 +293,11 @@ class PhenoData(object) :
     for i in self.pheno_data :
       pheno_name.append(i)
     return pheno_name
+
+  def add_data_column(self, data_column_name, values = None) :
+    if data_column_name in self.pheno_data.keys() :
+      raise StandardError, 'pheno column %s already exists' % data_column_name
+    self.pheno_data[data_column_name] = [None] * len(self.pheno_name)
 
 
   #FIXME: really pertains to column names
@@ -391,6 +408,12 @@ gene in that array.
 """
     return self.expression_data.get_profile(gene_name)
 
+
+  def add_column(self, column_name, column_data) :
+    self.expression_data.add_column(column_name, column_data)
+    if self.pheno_data is not None :
+      self.pheno_data.add_data_column(column_name)
+      
 
 #FIXME: Obsolete
 #FIXME: jtk: yes, this seems obsolete to me too
@@ -974,48 +997,48 @@ class SimGenexColumn(object) :
 @param transsys_instance: transsys_instance
 @type transsys_instance: L{transsys.TranssysInstance}
 """
-
+  #FIXME: think of better name
   def __init__(self, name, transsys_instance) :
     self.name = name
     self.transsys_instance = transsys_instance
 
 
-class SimGenex(transsys.optim.AbstractObjectiveFunction) :
-  """Objective function
-For each genotype (wild type and knockouts), a transsys instance is
-created, equilibrated according to some C{equilibration_length} 
-time steps, added a treatment according to some rules C{String} 
-and finally equilibrated again. The instance at the end of this time 
-series is the simulation of the gene expression levels for that genotype.
-@param procedure_defs: procedure definition.
+class SimGenex(object) :
+
+  """Class to represent a "recipe" for constructing a simulated
+  expression set from a suitable transsys program.
+
+@ivar procedure_defs: procedure definition.
 @type procedure_defs: list of C{Procedure}
-@param simexpression_defs: simexpression definition.
+@ivar simexpression_defs: simexpression definition.
 @type simexpression_defs: list of C{SimExpression}
-@param measurementmatrix_def: measurementmatrix definitions.
+@ivar measurementmatrix_def: measurementmatrix definitions.
 @type measurementmatrix_def: L{MeasurementMatrix}
-@param discriminationsettings_def: discriminationsettings definitions
+@ivar discriminationsettings_def: discriminationsettings definitions
 @type discriminationsettings_def: L{DiscriminationSettings}
 """ 
 
 
   def __init__(self, procedure_defs, simexpression_defs, measurementmatrix_def, discriminationsettings_def) :
-    """ Constructor  """
-    self.empirical_expression_set = None
+    """Constructor.
+
+    parameters to be documented after considering collaboration with parser.
+"""
     self.procedure_defs = procedure_defs
     self.simexpression_defs = simexpression_defs
     self.measurementmatrix_def = measurementmatrix_def
     self.discriminationsettings_def = discriminationsettings_def
-    self.resolve_procedure()
+    self.resolve_procedures()
 
 
-  def resolve_procedure(self) :
-    """ Resolve spec """
+  def resolve_procedures(self) :
+    """Resolve procedures in this SimGenex instance."""
     for procedure in self.procedure_defs :
       procedure.resolve(self.procedure_defs)
 
 
   def get_instructionsequence_list(self) :
-    """Get instruction sequence list from simexpression_defs
+    """Get instruction sequence list from all simexpressions in this SimGenex instance.
 @return: instructionsequence_list
 @rtype: list of {InstructionSequence}
 """
@@ -1026,81 +1049,35 @@ series is the simulation of the gene expression levels for that genotype.
     return instructionsequence_list
 
 
-  def __call__(self, transsys_program) :
-    """Compute the divergence between the expression matrix simulated
-from a transsys program to the empirical data.
-    
-@param transsys_program: transsys program   
-@type transsys_program: L{transsys.TranssysProgram}
-@return: Fitness results
-@rtype: L{SimgenexFitnessResult}
+  def get_simulated_set(self, transsys_program) :
+    """Generate an expression set by applying the simulation operations specified by this SimGenex instance.
 """
-    rawdata_matrix = self.get_simulated_set(transsys_program)
+    rawdata_matrix = self.get_raw_simulated_set(transsys_program)
     transformed_matrix = self.measurementmatrix_def.transform(rawdata_matrix)
-    simulated_expression_set = self.map_genes(transformed_matrix)
-    s = self.get_divergence(simulated_expression_set)
-    return SimgenexFitnessResult(s)
-
-
-  def map_genes(self, matrix) :
-    """Construct expression set based on the matrix.
-@param matrix: List of transsys.TranssysInstances 
-@type matrix: list of {transsys.TranssysInstances}
-@return: expression set
-@rtype: L{ExpressionSet}
-"""
-    e = self.get_expressionset_template()
-    for column in matrix :
+    simulated_expression_set = self.get_expressionset_template()
+    for column in transformed_matrix :
       for factor in self.discriminationsettings_def.get_genemapping().get_factor_list() :
-        e.set_expression_value(column.name, factor, column.data_dict[factor])
-    return e
+        simulated_expression_set.set_expression_value(column.name, factor, column.data_dict[factor])
+    return simulated_expression_set
 
 
-  def set_empirical_expression_set(self, empirical_expression_set):
-    """Set empirical expression set and check it exists
-@param expression_set: expression set
-@type expression_set: L{ExpressionSet}
-"""
-# FIXME: expression_set really means empirical_expression set?
-    self.empirical_expression_set = empirical_expression_set
-    if self.empirical_expression_set == None :
-      raise StandardError, 'None expression set %s' %self.empirical_expression_set
-    self.validate_measurementcolumn()
-    self.validate_genemapping()
-
-
-  def get_divergence(self, simulated_expression_set) :
-    """Divergence measurement.
-@param simulated_expression_set: simulated expression set
-@type simulated_expression_set: L{ExpressionSet}
-@return: divergence between this expression set and the other expression set
-@rtype: C{float}
-"""
-    d = 0.0
-    for factor_name in simulated_expression_set.expression_data.expression_data.keys() :
-      empiricalProfile = self.empirical_expression_set.get_profile(factor_name)
-      simulatedProfile = simulated_expression_set.get_profile(factor_name)
-      d = d + self.empirical_expression_set.distance_divergence(empiricalProfile, simulatedProfile, self.discriminationsettings_def.distance)
-    return d
-
-
-  def get_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
+  def get_raw_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
     """Produce simulated data.
 @param transsys_program: transsys program
 @type transsys_program: L{transsys.TranssysProgram}
 @return: rawdata_matrix
 @rtype: C{List}
 """
+    #FIXME: ad-hoc writing of tracefiles...
     rawdata_matrix = []
     self.write_trace_header(tracefile, transsys_program)
-    
     for instructionsequence in self.get_instructionsequence_list() :
       ti_trace = instructionsequence.simulate(transsys_program)
       if ti_trace is not None :
         ti = ti_trace[-1]
-        self.write_tp_tracefile(tp_tracefile, ti.transsys_program, instructionsequence.get_instruction_sequence_name())
-        rawdata_matrix.append(SimGenexColumn(instructionsequence.name, ti))
-        self.write_trace_simexpression(tracefile, instructionsequence.get_instruction_sequence_name(), ti_trace)
+        self.write_tp_tracefile(tp_tracefile, ti.transsys_program, instructionsequence.get_name())
+        rawdata_matrix.append(SimGenexColumn(instructionsequence.get_name(), ti))
+        self.write_trace_simexpression(tracefile, instructionsequence.get_name(), ti_trace)
     return rawdata_matrix
 
 
@@ -1110,24 +1087,24 @@ from a transsys program to the empirical data.
 @type transsys_program: L{transsys.TranssysProgram}
 """
     if tracefile is not None :
-      tracefile.write("Array\t")
+      tracefile.write("instructionsequence")
       for factor in transsys_program.factor_list :
-        tracefile.write("%s\t" %factor.name)
+        tracefile.write("\t%s" %factor.name)
       tracefile.write("\n")
 
 
-  def write_trace_simexpression(self, tracefile, array_name, ti_trace) :
+  def write_trace_simexpression(self, tracefile, instruction_sequence_name, ti_trace) :
     """ Write expression profiles per time step
 @param tracefile: tracefile
 @type tracefile: C{File}
-@param array_name: array_name
-@type array_name: C{String}
+@param instruction_sequence_name: instruction_sequence_name
+@type instruction_sequence_name: C{String}
 @param ti_trace: time series
 @type ti_trace: L{transsys.TranssysInstance}
 """
     if tracefile is not None :
       for ti in ti_trace :
-        tracefile.write("%s\t" % array_name)
+        tracefile.write("%s\t" % instruction_sequence_name)
         for factor in ti.transsys_program.factor_list :
           tracefile.write("%02f\t" % ti.get_factor_concentration(factor.name))
         tracefile.write("\n")
@@ -1143,29 +1120,21 @@ from a transsys program to the empirical data.
 @type name: C{String}
 """
     if tp_tracefile is not None :
-      tp_tracefile.write('Array name: %s\n'%name)
+      tp_tracefile.write('# instructionsequence: %s\n' % name)
       tp_tracefile.write('%s\n'%tp)
 
 
-  def get_trace_file(self) :
-    """ Get trace file
-@return: trace file
-@rtype: StringIO
-"""
-    return self.file
-
-
-  def get_expressionset_template(self, factor_list = None) :
+  def get_expressionset_template(self) :
     """ Create expression set according to spec file 
 @param factor_list: factor list
 @type factor_list: C{List}
 @return: Expression set
 @rtype: L{ExpressionSet}
 """
-    if factor_list is None :
-      factor_list = self.discriminationsettings_def.genemapping.get_factor_list()
-    # FIXME: should not interf
+    factor_list = self.discriminationsettings_def.genemapping.get_factor_list()
     expression_data = ExpressionData()
+    column_name_list = map(lambda iseq: iseq.get_name(), self.get_instructionsequence_list())
+    # continue here
     l = len(self.measurementmatrix_def.get_measurementcolumn_list())
     for factor in factor_list :
       values = []
@@ -1345,6 +1314,56 @@ class SimgenexFitnessResult(transsys.optim.FitnessResult) :
     super(SimgenexFitnessResult, self).__init__(fitness)
 
 
+class SimGenexObjectiveFunction(transsys.optim.AbstractObjectiveFunction) :
+
+  def __init__(self, simgenex, empirical_expression_set) :
+    self.empirical_expression_set = empirical_expression_set
+    self.simgenex = simgenex
+
+
+  def __call__(self, transsys_program) :
+    """Compute the divergence between the expression matrix simulated
+from a transsys program to the empirical data.
+    
+@param transsys_program: transsys program   
+@type transsys_program: L{transsys.TranssysProgram}
+@return: Fitness results
+@rtype: L{SimgenexFitnessResult}
+"""
+    simulated_expression_set = self.simgenex.get_simulated_set(transsys_program)
+    s = self.get_divergence(simulated_expression_set)
+    return SimgenexFitnessResult(s)
+
+
+    def get_divergence(self, simulated_expression_set) :
+    """Divergence measurement.
+@param simulated_expression_set: simulated expression set
+@type simulated_expression_set: L{ExpressionSet}
+@return: divergence between this expression set and the other expression set
+@rtype: C{float}
+"""
+    d = 0.0
+    for factor_name in simulated_expression_set.expression_data.expression_data.keys() :
+      empiricalProfile = self.empirical_expression_set.get_profile(factor_name)
+      simulatedProfile = simulated_expression_set.get_profile(factor_name)
+      d = d + self.empirical_expression_set.distance_divergence(empiricalProfile, simulatedProfile, self.discriminationsettings_def.distance)
+    return d
+
+
+  def set_empirical_expression_set(self, empirical_expression_set):
+    """Set empirical expression set and check it exists
+@param expression_set: expression set
+@type expression_set: L{ExpressionSet}
+"""
+# FIXME: expression_set really means empirical_expression set?
+# FIXME: adapt to objective function structure
+    self.empirical_expression_set = empirical_expression_set
+    if self.empirical_expression_set is not None :
+      self.validate_measurementcolumn()
+      self.validate_genemapping()
+
+
+
 class Procedure(object) :
   """Object Procedure
 @ivar procedure_name: procedure name
@@ -1447,7 +1466,7 @@ class InstructionSequence(object) :
     return InstructionSequence(self.name, self.instruction_sequence)
 
 
-  def get_instruction_sequence_name(self) :
+  def get_name(self) :
     """
 @return: self.name
 @rtype: C{String}
