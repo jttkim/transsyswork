@@ -470,13 +470,13 @@ gene in that array.
 @type f: file
 """
     #FIXME: where does the basename instance variable come from?
-    for group in self.expression_data.array_name :
+    for group in self.expression_data.column_name_list :
       f.write('\t%s'%group )
     f.write('\n')
     for factor in self.expression_data.get_gene_name_list() :
       f.write('%s'%factor)
-      for iname in self.expression_data.array_name :
-        index =  self.expression_data.array_name.index(iname)
+      for iname in self.expression_data.column_name_list :
+        index =  self.expression_data.column_name_list.index(iname)
         f.write('\t%e'%self.expression_data.expression_data[factor][index])
       f.write('\n')
  
@@ -1336,7 +1336,7 @@ from a transsys program to the empirical data.
 
 
     def get_divergence(self, simulated_expression_set) :
-    """Divergence measurement.
+      """Divergence measurement.
 @param simulated_expression_set: simulated expression set
 @type simulated_expression_set: L{ExpressionSet}
 @return: divergence between this expression set and the other expression set
@@ -1699,7 +1699,7 @@ class GeneMapping(object) :
     for name, value in self.factor_list.iteritems() :
       w = ''
       for u in value :
-	w = w + u + " "
+	w = w + u# + " "
       s = s + ('    factor ' + name + " = " + w + ";\n")
     s = s + '  }\n'
     return s
@@ -2269,7 +2269,7 @@ class Offset(object) :
 
   def __str__(self) :
     if self.expressionstat is None :
-      return 'offset: %f;' % self.offsetvalue
+      return 'offset: %f' % self.offsetvalue
     else :
       return 'offset: %f * %s' % (self.offsetvalue, str(self.expressionstat))
 
@@ -2344,8 +2344,8 @@ class SimGenexObjectiveFunctionParser(object) :
   def __init__(self, f = None) :
     """  Constructor """
 
-    if not isinstance(f, file):
-      raise TypeError, "%s is not a proper spec file"%f
+    #if not isinstance(f, file) or not isinstance(f, StringIO.StringIO) :
+    #  raise TypeError, "%s is not a proper spec file"%f
     self.scanner = Scanner(f)
 
 

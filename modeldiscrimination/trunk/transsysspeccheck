@@ -27,7 +27,7 @@ if len(args) > 1 :
 else :
   outfile = sys.stdout
 
-o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
+o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
 s = objective_function.__str__()
 outfile.write('%s\n' % s)
