@@ -47,7 +47,7 @@ if len(args) > 0 :
 else :
   infile = sys.stdin
 if len(args) > 1 :
-  outfile = args[1]
+  outfile = open(args[1], 'w')
 if len(args) > 2 :
   if args[2] != 'None' :
     tracefile = open(args[2], 'w')
@@ -56,21 +56,20 @@ if len(args) > 3 :
     tp_tracefile = open(args[3], 'w')
 
 specfile = open(spec, 'r')
-o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
+o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
 if all_factors :
-  rawdata_matrix = objective_function.get_simulated_set(transsys_program,tracefile, tp_tracefile, transsys_program.factor_names())
+  rawdata_matrix = objective_function.get_simulated_set(transsys_program)
   transformed_matrix = objective_function.measurementmatrix_def.transform(rawdata_matrix)
   e = objective_function.map_genes(transformed_matrix)
 else :
-  rawdata_matrix = objective_function.get_simulated_set(transsys_program, tracefile, tp_tracefile)
-  transformed_matrix = objective_function.measurementmatrix_def.transform(rawdata_matrix)
-  e = objective_function.map_genes(transformed_matrix)
+  e = objective_function.get_simulated_set(transsys_program)
 
 if noise > 0.0 :
   if rndseed is not None :
-    e.write_noisy_simulated_set(outfile, rng, noise)
+    #e.write_noisy_simulated_set(outfile, rng, noise)
+    e.write_expression_data(outfile, rng, noise)
 else :
-  e.write_simulated_set(outfile)
+  e.write_expression_data(outfile)
