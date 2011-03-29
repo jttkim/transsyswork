@@ -60,6 +60,7 @@ dev.off();
 """ %resultDict
   # FIXME: hard-coded path to R
   # FIXME: solve this path issue
+  #rcmd = '/usr/local/R-2.11.1/bin/R --vanilla --slave --quiet'
   rcmd = '/home/trsysweb/bin/R --vanilla --slave --quiet'
   p = popen2.Popen3(rcmd, 1)
   sys.stdout.flush()
@@ -262,7 +263,7 @@ def extractModelDicts() :
   if 'simgenexspec' in formdata :
     seString = formdata['simgenexspec'].value
     specFile = StringIO.StringIO(seString)
-    o = trsysmodis.EmpiricalObjectiveFunctionParser(specFile)
+    o = trsysmodis.SimGenexObjectiveFunctionParser(specFile)
     modelDict['simgenexspec'] = o.parse_objectivespec()
   else :
     errorList.append('simgenexspec not specified')
@@ -279,7 +280,8 @@ def extractModelDicts() :
 def discriminate(modelDict) :
   resultDict = {}
   objective_function = modelDict['simgenexspec']
-  objective_function.set_empirical_expression_set(modelDict['targetdata'])
+  #objective_function.set_empirical_expression_set(modelDict['targetdata'])
+  oo = trsysmodis.SimGenexObjectiveFunction(objective_function, (modelDict['targetdata']))
   optimiser = transsys.optim.GradientOptimiser()
   optimiser.termination_relative_improvement = 0.1
   restarts = modelDict['restarts']
@@ -288,7 +290,8 @@ def discriminate(modelDict) :
     fitness_label = candidate_model + '_' + 'fitness'
     if 'candidate' in candidate_model :
       for rindex in range(0,restarts) :
-        opt_result = optimiser.optimise(modelDict[candidate_model], objective_function)
+        #opt_result = optimiser.optimise(modelDict[candidate_model], objective_function)
+        opt_result = optimiser.optimise(modelDict[candidate_model], oo)
         fitness_results.append(opt_result.objectiveOptimum.fitness)
         resultDict[fitness_label] = fitness_results
   return resultDict
