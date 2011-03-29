@@ -1335,8 +1335,8 @@ from a transsys program to the empirical data.
     return SimgenexFitnessResult(s)
 
 
-    def get_divergence(self, simulated_expression_set) :
-      """Divergence measurement.
+  def get_divergence(self, simulated_expression_set) :
+    """Divergence measurement.
 @param simulated_expression_set: simulated expression set
 @type simulated_expression_set: L{ExpressionSet}
 @return: divergence between this expression set and the other expression set
@@ -1346,7 +1346,7 @@ from a transsys program to the empirical data.
     for factor_name in simulated_expression_set.expression_data.expression_data.keys() :
       empiricalProfile = self.empirical_expression_set.get_profile(factor_name)
       simulatedProfile = simulated_expression_set.get_profile(factor_name)
-      d = d + self.empirical_expression_set.distance_divergence(empiricalProfile, simulatedProfile, self.discriminationsettings_def.distance)
+      d = d + self.empirical_expression_set.distance_divergence(empiricalProfile, simulatedProfile, self.simgenex.discriminationsettings_def.distance)
     return d
 
 
