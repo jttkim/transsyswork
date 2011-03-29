@@ -1,0 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Transsys model discrimination</title>
+    <link rel="stylesheet" type="text/css" href="http://localhost/css/site.css" />
+</head>
+<body>
+    <table>
+    <h1>Model discrimination</h1>
+    {% if errorList %}
+        <ul>
+            {% for error in errorList %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <form action="simgenex.cgi" method="post">
+        <tr><td><h3><p>Candidate 1: </p></h3></tr></td>
+        <tr><td><p><textarea name="candidate1" rows="10" cols="50">{{ candidate1 }}</textarea></p></tr></td>
+        <tr><td><h3><p>SimGenex specification: </tp></h3>
+        <tr><td><textarea name="simgenexspec" rows="10" cols="50">{{ simgenexspec }}</textarea></p></tr></td>
+        <p>
+        <tr><td><input type="submit" value="Submit"></tr></td>
+        </p>
+    </form>
+    </table>
+</body>
+</html>
