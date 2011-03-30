@@ -21,13 +21,22 @@ class ExpressionData(object) :
   """Create expression data object
 @ivar column_name_list: list of column names
 @type column_name_list: list of C{string}
-@ivar expression_data: gene expression data
-@type expression_data: dictionary
+@ivar expression_data: gene expression data, organised by row, where the row label is the dictionary key
+@type expression_data: dictionary of list of float
 """
-#FIXME: what's the type of expression_data?
-  def __init__(self) :
+
+  def __init__(self, rowname_list = None) :
+    """Constructor. Constructs an instance with no data, but with
+row names as specified by the C{rowname_list} parameter.
+@param rowname_list lists of row names
+@type rowname_list list of strings
+"""
+    if rowname_list is None :
+      rowname_list = []
     self.column_name_list = []
     self.expression_data = {}
+    for rowname in rowname_list :
+      self.expression_data[rowname] = []
 
 
   def read(self, f) :
@@ -47,6 +56,7 @@ This method does not rigorously check input for validity.
 @param f: Input file
 @type f: C{file}
 """
+    # FIXME: questionable design as previous content of instance gets erased. Consider refactoring this into a function returning an ExpressionData instance
     l = f.readline()
     self.column_name_list = l.strip().split()
     l = f.readline()
@@ -72,10 +82,19 @@ This method does not rigorously check input for validity.
     column_index = self.column_name_list.index(column_name)
     return self.expression_data[factor_name][column_index]
 
-  def add_column(self, column_name) :
+
+  def add_column(self, column_name, column_data) :
+    """Add a column to this expression matrix. The new column is
+    populated with C{None}s.
+@param column_name the name of the column
+@type column_name C{string}
+@param column_data data to populate the column with, labels must match row names of this expression matrix
+@type column_data C{dictionary} of C{float}s
+"""
     self.column_name_list.append(column_name)
     for factor_name in self.expression_data.keys() :
-      self.expression_data[factor_name].append(None)
+      # no such key error will occur if column_data doesn't have values for all rows
+      self.expression_data[factor_name].append(column_data[factor_name])
 
 
   def set_value(self, column_name, factor_name, v) :
@@ -410,6 +429,12 @@ gene in that array.
 
 
   def add_column(self, column_name, column_data) :
+    """Add a data column to this expression set.
+@param column_name the name of the newly created column
+@type column_name C{string}
+@param column_data the date for the new column
+@type column_data dict of floats
+"""
     self.expression_data.add_column(column_name, column_data)
     if self.pheno_data is not None :
       self.pheno_data.add_data_column(column_name)
@@ -1053,12 +1078,7 @@ class SimGenex(object) :
     """Generate an expression set by applying the simulation operations specified by this SimGenex instance.
 """
     rawdata_matrix = self.get_raw_simulated_set(transsys_program)
-    transformed_matrix = self.measurementmatrix_def.transform(rawdata_matrix)
-    simulated_expression_set = self.get_expressionset_template()
-    for column in transformed_matrix :
-      for factor in self.discriminationsettings_def.get_genemapping().get_factor_list() :
-        simulated_expression_set.set_expression_value(column.name, factor, column.data_dict[factor])
-    return simulated_expression_set
+    return self.measurementmatrix_def.transform(rawdata_matrix)
 
 
   def get_raw_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
@@ -1122,29 +1142,6 @@ class SimGenex(object) :
     if tp_tracefile is not None :
       tp_tracefile.write('# instructionsequence: %s\n' % name)
       tp_tracefile.write('%s\n'%tp)
-
-
-  def get_expressionset_template(self) :
-    """ Create expression set according to spec file 
-@param factor_list: factor list
-@type factor_list: C{List}
-@return: Expression set
-@rtype: L{ExpressionSet}
-"""
-    factor_list = self.discriminationsettings_def.genemapping.get_factor_list()
-    expression_data = ExpressionData()
-    column_name_list = map(lambda iseq: iseq.get_name(), self.get_instructionsequence_list())
-    # continue here
-    l = len(self.measurementmatrix_def.get_measurementcolumn_list())
-    for factor in factor_list :
-      values = []
-      for j in range(0, l) :
-        values.append('None')
-      expression_data.expression_data[factor] = values
-    e = ExpressionSet(expression_data)
-    for colname in self.measurementmatrix_def.get_measurementcolumn_list() :
-      e.add_column(colname.name)
-    return e
 
 
   def validate_measurementcolumn(self) :
@@ -1613,7 +1610,7 @@ intended for use during validation of identifiers in transformations.
 class TransformedData(object) :
   """
 @ivar name: name
-@type name: C{Tring}
+@type name: C{string}
 @ivar data_dict: simulated gene expression values
 @type data_dict: dictionary of C{Float}
 """
@@ -1624,7 +1621,8 @@ class TransformedData(object) :
 
 
 class MeasurementMatrix(object) :
- 
+
+ # FIXME: gene mapping should become an instance variable here
    def __init__(self, measurementprocess, measurementcolumn_list) :
      """
 @param measurementprocess: measurement process
@@ -1656,10 +1654,19 @@ class MeasurementMatrix(object) :
 """
      offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
      column_list = []
+     expression_data = ExpressionData(rowname_list)
      for measurementcolumn in self.measurementcolumn_list :
        context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
-       column_list.append(TransformedData(measurementcolumn.name, self.measurementprocess.evaluate(context)))
-     return column_list
+       factor_column_dict = self.measurementprocess.evaluate(context)
+       # FIXME: eset_dict should be extracted from gene mapping instance variable
+       # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
+       eset_dict = None
+       eset_column_dict = {}
+       for eset_rowname in eset_dict :
+         factor_name = eset_dict[eset_rowname]
+         eset_column_dict[eset_rowname] = factor_column_dict[factor_name]
+       expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
+     return ExpressionSet(expression_data)
 
 
    def get_measurementprocess(self) :
@@ -2017,6 +2024,9 @@ class MeasurementColumn(object) :
     return self.mvar_assignment_list
 
 
+  def get_name(self) :
+    return self.name
+
 
 class TransformationContext(object) :
   """Context for evaluating a transformation
@@ -2040,6 +2050,12 @@ class TransformationExpr(object) :
 
 
   def evaluate(self, context) :
+    """Evaluate the transformation expression within the given context.
+@param context the transformation context
+@type context L{TransformationContext}
+@return the transformed column
+@rtype dictionary of floats
+"""
     raise StandardError, 'abstract method called'
 
 
@@ -2068,10 +2084,10 @@ class TransformationExprPlus(TransformationExpr) :
     column_matrix_plus = {}
     if self.operand1 is None and self.operand2 is None :
       raise StandardError, 'two operands were not found'
-    operando1_dict = self.operand1.evaluate(context)
-    operando2_dict = self.operand2.evaluate(context)
-    for factor in operando1_dict :
-      column_matrix_plus[factor] = operando1_dict[factor] + operando2_dict[factor]
+    operand1_dict = self.operand1.evaluate(context)
+    operand2_dict = self.operand2.evaluate(context)
+    for factor in operand1_dict :
+      column_matrix_plus[factor] = operand1_dict[factor] + operand2_dict[factor]
     return column_matrix_plus
 
 
@@ -2100,10 +2116,10 @@ class TransformationExprMinus(TransformationExpr) :
     column_matrix_minus = {}
     if self.operand1 is None and self.operand2 is None :
       raise StandardError, 'two operands were not found'
-    operando1_dict = self.operand1.evaluate(context)
-    operando2_dict = self.operand2.evaluate(context)
-    for factor in operando1_dict :
-      column_matrix_minus[factor] = operando1_dict[factor] - operando2_dict[factor]
+    operand1_dict = self.operand1.evaluate(context)
+    operand2_dict = self.operand2.evaluate(context)
+    for factor in operand1_dict :
+      column_matrix_minus[factor] = operand1_dict[factor] - operand2_dict[factor]
     return column_matrix_minus
 
 
@@ -2129,13 +2145,13 @@ class TransformationExprMultiply(TransformationExpr) :
 @return: column_matrix_mul
 @rtype: dictionary of C{float}
 """
-    column_matrix_mul = {}
     if self.operand1 is None and self.operand2 is None :
       raise StandardError, 'two operands were not found'
-    operando1_dict = self.operand1.evaluate(context)
-    operando2_dict = self.operand2.evaluate(context)
-    for factor in operando1_dict :
-      column_matrix_mul[factor] = operando1_dict[factor] * operando2_dict[factor]
+    operand1_dict = self.operand1.evaluate(context)
+    operand2_dict = self.operand2.evaluate(context)
+    column_matrix_mul = {}
+    for factor in operand1_dict :
+      column_matrix_mul[factor] = operand1_dict[factor] * operand2_dict[factor]
     return column_matrix_mul
 
 
@@ -2161,13 +2177,13 @@ class TransformationExprDivide(TransformationExpr) :
 @return: column_matrix_div
 @rtype: dictionary of C{float}
 """
-    column_matrix_div = {}
     if self.operand1 is None and self.operand2 is None :
       raise StandardError, 'two operands were not found'
-    operando1_dict = self.operand1.evaluate(context)
-    operando2_dict = self.operand2.evaluate(context)
-    for factor in operando1_dict :
-      column_matrix_div[factor] = operando1_dict[factor] / operando2_dict[factor]
+    operand1_dict = self.operand1.evaluate(context)
+    operand2_dict = self.operand2.evaluate(context)
+    column_matrix_div = {}
+    for factor in operand1_dict :
+      column_matrix_div[factor] = operand1_dict[factor] / operand2_dict[factor]
     return column_matrix_div
 
 
@@ -2191,10 +2207,10 @@ class TransformationExprLog2(TransformationExpr) :
 @return: column_matrix_log
 @rtype: dictionary of C{float}
 """
-    column_matrix = self.operand.evaluate(context)
+    operand_dict = self.operand.evaluate(context)
     column_matrix_log = {}
-    for factor in column_matrix :
-      column_matrix_log[factor] = math.log(column_matrix[factor], 2)
+    for factor in operand_dict :
+      column_matrix_log[factor] = math.log(operand_dict[factor], 2)
     return column_matrix_log
       
   
@@ -2218,10 +2234,10 @@ class TransformationExprOffset(TransformationExpr) :
 @return: column_matrix_log
 @rtype: dictionary of C{float}
 """
-    column_matrix = {}
-    column_matrix_ti = self.operand.evaluate(context)
-    for factor in column_matrix_ti.transsys_program.factor_list :
-      column_matrix[factor.name] = column_matrix_ti.get_factor_concentration(factor.name) + context.offset
+    column_matrix_offset = {}
+    operand_dict = self.operand.evaluate(context)
+    for factor in operand_dict :
+      column_matrix_offset[factor] = operand_dict[factor] + context.offset
     return column_matrix
 
   
@@ -2245,13 +2261,20 @@ class TransformationExprMvar(TransformationExpr) :
 @return: column_matrix.transsys_instance
 @rtype: L{transsys.TranssysInstance}
 """
+    colname = None
     for i in context.mvar_map :
       if i.lhs == self.name :
         colname = i.rhs
+    if colname is None :
+      raise StandardError, 'no mvar with lhs = %s' % self.name
     for column_matrix in context.rawdata_matrix  :
       if column_matrix.name == colname :
-        break
-    return column_matrix.transsys_instance
+        ti = column_matrix.transsys_instance
+        column_matrix_mvar = {}
+        for factor in ti.transsys_program.factor_list :
+          column_matrix_mvar[factor.name] = ti.get_factor_concentration(factor.name)
+        return column_matrix_mvar
+    raise StandardError, 'found no rawdata column named %s' % colname
 
 
 class Offset(object) :
