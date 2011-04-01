@@ -64,20 +64,21 @@ ParameterTransformer
     self.rndseed = 1
     self.cwd = os.getcwd()
     self.simulated_data = None
-    self.simulated_data = open('out_expr.txt', 'r')
+    self.simulated_data = open('out.txt', 'r')
 
 
   def test_EmpiricalObjectiveFunctionParser(self) :
-    self.assertRaises(TypeError, trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile))
+    self.assertRaises(TypeError, trsysmodis.SimGenexObjectiveFunctionParser(self.specfile))
 
 
   def test_objectivefunctionparser(self) :
     expression_set = trsysmodis.ExpressionSet()
     expression_set.read(self.simulated_data)
-    o = trsysmodis.EmpiricalObjectiveFunctionParser(self.specfile)
-    objective_function = o.parse_objectivespec()
+    o = trsysmodis.SimGenexObjectiveFunctionParser(self.specfile)
+    simgenex = o.parse_objectivespec()
+    objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
     objective_function.set_empirical_expression_set(expression_set)
-    optimiser = transsys.optim.parse_optimiser(StringIO.StringIO.(self.optimiserspec))
+    optimiser = transsys.optim.parse_optimiser(StringIO.StringIO(self.optimiserspec))
     optimiser.transformer = transsys.optim.parse_parameter_transformer(StringIO.StringIO(self.transformerspec))
     rng = random.Random(self.rndseed)
     optimiser.rng = rng
@@ -88,19 +89,6 @@ ParameterTransformer
     # FIXME: was fitness < 0.3 -- any rationale for that?
     self.assertTrue(opt_result.objectiveOptimum.fitness < 0.4)
 
-
-#   def test_individual_pythonscripts(self, type = 1) :
-#     # Generate data: nodes=7, edges=14, noise=0.0
-#     os.system('python transsysrandomprogram -n test -m 1 -p rtptest.dat')
-#     os.system('python transsysrandomprogram -n test -m 1 -p rtptest.dat')
-#     os.system('mv test01.tra test_targettopology.tra')
-#     os.system('python transsysreparam -T transformerfile.dat -s 1 -p 1 -n test test_targettopology.tra')
-#     os.system('mv test01.tra test_target.tra')
-#     if type is None :
-#       os.system('python transsyswritesimset -s 2 -N 0.0 -e 100 test_target.tra test_target')
-#     else :
-#      os.system('python transsyswritesimsetOF -o sgx.txt sgx.tra out')
- 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
 unittest.TextTestRunner(verbosity=2).run(suite)
