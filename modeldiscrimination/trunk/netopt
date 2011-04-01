@@ -108,8 +108,9 @@ x = open(expression_set, 'r')
 expression_set = trsysmodis.ExpressionSet()
 expression_set.read(x, p = None, f = None)
 specfile = open(spec, 'r')
-o = trsysmodis.EmpiricalObjectiveFunctionParser(specfile)
-objective_function = o.parse_objectivespec()
+parser = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
+simgenex = parser.parse_objectivespec()
+objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
 objective_function.set_empirical_expression_set(expression_set)
 optimiser.randomInitRange = 1.0
 model = open('%s.tra'%(candidate_name),'r')
@@ -122,7 +123,6 @@ if evaluate_objective :
 
 for restart_index in xrange(num_restarts) :
   print 'Using %s'%(candidate_name)
-  #opt_result = optimiser.optimise(transsys_program, objective_function, ['f0000'], ['g0000'])
   opt_result = optimiser.optimise(transsys_program, objective_function)
   logo.write('rst%d\t%f\n' % (restart_index, opt_result.objectiveOptimum.fitness))
   sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
