@@ -81,18 +81,19 @@ measurementmatrix
     koc3_hormtreat: x1 = all_ko_c3_hormtreat, x2 = all_wildtype_hormtreat;
     koc4_hormtreat: x1 = all_ko_c4_hormtreat, x2 = all_wildtype_hormtreat;
   }
+
+  genemapping
+  {
+    factor housekeeper = "genehousekeeper";
+    factor c1 = "genec1";
+    factor c2 = "genec2";
+    factor c3 = "genec3";
+    factor c4 = "genec4";
+  }
 }
 
 discriminationsettings
 {
-  genemapping
-  {
-    factor housekeeper = "housekeeper";
-    factor c1 = "c1";
-    factor c2 = "c2";
-    factor c3 = "c3";
-    factor c4 = "c4";
-  }
 
   distance: correlation;
 

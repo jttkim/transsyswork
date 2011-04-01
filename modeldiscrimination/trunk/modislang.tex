@@ -319,7 +319,7 @@ Invocation of other simexpressions is an error.
 
 \begin{ebnfrule}
 measurementmatrix_def ::= "measurementmatrix" "\{" measurementprocess_def 
-measurementcolums_def "\}"
+measurementcolums_def genemapping"\}"
 \end{ebnfrule}
 
 As in the wet lab scenario, the columns of a matrix simulated by
@@ -371,15 +371,6 @@ mvar_assignment_list ::= mvar_assignment_list "," mvar_assignment
         | mvar_assignment
 mvar_assignment ::= identifier "=" identifier
 \end{ebnfrule}
-\end{itemize}
-
-
-\subsubsection{Discrimination Settings and Gene mapping}
-
-\begin{ebnfrule}
-  discriminationsettings_def ::= "discriminationdettings" 
-  "\{"  genemapping distance_def whitelist_def "\}"
-\end{ebnfrule}
 
 \begin{ebnfrule}
 genemapping_def ::= genemapping_header genemapping_body genemapping_footer 
@@ -389,7 +380,7 @@ genemapping_footer ::= "endgenemapping"
 factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ 
 \end{ebnfrule}
 
-\computercode{genemapping} specifies names of genes in the computational 
+\item \computercode{genemapping}: specifies names of genes in the computational 
 model that can be mapped to names in the target matrix, which may e.g.\ be IDs 
 designated by the microarray provider. 
 
@@ -399,6 +390,16 @@ this case, the average profile is used for comparison.
 
 The identifiers of the right hand side must be names of factors in the
 candidate program. No factor may be mapped more than once.
+\end{itemize}
+
+
+
+\subsubsection{Discrimination Settings}
+
+\begin{ebnfrule}
+  discriminationsettings_def ::= "discriminationdettings" 
+  "\{"  distance_def whitelist_def "\}"
+\end{ebnfrule}
 
 \begin{ebnfrule}
 distancemeasure_def ::= "distance:" distance_type 
@@ -589,13 +590,8 @@ simexpression g0_treatment30
   timepoint030min;
 }
 
-expressionset
+measurementmatrix
 {
-  genemapping
-  {
-    factor f0 = "257221_at" "257222_at" "257223_at";
-    factor f1 = "257224_at";
-  }
 
   measurementprocess
   {
@@ -604,7 +600,7 @@ expressionset
     transformation: log(offset(x1)) / log(offset(x2));
   }
 
-  measurements
+  measurementcolumns
   {
     wt_treatment15 : x1 = wt_treatment15, x2 = wt;
     wt_treatment30 : x1 = wt_treatment30, x2 = wt;
@@ -612,6 +608,12 @@ expressionset
     g0000_treatment30 : x1 = g0_treatment30, x2 = g0;
     # idea for later consideration -- not yet in language spec
     # wt : transformation log(wt) / log(wt);
+  }
+
+  genemapping
+  {
+    factor f0 = "257221_at" "257222_at" "257223_at";
+    factor f1 = "257224_at";
   }
 }
 
