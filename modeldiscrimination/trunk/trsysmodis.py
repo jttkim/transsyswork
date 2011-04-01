@@ -93,10 +93,11 @@ This method does not rigorously check input for validity.
 """
     self.column_name_list.append(column_name)
     for factor_name in self.expression_data.keys() :
-      # no such key error will occur if column_data doesn't have values for all rows
+      column_index = self.column_name_list.index(column_name)
       self.expression_data[factor_name].append(column_data[factor_name])
 
 
+#FIXME: obsolete now, add_colum took over
   def set_value(self, column_name, factor_name, v) :
     """Mutator.
 @param column_name: column name
@@ -181,20 +182,21 @@ Used to be called C{get_gene_name}.
     return gene_name
 
 
-  def add_column(self, column_name) :
-    """Add an column.
-
-Used to be called C{add_array}.
-
-All expression values in the newly added column are initialised with C{None}.
-@param column_name: column name
-@type column_name: C{String}
-"""
-    if column_name in self.column_name_list :
-      raise StandardError, '%s already in column list' % column_name
-    self.column_name_list.append(column_name)
-    for gene_name in self.expression_data.keys() :
-      self.expression_data[gene_name].append(None)
+#FIXME: obsolete?
+#  def add_column(self, column_name) :
+#    """Add an column.
+#
+#Used to be called C{add_array}.
+#
+#All expression values in the newly added column are initialised with C{None}.
+#@param column_name: column name
+#@type column_name: C{String}
+#"""
+#    if column_name in self.column_name_list :
+#      raise StandardError, '%s already in column list' % column_name
+#    self.column_name_list.append(column_name)
+#    for gene_name in self.expression_data.keys() :
+#      self.expression_data[gene_name].append(None)
 
 
 #FIXME: features should be attached to expression data with references.
@@ -576,9 +578,9 @@ Used to be aliased C{write_simulated_set} and C{write_data}.
       for i in xrange(len(profile)) :
         self.expression_data.expression_data[key][i] = self.expression_data.expression_data[key][i] + rng.gauss(0,noiseadd)
 
-
-  def add_column(self, array_name) :
-    self.expression_data.add_column(array_name)
+  #FIXME: obsolete method?
+  #def add_column(self, array_name) :
+  #  self.expression_data.add_column(array_name)
 
 
   def set_expression_value(self, array_name, factor_name, v) :
@@ -1623,15 +1625,18 @@ class TransformedData(object) :
 class MeasurementMatrix(object) :
 
  # FIXME: gene mapping should become an instance variable here
-   def __init__(self, measurementprocess, measurementcolumn_list) :
+   def __init__(self, measurementprocess, measurementcolumn_list, genemapping) :
      """
 @param measurementprocess: measurement process
 @type measurementprocess: L{MeasurementProcess}
 @param measurementcolumn_list: measurement column list - mapping
 @type measurementcolumn_list: List of L{MeasurementColumn}
+@ivar genemapping: gene mapping
+@type genemapping: L{GeneMapping}
 """
      self.measurementprocess = measurementprocess
      self.measurementcolumn_list = measurementcolumn_list
+     self.genemapping =  genemapping
 
 
    def __str__(self) :
@@ -1641,6 +1646,7 @@ class MeasurementMatrix(object) :
      for measurementcolumn in self.measurementcolumn_list :
        s = s + '    %s;\n' % str(measurementcolumn)
      s = s + '  }\n'
+     s = s + str(self.genemapping)
      s = s + '}\n'
      return s
 
@@ -1652,19 +1658,22 @@ class MeasurementMatrix(object) :
 @return: column_list
 @rtype: C{List}
 """
+     
      offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
      column_list = []
-     expression_data = ExpressionData(rowname_list)
+     expression_data = ExpressionData(self.genemapping.get_gene_list())
      for measurementcolumn in self.measurementcolumn_list :
        context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
        factor_column_dict = self.measurementprocess.evaluate(context)
+       #print factor_column_dict
        # FIXME: eset_dict should be extracted from gene mapping instance variable
        # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
-       eset_dict = None
+       eset_dict = self.genemapping.get_genemapping_dict()
        eset_column_dict = {}
        for eset_rowname in eset_dict :
-         factor_name = eset_dict[eset_rowname]
-         eset_column_dict[eset_rowname] = factor_column_dict[factor_name]
+         row_names = eset_dict[eset_rowname]
+	 for row_name in row_names :
+           eset_column_dict[row_name] = factor_column_dict[eset_rowname]
        expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
      return ExpressionSet(expression_data)
 
@@ -1676,6 +1685,9 @@ class MeasurementMatrix(object) :
    def get_measurementcolumn_list(self) :
      return(self.measurementcolumn_list)
 
+
+   def get_genemapping(self) :
+     return(self.genemapping)
 
 
 class GeneMapping(object) :
@@ -1695,6 +1707,22 @@ class GeneMapping(object) :
 @rtype: list of C{String}
 """
     return(self.factor_list.keys())
+
+
+  def get_genemapping_dict(self) :
+    """
+@return: self.factor_list
+@rtype: dict of C{String}
+"""
+    return self.factor_list
+
+
+  def get_gene_list(self) :
+    gene_list = []
+    for key, value in self.factor_list.iteritems() :
+      for i in value :
+        gene_list.append(i)
+    return gene_list
 
 
   def __str__(self) :
@@ -1791,24 +1819,15 @@ class Measurements(object) :
 
 class DiscriminationSettings(object) :
   """
-@ivar genemapping: gene mapping
-@type genemapping: L{GeneMapping}
 @ivar distance: distance
 @type distance: C{String}
 @ivar whitelist: whitelist
 @type whitelist: L{WhiteList}
 """
 
-  def __init__(self, genemapping, distance, whitelist) :
+  def __init__(self, distance, whitelist) :
     self.distance = distance
     self.whitelist = whitelist
-    self.genemapping =  genemapping
-
-
-  def get_genemapping(self) :
-     return(self.genemapping)
-
-  
   def get_distance(self) :
     return(self.distance)
 
@@ -1824,7 +1843,6 @@ class DiscriminationSettings(object) :
 """
     s = 'discriminationsettings' + '\n'
     s = s + '{' + '\n'
-    s = s + str(self.genemapping)
     s = s + ('  distance: %s;\n' % self.get_distance())
     s = s + str(self.whitelist)
     s = s + '}' + '\n'
@@ -2238,7 +2256,7 @@ class TransformationExprOffset(TransformationExpr) :
     operand_dict = self.operand.evaluate(context)
     for factor in operand_dict :
       column_matrix_offset[factor] = operand_dict[factor] + context.offset
-    return column_matrix
+    return column_matrix_offset
 
   
 class TransformationExprMvar(TransformationExpr) :
@@ -2418,14 +2436,13 @@ class SimGenexObjectiveFunctionParser(object) :
 @rtype: dictionary{}
 """
 # FIXME: what are return value and return type above?
-    genemapping = self.parse_genemapping_def()
     self.expect_token('distance')
     self.expect_token(':')
     distance = self.scanner.token()[0]
     self.expect_token(';')
     self.expect_token('whitelistdefs')
     whitelist_list = self.parse_whitelist_body()
-    return DiscriminationSettings(genemapping, distance, whitelist_list)
+    return DiscriminationSettings(distance, whitelist_list)
   
 
   def parse_discriminationsettings_def(self) :
@@ -2653,8 +2670,9 @@ class SimGenexObjectiveFunctionParser(object) :
     measurementmatrix_list = []
     measurementprocess = self.parse_measurementprocess_def()
     measurementcolumns = self.parse_measurementcolumns_def()
+    genemapping = self.parse_genemapping_def()
     self.expect_token('}')
-    return MeasurementMatrix(measurementprocess, measurementcolumns)
+    return MeasurementMatrix(measurementprocess, measurementcolumns, genemapping)
 
 
 

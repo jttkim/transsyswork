@@ -27,17 +27,17 @@ if len(args) > 1 :
   outfile = open(args[1], 'w')
 else :
   outfile = sys.stdout
-p = trsysmodis.EmpiricalObjectiveFunctionParser(infile)
+p = trsysmodis.SimGenexObjectiveFunctionParser(infile)
 s = p.parse_objectivespec()
 sys.stderr.write('getting string\n')
 outfile.write('%s\n' % str(s))
-for simexpression in s.simexpression_defs :
-  print str(simexpression)
-  ilist = simexpression.get_instruction_list()
-  print ilist
-  iseq_list = simexpression.get_instruction_sequence_list()
-  for iseq in iseq_list :
-    print str(iseq)
+#for simexpression in s.simexpression_defs :
+#  print str(simexpression)
+#  ilist = simexpression.get_instruction_list()
+#  print ilist
+#  iseq_list = simexpression.get_instruction_sequence_list()
+#  for iseq in iseq_list :
+#    print str(iseq)
     
 #   for instruction in ilist :
 #     if isinstance(instruction, trsysmodis.ForeachInstruction) :
