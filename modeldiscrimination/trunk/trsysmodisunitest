@@ -67,17 +67,43 @@ ParameterTransformer
     self.simulated_data = open('out.txt', 'r')
 
 
+  def test_ExpressionData(self) :
+    gene_name_list = ['f1', 'f2', 'f3']
+    edata = trsysmodis.ExpressionData(gene_name_list)
+    for gene_name in gene_name_list :
+      self.assertTrue(gene_name in edata.get_gene_name_list())
+    col1name = 'col1'
+    col1dict = {}
+    for gene_name in gene_name_list :
+      col1dict[gene_name] = 1.0
+    edata.add_column(col1name, col1dict)
+    for gene_name in gene_name_list :
+      self.assertEquals(edata.get_value(col1name, gene_name), 1.0)
+    col2name = 'col2'
+    col2dict = {}
+    for gene_name in gene_name_list :
+      col2dict[gene_name] = 2.0
+    edata.add_column(col2name, col2dict)
+    for gene_name in gene_name_list :
+      self.assertEquals(edata.get_value(col2name, gene_name), 2.0)
+    for gene_name in gene_name_list :
+      p = edata.get_profile(gene_name)
+      self.assertEquals(p['col1'], 1.0)
+      self.assertEquals(p['col2'], 2.0)
+    self.assertRaises(KeyError, edata.get_profile, 'fx1')
+
+
   def test_EmpiricalObjectiveFunctionParser(self) :
     self.assertRaises(TypeError, trsysmodis.SimGenexObjectiveFunctionParser(self.specfile))
 
 
   def test_objectivefunctionparser(self) :
+    return
     expression_set = trsysmodis.ExpressionSet()
     expression_set.read(self.simulated_data)
     o = trsysmodis.SimGenexObjectiveFunctionParser(self.specfile)
     simgenex = o.parse_objectivespec()
     objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
-    objective_function.set_empirical_expression_set(expression_set)
     optimiser = transsys.optim.parse_optimiser(StringIO.StringIO(self.optimiserspec))
     optimiser.transformer = transsys.optim.parse_parameter_transformer(StringIO.StringIO(self.transformerspec))
     rng = random.Random(self.rndseed)

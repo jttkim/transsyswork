@@ -17,6 +17,21 @@ import types
 import StringIO
 
 
+def is_subset(candidate_subset, candidate_superset) :
+  """Test whether candidate_subset is indeed a subset of candidate_superset
+@param candidate_subset: candidate subset
+@type candidate_subset: list (or other iterable)
+@param candidate_superset: candidate superset
+@type candidate_superset: list (or other iterable)
+@return true if candidate_subset is a subset of candidate_superset
+@rtype boolean
+"""
+  for e in candidate_subset :
+    if e not in candidate_superset :
+      return False
+  return True
+
+
 class ExpressionData(object) :
   """Create expression data object
 @ivar column_name_list: list of column names
@@ -1291,14 +1306,15 @@ class SimgenexFitnessResult(transsys.optim.FitnessResult) :
 
 class SimGenexObjectiveFunction(transsys.optim.AbstractObjectiveFunction) :
 
-  def __init__(self, simgenex, empirical_expression_set) :
-    self.empirical_expression_set = empirical_expression_set
+  def __init__(self, simgenex, target_expression_set) :
     self.simgenex = simgenex
+    if self.is_compatible_target(target_expression_set) :
+      self.target_expression_set = target_expression_set
 
 
   def __call__(self, transsys_program) :
     """Compute the divergence between the expression matrix simulated
-from a transsys program to the empirical data.
+from a transsys program to the target data.
     
 @param transsys_program: transsys program   
 @type transsys_program: L{transsys.TranssysProgram}
@@ -1319,49 +1335,30 @@ from a transsys program to the empirical data.
 """
     d = 0.0
     for factor_name in simulated_expression_set.expression_data.expression_data.keys() :
-      empiricalProfile = self.empirical_expression_set.get_profile(factor_name)
+      targetProfile = self.target_expression_set.get_profile(factor_name)
       simulatedProfile = simulated_expression_set.get_profile(factor_name)
-      d = d + self.empirical_expression_set.distance_divergence(empiricalProfile, simulatedProfile, self.simgenex.discriminationsettings_def.distance)
+      d = d + self.target_expression_set.distance_divergence(targetProfile, simulatedProfile, self.simgenex.discriminationsettings_def.distance)
     return d
 
-
+  
 # FIXME: There is validation of SimGenex file, where should that go?
 
-  def set_empirical_expression_set(self, empirical_expression_set):
-    """Set empirical expression set and check it exists
+  def is_compatible_target(self, target_expression_set):
+    """Set target expression set and check it exists
 @param expression_set: expression set
 @type expression_set: L{ExpressionSet}
 """
-# FIXME: expression_set really means empirical_expression set?
-# FIXME: adapt to objective function structure
-    self.empirical_expression_set = empirical_expression_set
-    if self.empirical_expression_set is not None :
-      self.validate_measurementcolumn()
-      self.validate_genemapping()
-
-  def validate_measurementcolumn(self) :
-    """ Validate spec file simexpression consistency """
-    if self.empirical_expression_set is None :
-      raise StandardError, 'Empirical data have not been provided'
-    simexpression_name_spec = []
-    for col in self.simgenex.measurementmatrix_def.get_measurementcolumn_list() :
-      simexpression_name_spec.append(col.name)
-    # FIXME: shouldn't be called array_name_eset -- really is a column name list
-    array_name_eset = self.empirical_expression_set.expression_data.column_name_list
-    if (len(self.simgenex.measurementmatrix_def.get_measurementcolumn_list()) != len(array_name_eset)) :
-      raise StandardError, 'Arrays vary in length spec: %s, empirical data: %s' %(len(simexpression_name_spec), len(array_name_eset))
-
-    for name in simexpression_name_spec :
-      if name not in array_name_eset :
-        raise StandardError, 'Array %s in spec is not present in empirical data' %name
-
-  
-  def validate_genemapping(self) :
-    """ Validate spec file genemapping consistency """
-
-    gene_name_spec = self.simgenex.measurementmatrix_def.get_genemapping().get_factor_list()
-    if (len(gene_name_spec) != len(self.empirical_expression_set.expression_data.get_gene_name_list())) :
-      raise StandardError, 'Arrays vary in length spec: %s, empirical data: %s' %(len(gene_name_spec), len(self.expression_set.expression_data.get_gene_name_list()))
+    return True
+    target_rowname_set = target_expression_set.get_rowname_set()
+    simgenex_rowname_set = self.simgenex.get_rowname_set()
+    if not is_subset(simgenex_rowname_set, target_rowname_set) :
+      raise StandardError, 'rows missing from target set'
+    target_colname_set = target_expression_set.get_colname_set()
+    simgenex_colname_set = self.simgenex.get_colname_set()
+    if not is_subset(target_colname_set, simgenex_colname_set) :
+      raise StandardError, 'columns missing from simulated set'
+    if not is_subset(simgenex_colname_set, target_colname_set) :
+      raise StandardError, 'columns missing from target set'
 
 
 class Procedure(object) :
