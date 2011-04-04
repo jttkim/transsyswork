@@ -175,7 +175,6 @@ expression levels across the data set.
 @return: dictionary with column names as keys and expression levels as values
 @rtype: C{dictionary}
 """
-    values = []
     profile = {}
     for column_name in self.column_name_list :
       column_index = self.column_name_list.index(column_name)
@@ -461,38 +460,25 @@ gene in that array.
     """Divergence measurement.
 @param other: the other expression set
 @type other: ExpressionSet
-@param distance_function: name of distance function
-@type distance_function: C{String}
+@param distance_function: the distance function
+@type distance_function: function(row, row)
 @return: divergence between this expression set and the other expression set
 @rtype: C{float}
 """
-# FIXME: use better exception messages below -- it's not always the case that the self.X instance's handling is as cumbersome...
-    if self.feature_data == None :
-      raise StandardError, ' Empirical data does not exist'
+    self_rowset = self.expression_data.expression_data.keys()
+    other_rowset = other.expression_data.expression_data.keys()
+    self_colset = self.expression_data.column_name_list
+    other_colset = other.expression_data.column_name_list
+    if not is_subset(self_rowset, other_rowset) and not is_subset(other_rowset, self_rowset) :
+      raise StandardError, 'incompatible row sets'
+    if not is_subset(self_colset, other_colset) and not is_subset(other_colset, self_colset) :
+      raise StandardError, 'incompatible column sets'
     d = 0.0
     for factor_name in self.expression_data.expression_data.keys() :
       selfProfile = self.get_profile(factor_name)
       otherProfile = other.get_profile(factor_name)
-      d = d + self.distance_divergence(selfProfile, otherProfile, distance_function)
+      d = d + distance_function(selfProfile, otherProfile)
     return d
-
-
-#FIXME: "static" method -- consider absorbing this into divergence method
-  def distance_divergence(self, selfProfile, otherProfile, distance_function) :
-    """ Divergence distance
-@param selfProfile: Empirical data
-@type selfProfile: ExpressionSet
-@param otherProfile: Simulated data
-@type otherProfile: ExpressionSet
-"""
-    if distance_function == 'correlation' :
-      return distance_correl(selfProfile, otherProfile)
-    elif distance_function == 'euclidean' :
-      return distance_euclidean(selfProfile, otherProfile)
-    elif distance_function == 'sum_squares' :
-      return distance_sum_squares(selfProfile, otherProfile)
-    else :
-      raise StandardError, ' % distance not found' % distance_function
 
 
   def write_expression_data(self, f) :
@@ -1218,7 +1204,6 @@ def distance_euclidean(array1, array2) :
 @return: distance estimation
 @rtype: C{float}
 """
-
   a = []
   b = []
   try:
@@ -1341,6 +1326,7 @@ from a transsys program to the target data.
 @return: divergence between this expression set and the other expression set
 @rtype: C{float}
 """
+    # FIXME: looks like replication of the ExpressionSet.divergence method...??
     d = 0.0
     for factor_name in simulated_expression_set.expression_data.expression_data.keys() :
       targetProfile = self.target_expression_set.get_profile(factor_name)
@@ -1824,8 +1810,8 @@ class Measurements(object) :
 
 class DiscriminationSettings(object) :
   """
-@ivar distance: distance
-@type distance: C{String}
+@ivar distance: distance function for computing divergence between empirical and simulated expression set
+@type distance: function taking two parameters
 @ivar whitelist: whitelist
 @type whitelist: L{WhiteList}
 """
@@ -1846,9 +1832,15 @@ class DiscriminationSettings(object) :
 @return: s
 @rtype: C{String}
 """
+    if self.distance is distance_euclidean :
+      d = 'euclidean'
+    elif self.distance is distance_correl :
+      d = 'correlation'
+    else :
+      raise StandardError, 'no textual representation for distance function %s' % str(self.distance)
     s = 'discriminationsettings' + '\n'
     s = s + '{' + '\n'
-    s = s + ('  distance: %s;\n' % self.get_distance())
+    s = s + ('  distance: %s;\n' % d)
     s = s + str(self.whitelist)
     s = s + '}' + '\n'
     return s
@@ -2388,7 +2380,15 @@ class SimGenexObjectiveFunctionParser(object) :
 
 
   def __init__(self, f = None) :
-    """  Constructor """
+    """Constructor.
+
+Currently, the object for accessing the textual code does not have to be
+a file in the strict sense, any object providing a C{readline} method
+is ok. Clients should not unnecessarily use this feature, however.
+
+@param f: the file to parse from
+@type f: a file, open for reading
+"""
 
     #if not isinstance(f, file) or not isinstance(f, StringIO.StringIO) :
     #  raise TypeError, "%s is not a proper spec file"%f
@@ -2443,7 +2443,15 @@ class SimGenexObjectiveFunctionParser(object) :
 # FIXME: what are return value and return type above?
     self.expect_token('distance')
     self.expect_token(':')
-    distance = self.scanner.token()[0]
+    t = self.scanner.lookahead()
+    if t == 'euclidean' :
+      self.expect_token('euclidean')
+      distance = distance_euclidean
+    elif t == 'correlation' :
+      self.expect_token('correlation')
+      distance = distance_correl
+    else :
+      raise StandardError, 'line %d: expected euclidean or correlation but got "%s"' % (self.scanner.lineno, t)
     self.expect_token(';')
     self.expect_token('whitelistdefs')
     whitelist_list = self.parse_whitelist_body()
