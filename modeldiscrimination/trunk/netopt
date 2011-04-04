@@ -111,7 +111,6 @@ specfile = open(spec, 'r')
 parser = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
 simgenex = parser.parse_objectivespec()
 objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
-objective_function.set_empirical_expression_set(expression_set)
 optimiser.randomInitRange = 1.0
 model = open('%s.tra'%(candidate_name),'r')
 
