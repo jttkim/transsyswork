@@ -98,7 +98,6 @@ ParameterTransformer
 
 
   def test_objectivefunctionparser(self) :
-    return
     expression_set = trsysmodis.ExpressionSet()
     expression_set.read(self.simulated_data)
     o = trsysmodis.SimGenexObjectiveFunctionParser(self.specfile)

@@ -71,7 +71,9 @@ This method does not rigorously check input for validity.
 @param f: Input file
 @type f: C{file}
 """
-    # FIXME: questionable design as previous content of instance gets erased. Consider refactoring this into a function returning an ExpressionData instance
+    # FIXME: questionable design as previous content of instance gets
+    # erased. Consider refactoring this into a function returning an
+    # ExpressionData instance = f.readline()
     l = f.readline()
     self.column_name_list = l.strip().split()
     l = f.readline()
@@ -84,7 +86,7 @@ This method does not rigorously check input for validity.
       self.expression_data[factor_name] = data_list
       l = f.readline()
 
-
+  
   def get_value(self, column_name, factor_name) :
     """Accessor.
 @param column_name: column name
@@ -112,7 +114,6 @@ This method does not rigorously check input for validity.
       self.expression_data[factor_name].append(column_data[factor_name])
 
 
-#FIXME: obsolete now, add_colum took over
   def set_value(self, column_name, factor_name, v) :
     """Mutator.
 @param column_name: column name
@@ -166,7 +167,6 @@ expression levels across the data set.
     else :
       self.shift_data(sd_multiplier)
       
-  
 
   def get_profile(self, gene_name) :
     """ Retrieve gene_name expression vector
@@ -196,22 +196,6 @@ Used to be called C{get_gene_name}.
       gene_name.append(i)
     return gene_name
 
-
-#FIXME: obsolete?
-#  def add_column(self, column_name) :
-#    """Add an column.
-#
-#Used to be called C{add_array}.
-#
-#All expression values in the newly added column are initialised with C{None}.
-#@param column_name: column name
-#@type column_name: C{String}
-#"""
-#    if column_name in self.column_name_list :
-#      raise StandardError, '%s already in column list' % column_name
-#    self.column_name_list.append(column_name)
-#    for gene_name in self.expression_data.keys() :
-#      self.expression_data[gene_name].append(None)
 
 
 #FIXME: features should be attached to expression data with references.
@@ -430,6 +414,22 @@ Notice that the current contents of this instance are lost.
         if i not in self.feature_data.feature_data : 
           raise StandardError, 'indexes of expression data and feature data are not comparable'
 
+
+  def get_column_name_list(self):
+     """ Accessor
+@return: column name list
+@rtype: list of C{String}
+"""
+     return self.expression_data.column_name_list 
+
+
+  def get_rowname_list(self):
+     """ Accessor
+@return: column name list
+@rtype: list of C{String}
+"""
+     return self.expression_data.expression_data.keys() 
+
    
   def get_profile(self, gene_name) :
     """Retrieve the gene expression profile of a specific gene in this set.
@@ -456,16 +456,6 @@ gene in that array.
     if self.pheno_data is not None :
       self.pheno_data.add_data_column(column_name)
       
-
-#FIXME: Obsolete
-#FIXME: jtk: yes, this seems obsolete to me too
-  def shift_data(self, offset) :
-    """Shift expression data by offset.
-@param offset: the offset
-@type offset: C{float}
-"""
-    self.expression_data.shift_data(offset)
-
 
   def divergence(self, other, distance_function) :
     """Divergence measurement.
@@ -1073,6 +1063,25 @@ class SimGenex(object) :
     self.resolve_procedures()
 
 
+  def get_rowname_list(self) :
+    """Accessor
+@return: row name list
+@rtype: list of C{String}
+"""
+    return self.measurementmatrix_def.genemapping.get_gene_list()
+
+# FIXME: Would this method go into the MeasurementColumn class?
+  def get_column_name_list(self):
+    """Accessor
+@return: column name list
+@rtype: list of C{String}
+"""
+    column_name = []
+    for col in self.measurementmatrix_def.get_measurementcolumn_list():
+      column_name.append(col.get_name())
+    return  column_name
+
+
   def resolve_procedures(self) :
     """Resolve procedures in this SimGenex instance."""
     for procedure in self.procedure_defs :
@@ -1159,7 +1168,6 @@ class SimGenex(object) :
     if tp_tracefile is not None :
       tp_tracefile.write('# instructionsequence: %s\n' % name)
       tp_tracefile.write('%s\n'%tp)
-
 
   
   def __str__(self) :
@@ -1348,17 +1356,17 @@ from a transsys program to the target data.
 @param expression_set: expression set
 @type expression_set: L{ExpressionSet}
 """
-    return True
-    target_rowname_set = target_expression_set.get_rowname_set()
-    simgenex_rowname_set = self.simgenex.get_rowname_set()
+    target_rowname_set = target_expression_set.get_rowname_list()
+    simgenex_rowname_set = self.simgenex.get_rowname_list()
     if not is_subset(simgenex_rowname_set, target_rowname_set) :
       raise StandardError, 'rows missing from target set'
-    target_colname_set = target_expression_set.get_colname_set()
-    simgenex_colname_set = self.simgenex.get_colname_set()
+    target_colname_set = target_expression_set.get_column_name_list()
+    simgenex_colname_set = self.simgenex.get_column_name_list()
     if not is_subset(target_colname_set, simgenex_colname_set) :
       raise StandardError, 'columns missing from simulated set'
     if not is_subset(simgenex_colname_set, target_colname_set) :
       raise StandardError, 'columns missing from target set'
+    return True
 
 
 class Procedure(object) :
@@ -1663,7 +1671,6 @@ class MeasurementMatrix(object) :
      for measurementcolumn in self.measurementcolumn_list :
        context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
        factor_column_dict = self.measurementprocess.evaluate(context)
-       #print factor_column_dict
        # FIXME: eset_dict should be extracted from gene mapping instance variable
        # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
        eset_dict = self.genemapping.get_genemapping_dict()
