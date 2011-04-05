@@ -1040,6 +1040,22 @@ expression set from a suitable transsys program.
     self.resolve_procedures()
 
 
+  def __str__(self) :
+    """Return String of Object Specification 
+@return: Object spec string
+@rtype: C{String}
+"""
+    s = ("%s\n\n" % SimGenexObjectiveFunctionParser.magic)
+    for procedure in self.procedure_defs :
+      s = s + ("%s" % str(procedure))
+    for simexpression in self.simexpression_defs :
+      s = s + ('%s' % str(simexpression))
+    s = s + '%s' % str(self.measurementmatrix_def)
+    s = s + '\n'
+    s = s + '%s' % str(self.discriminationsettings_def)
+    return s
+
+
   def get_rowname_list(self) :
     """Accessor
 @return: row name list
@@ -1147,21 +1163,6 @@ expression set from a suitable transsys program.
       tp_tracefile.write('%s\n'%tp)
 
   
-  def __str__(self) :
-    """Return String of Object Specification 
-@return: Object spec string
-@rtype: C{String}
-"""
-    s = ("%s\n\n" % SimGenexObjectiveFunctionParser.magic)
-    for procedure in self.procedure_defs :
-      s = s + ("%s" % str(procedure))
-    for simexpression in self.simexpression_defs :
-      s = s + ('%s' % str(simexpression))
-    s = s + '%s' % str(self.measurementmatrix_def)
-    s = s + '%s' % str(self.discriminationsettings_def)
-    return s
-
-
 def distance_sum_squares(array1, array2) :
   """ Calculates the Sum Square Distance of two arrays
 @param array1: data set
@@ -1608,10 +1609,12 @@ class MeasurementMatrix(object) :
   def __str__(self) :
     s = 'measurementmatrix\n{\n'
     s = s + str(self.measurementprocess)
+    s = s + '\n'
     s = s + '  measurementcolumns\n  {\n'
     for measurementcolumn in self.measurementcolumn_list :
       s = s + '    %s;\n' % str(measurementcolumn)
     s = s + '  }\n'
+    s = s + '\n'
     s = s + str(self.genemapping)
     s = s + '}\n'
     return s
@@ -1655,70 +1658,38 @@ class MeasurementMatrix(object) :
     return(self.genemapping)
 
 
-class GeneMap(object) :
-  """Object GeneMap
-@ivar name: gene name
-@type name: C{String}
-@ivar gene_list: list of alias
-@type gene_list: list of C{String}
-"""
-
-  def __init__(self, name, gene_list):
-    """Constructor"""
-    self.name = name
-    self.gene_list = gene_list
-
-
-  def get_gene_name(self) :
-    """Accessor 
-@return: name
-@rtype: C{String}
-"""
-    return self.name
-
-
-  def get_gene_list(self) :
-    """Accessor
-@return: gene list
-@rtype: list of C{String}
-"""
-    return self.gene_list
-
-
-  def __str__(self) :
-    """Return string of GeneMap
-@return: s
-@rtype: C{String}
-""" 
-    s = '    factor ' + self.name + " = "
-    for name in self.gene_list :
-      w = ''
-      u = w + name
-      s = s + u
-    s = s + ";\n"
-    return s
-
-
 class GeneMapping(object) :
   """  Object GeneMapping
 @ivar factor_list: factor list
-@type factor_list: Dictionary{S}
+@type factor_list: list of strings
+@ivar factor_dict: mapping of factor names to gene identifiers
+@type factor_dict: dictionary string: string
 """
 
-  def __init__(self, factor_list):
+  def __init__(self):
     """ Constructor """
-    self.factor_list = factor_list
+    self.factor_list = []
+    self.factor_dict = {}
    
+
+  def __str__(self) :
+    """Return string of GeneMapping
+@return: s
+@rtype: C{String}
+"""
+    s = '  genemapping\n'
+    s = s + '  {\n'
+    for factor_name in self.factor_list :
+      s = s + '    factor %s = "%s";\n' % (factor_name, self.factor_dict[factor_name])
+    return s + '  }\n'
+
 
   def get_factor_list(self) :
     """
 @return: self.factor_list.keys()
 @rtype: list of C{String}
 """
-    factor_list = []
-    for factor in self.factor_list :
-      factor_list.append(factor.get_name())
-    return factor_list
+    return self.factor_list
     
 
   def get_genemapping_dict(self) :
@@ -1726,34 +1697,32 @@ class GeneMapping(object) :
 @return: self.factor_list
 @rtype: dict of C{String}
 """
-    gene_mapping_dict = {}
-    for factor in self.factor_list :
-      mapping = []
-      for gene_name in factor.get_gene_list() :
-        mapping.append(gene_name)
-      gene_mapping_dict[factor.get_gene_name()] = mapping
-    return gene_mapping_dict
+    return self.factor_dict
 
 
   def get_gene_list(self) :
-    gene_list = []
-    for factor in self.factor_list :
-      for gene_name in factor.get_gene_list() :
-        gene_list.append(gene_name)
-    return gene_list
+    return self.factor_dict.values()
 
 
-  def __str__(self) :
-    """Return string of GeneMapping
-@return: s
-@rtype: C{String}
-"""    
-    s = '  genemapping\n  {\n'
-    for factor in self.factor_list :
-      s = s + '%s' %factor
-    s = s + '  }\n'
-    return s
+  def add_mapping(self, factor_name, gene_identifier) :
+    if factor_name in self.factor_dict.keys() :
+      raise StandardError, 'factor %s is already mapped' % factor_name
+    self.factor_list.append(factor_name)
+    self.factor_dict[factor_name] = gene_identifier
 
+
+  def find_identifier(self, factor_name) :
+    """Find the gene manufacturer identifier that is represented by the given factor in the transsys model.
+
+This method will raise an exception if the factor is not mapped.
+
+@param factor_name: the name of the factor
+@type factor_name: string
+@return: the manufacturer's gene ID
+@rtype: string
+"""
+    return this.factor_dict[factor_name]
+    
 
 class MeasurementProcess(object) :
   """
@@ -1846,10 +1815,6 @@ class DiscriminationSettings(object) :
   def get_distance(self) :
     return(self.distance)
 
-  
-  def get_whitelist(self) :
-    return(self.whitelist)
-
 
   def __str__(self) :
     """  Return string Discrimination Settings 
@@ -1865,9 +1830,14 @@ class DiscriminationSettings(object) :
     s = 'discriminationsettings' + '\n'
     s = s + '{' + '\n'
     s = s + ('  distance: %s;\n' % d)
+    s = s + '\n'
     s = s + str(self.whitelist)
     s = s + '}' + '\n'
     return s
+
+  
+  def get_whitelist(self) :
+    return(self.whitelist)
 
 
 class WhiteList(object) :
@@ -1981,8 +1951,8 @@ class Scanner(object) :
       return ('identifier', s)
     m = self.gene_manufacturer_re.match(self.buffer)
     if m :
-      s = m.group()
-      self.buffer = string.strip(self.buffer[len(s):])
+      s = m.group(1)
+      self.buffer = string.strip(self.buffer[len(m.group(0)):])
       return ('gene_manufacturer_identifier', s)
     m = self.realvalue_re.match(self.buffer)
     if m :
@@ -2668,19 +2638,15 @@ is ok. Clients should not unnecessarily use this feature, however.
 @return: genemapping list
 @rtype: list of L{GeneMap}
 """
-    genemapping_list = []
+    genemapping = GeneMapping()
     while self.scanner.lookahead() != '}' :
-      mapping = []
       self.expect_token('factor')
-      m = self.expect_token('gene_manufacturer_identifier')
+      m = self.expect_token('identifier')
       self.expect_token('=')
-      while self.scanner.lookahead() != ';' :
-        d = self.expect_token('gene_manufacturer_identifier')
-        mapping.append(d)
-      o = GeneMap(m, mapping)
-      genemapping_list.append(o)
+      d = self.expect_token('gene_manufacturer_identifier')
+      genemapping.add_mapping(m, d)
       self.expect_token(';')
-    return(genemapping_list)
+    return(genemapping)
 
 
   def parse_genemapping_def(self) :
@@ -2690,9 +2656,9 @@ is ok. Clients should not unnecessarily use this feature, however.
 """
     self.expect_token('genemapping') 
     self.expect_token('{') 
-    genemapping_list = self.parse_genemapping_body()
+    genemapping = self.parse_genemapping_body()
     self.expect_token('}')
-    return GeneMapping(genemapping_list) 
+    return genemapping
 
 
   def parse_measurementmatrix_def(self) :
