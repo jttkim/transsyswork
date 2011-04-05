@@ -78,12 +78,12 @@ ParameterTransformer
 
 procedure notreat
 {
-  treatment: hormone = 0.0;
+  treatment: hormone = 0.000000;
 }
 
 procedure hormtreat
 {
-  treatment: hormone = 1.0;
+  treatment: hormone = 1.000000;
 }
 
 procedure equilibration
@@ -98,7 +98,6 @@ procedure treatmenttime
 
 procedure wildtype
 {
-#  runtimesteps: 1;
 }
 
 procedure ko_housekeeping
@@ -138,7 +137,7 @@ measurementmatrix
 {
   measurementprocess
   {
-    offset: 0.1;
+    offset: 0.100000;
     transformation: log2(offset(x1)) - log2(offset(x2));
   }
 
@@ -170,7 +169,6 @@ measurementmatrix
 
 discriminationsettings
 {
-
   distance: correlation;
 
   whitelistdefs
@@ -179,8 +177,6 @@ discriminationsettings
     gene: housekeepinggene c1gene c2gene c3gene c4gene;
   }
 }
-
-
 """
     self.model_01 = open('sgx.tra', 'r')
     self.model_02 = open('sgx_01.tra', 'r')
@@ -236,7 +232,6 @@ discriminationsettings
     f = open('sgxparsed.txt', 'w')
     f.write(str(simgenex))
     f.close()
-    return
     self.assertEquals(self.simgenexspec, str(simgenex))
 
 

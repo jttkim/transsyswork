@@ -377,18 +377,14 @@ genemapping_def ::= genemapping_header genemapping_body genemapping_footer
 genemapping_header ::= "genemapping" 
 genemapping_body ::= (factor_def )+   
 genemapping_footer ::= "endgenemapping"  
-factor_def ::= "factor" identifier "=" (gene_manufacturer_identifier)+ 
+factor_def ::= "factor" identifier "=" gene_manufacturer_identifier
 \end{ebnfrule}
 
 \item \computercode{genemapping}: specifies names of genes in the computational 
 model that can be mapped to names in the target matrix, which may e.g.\ be IDs 
 designated by the microarray provider. 
 
-If there are multiple profiles in the empirical matrix that correspond to
-one factor, these may be specified as a whitespace separated list. In
-this case, the average profile is used for comparison.
-
-The identifiers of the right hand side must be names of factors in the
+The identifiers of the left hand side must be names of factors in the
 candidate program. No factor may be mapped more than once.
 \end{itemize}
 
