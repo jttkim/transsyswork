@@ -222,16 +222,16 @@ discriminationsettings
     # self.assertRaises(StandardError, es1.divergence, esr6, trsysmodis.distance_euclidean)
     
 
-  def test_EmpiricalObjectiveFunctionParser(self) :
+  def test_SimGenexObjectiveFunctionParser(self) :
     specfile = StringIO.StringIO(self.simgenexspec)
     o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
     simgenex = o.parse_objectivespec()
-    f = open('sgxorig.txt', 'w')
-    f.write(self.simgenexspec)
-    f.close()
-    f = open('sgxparsed.txt', 'w')
-    f.write(str(simgenex))
-    f.close()
+#     f = open('sgxorig.txt', 'w')
+#     f.write(self.simgenexspec)
+#     f.close()
+#     f = open('sgxparsed.txt', 'w')
+#     f.write(str(simgenex))
+#     f.close()
     self.assertEquals(self.simgenexspec, str(simgenex))
 
 
