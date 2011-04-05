@@ -2,7 +2,7 @@
 
 # trsysmodis 
 # Copyright (C) 2009 UEA 
-# Author: Anyela Camargo 
+# Author: Jan T. Kim, Anyela Camargo,  
 
 import copy
 import sys
@@ -43,8 +43,8 @@ class ExpressionData(object) :
   def __init__(self, rowname_list = None) :
     """Constructor. Constructs an instance with no data, but with
 row names as specified by the C{rowname_list} parameter.
-@param rowname_list lists of row names
-@type rowname_list list of strings
+@param rowname_list: lists of row names
+@type rowname_list: list of strings
 """
     if rowname_list is None :
       rowname_list = []
@@ -101,12 +101,11 @@ This method does not rigorously check input for validity.
 
 
   def add_column(self, column_name, column_data) :
-    """Add a column to this expression matrix. The new column is
-    populated with C{None}s.
-@param column_name the name of the column
-@type column_name C{string}
-@param column_data data to populate the column with, labels must match row names of this expression matrix
-@type column_data C{dictionary} of C{float}s
+    """Add a column to this expression matrix. The new column is populated with C{None}s.
+@param column_name: the name of the column
+@type column_name: C{string}
+@param column_data: data to populate the column with, labels must match row names of this expression matrix
+@type column_data: C{dictionary} of C{float}s
 """
     self.column_name_list.append(column_name)
     for factor_name in self.expression_data.keys() :
@@ -252,8 +251,8 @@ Used to be called C{get_gene_name}.
   #FIXME: retrieves attributes -- names need fixing on basis of expressionset semantics
   def get_feature_list(self, gene_name) :
     """Deprecated -- Retrieve list of features for named feature.
-@param feature_name: array name
-@type feature_name: C{String}
+@param gene_name: gene name
+@type gene_name: C{String}
 @return: feature list, or C{None} if there is no gene
 @rtype: array of C{String}, or C{None}
 """
@@ -446,10 +445,10 @@ gene in that array.
 
   def add_column(self, column_name, column_data) :
     """Add a data column to this expression set.
-@param column_name the name of the newly created column
-@type column_name C{string}
-@param column_data the date for the new column
-@type column_data dict of floats
+@param column_name: the name of the newly created column
+@type column_name: C{string}
+@param column_data: the date for the new column
+@type column_data: dict of floats
 """
     self.expression_data.add_column(column_name, column_data)
     if self.pheno_data is not None :
@@ -605,11 +604,11 @@ class Instruction(object) :
   def apply_instruction(self, transsys_instance) :
     """Apply this instruction and return a trace of transsys instances.
 
-This method returns a list of C{TranssysInstance} instances. All
+This method returns a list of C{transsys.TranssysInstance} instances. All
 instances are distinct; specifically they have distinct states (factor
 concentration lists). References to the transsys programs are shared.
 
-The C{TranssysInstance} instance referred to by the
+The C{transsys.TranssysInstance} instance referred to by the
 C{transsys_instance} parameter will not be modified. Clients therefore
 may pass in the last element of a trace and be certain that the last
 element is not affected by the application of an instruction.
@@ -649,9 +648,8 @@ all instruction sequences represented by the instructions of that list.
 @param prefix_list: list of InstructionSequence
 @type prefix_list: list of L{InstructionSequence}
 @return: instruction_sequence_list
-@type: list of L{InstructionSequence}
+@rtype: list of L{InstructionSequence}
 """
-# FIXME: the last type above is the rtype, I presume?
     instruction_sequence_list = []
     for prefix in prefix_list[:] :
       instruction_sequence = prefix.get_copy()
@@ -700,11 +698,11 @@ Intended for use during validation of identifiers in transformations.
 
 
   def make_instruction_sequence_list(self, prefix_list) :
-    """
-@param prefix_list: list of InstructionSequence
+    """ Make instruction sequence list
+@param prefix_list: prefix list
 @type prefix_list: list of L{InstructionSequence}
 @return: instruction_sequence_list
-@ttype: list of L{InstructionSequence}
+@rtype: list of L{InstructionSequence}
 """
     instruction_sequence_list = []
     for prefix in prefix_list :
@@ -768,9 +766,9 @@ class InvocationInstruction(ApplicableInstruction) :
 
   def apply_instruction(self, transsys_instance) :
     """
-@param transsys_instance: Transsys Instance
-@type transsys_instance: L{transsys.TranssysInstance}
-@return: list of L{transsys.TranssysInstance}
+@param transsys_instance: Transsys instance
+@type transsys_instance: L{transsys.TranssysProgram}
+@return: list of L{transsys.TranssysProgram}
 """
     if not isinstance(self.procedure, Procedure) :
        raise StandardError, 'unresolved statement'
@@ -827,10 +825,10 @@ class KnockoutInstruction(PrimaryInstruction) :
     
 
   def apply_instruction(self, transsys_instance) :
-    """ Knock gene name outi
-@param transsys_instance: Transsys Instance
-@type transsys_instance: L{transsys.TranssysInstance}
-@return: list of Transsys Instance
+    """ Knock gene name out
+@param transsys_instance: transsys program
+@type transsys_instance: L{transsys.TranssysProgram}
+@return: list of transsys instances
 @rtype: list of L{transsys.TranssysInstance}
 """
     knockout_tp = copy.deepcopy(transsys_instance.transsys_program)
@@ -870,9 +868,9 @@ class TreatmentInstruction(PrimaryInstruction) :
   def apply_instruction(self, transsys_instance) :
     """Apply treatment
 @param transsys_instance: transsys instance
-@type transsys_instance: L{transsys.TranssysInstance}
+@type transsys_instance: L{transsys.TranssysProgram}
 @return: list of Transsys Instance
-@rtype: list of L{transsys.TranssysInstance}
+@rtype: list of L{transsys.TranssysProgram}
 @raise StandardError: If factor does not exist
 """ 
     ti = transsys_instance.clone()
@@ -908,9 +906,9 @@ Notice that running 0 timesteps will still add an instance to the trace.
   def apply_instruction(self, transsys_instance) :
     """Equilibrate and output gene expression
 @param transsys_instance: transsys instance
-@type transsys_instance: L{transsys.TranssysInstance}
+@type transsys_instance: L{transsys.TranssysProgram}
 @return: ts
-@rtype: L{transsys.TranssysInstance}
+@rtype: L{transsys.TranssysProgram}
 """
     ts = transsys_instance.time_series(int(self.time_steps + 1))
     return ts
@@ -945,10 +943,10 @@ class OverexpressionInstruction(PrimaryInstruction) :
 
   def apply_instruction(self, transsys_instance) :
     """ Overexpress gene
-@param transsys_program: transsys program
-@type transsys_instance: L{transsys.TranssysInstance}
-@return: list of Transsys Instance
-@rtype: list of L{transsys.TranssysInstance}
+@param transsys_instance: transsys instance
+@type transsys_instance: L{transsys.TranssysProgram}
+@return: list of Transsys Instances
+@rtype: list of L{transsys.TranssysProgram}
 """
 # FIXME: the transsys_program parameter really is the transsys_instance, I presume?
     tp = copy.deepcopy(transsys_instance.transsys_program)
@@ -966,15 +964,15 @@ class OverexpressionInstruction(PrimaryInstruction) :
 
 
 class SetproductInstruction(PrimaryInstruction) :
-  """ Class simulate set product """
-
-  def __init__(self, gene_name, factor_name) :
-    """Constructor 
-@param gene_name: gene name
+  """ Class simulate set product
+@ivar gene_name: gene name
 @type gene_name: C{String}
-@param factor_name: factor_name
+@ivar factor_name: factor_name
 @type factor_name: C{String}
 """
+
+  def __init__(self, gene_name, factor_name) :
+    """ Constructor """
     super(SetproductInstruction, self).__init__()
     if isinstance(gene_name, types.StringType) :
       self.gene_name = gene_name
@@ -993,12 +991,11 @@ class SetproductInstruction(PrimaryInstruction) :
 
   def apply_instruction(self, transsys_instance) :
     """ Overexpress gene
-@param transsys_program: transsys program
-@type transsys_program: Object{transsys_program}
-@return: list of Transsys Instance
-@rtype: list of L{transsys.TranssysInstance}
+@param transsys_instance: transsys instance
+@type transsys_instance: L{transsys.TranssysProgram}
+@return: list of Transsys Instances
+@rtype: list of L{transsys.TranssysProgram}
 """
-# FIXME: the transsys_program parameter really is transsys_instance?
     tp = copy.deepcopy(transsys_instance.transsys_program)
     gene = tp.find_gene(self.gene_name)
     factor = tp.find_factor(self.factor_name)
@@ -1012,8 +1009,8 @@ class SimGenexColumn(object) :
   """
 @param name: instruction sequence name
 @type name: C{String}
-@param transsys_instance: transsys_instance
-@type transsys_instance: L{transsys.TranssysInstance}
+@param transsys_instance: transsys instance
+@type transsys_instance: L{transsys.TranssysProgram}
 """
   #FIXME: think of better name
   def __init__(self, name, transsys_instance) :
@@ -1022,10 +1019,8 @@ class SimGenexColumn(object) :
 
 
 class SimGenex(object) :
-
   """Class to represent a "recipe" for constructing a simulated
-  expression set from a suitable transsys program.
-
+expression set from a suitable transsys program.
 @ivar procedure_defs: procedure definition.
 @type procedure_defs: list of C{Procedure}
 @ivar simexpression_defs: simexpression definition.
@@ -1036,12 +1031,8 @@ class SimGenex(object) :
 @type discriminationsettings_def: L{DiscriminationSettings}
 """ 
 
-
   def __init__(self, procedure_defs, simexpression_defs, measurementmatrix_def, discriminationsettings_def) :
-    """Constructor.
-
-    parameters to be documented after considering collaboration with parser.
-"""
+    """ Constructor """
     self.procedure_defs = procedure_defs
     self.simexpression_defs = simexpression_defs
     self.measurementmatrix_def = measurementmatrix_def
@@ -1131,8 +1122,8 @@ class SimGenex(object) :
 @type tracefile: C{File}
 @param instruction_sequence_name: instruction_sequence_name
 @type instruction_sequence_name: C{String}
-@param ti_trace: time series
-@type ti_trace: L{transsys.TranssysInstance}
+@param ti_trace: transsys instance
+@type ti_trace: L{transsys.TranssysProgram}
 """
     if tracefile is not None :
       for ti in ti_trace :
@@ -1315,32 +1306,18 @@ from a transsys program to the target data.
 @rtype: L{SimgenexFitnessResult}
 """
     simulated_expression_set = self.simgenex.get_simulated_set(transsys_program)
-    s = self.get_divergence(simulated_expression_set)
+    s = simulated_expression_set.divergence(self.target_expression_set, self.simgenex.discriminationsettings_def.distance)
     return SimgenexFitnessResult(s)
 
 
-  def get_divergence(self, simulated_expression_set) :
-    """Divergence measurement.
-@param simulated_expression_set: simulated expression set
-@type simulated_expression_set: L{ExpressionSet}
-@return: divergence between this expression set and the other expression set
-@rtype: C{float}
-"""
-    # FIXME: looks like replication of the ExpressionSet.divergence method...??
-    d = 0.0
-    for factor_name in simulated_expression_set.expression_data.expression_data.keys() :
-      targetProfile = self.target_expression_set.get_profile(factor_name)
-      simulatedProfile = simulated_expression_set.get_profile(factor_name)
-      d = d + self.target_expression_set.distance_divergence(targetProfile, simulatedProfile, self.simgenex.discriminationsettings_def.distance)
-    return d
-
-  
 # FIXME: There is validation of SimGenex file, where should that go?
 
   def is_compatible_target(self, target_expression_set):
     """Set target expression set and check it exists
-@param expression_set: expression set
-@type expression_set: L{ExpressionSet}
+@param target_expression_set: target expression set
+@type target_expression_set: L{ExpressionSet}
+@return: Boolean value
+@rtype: C{boolean}
 """
     target_rowname_set = target_expression_set.get_rowname_list()
     simgenex_rowname_set = self.simgenex.get_rowname_list()
@@ -1448,12 +1425,9 @@ class InstructionSequence(object) :
 
   def get_copy(self) :
     """
-@return: self.name
-@rtype: C{String}
-@return: self.instruction_sequence
-@rtype: List of L{InvocationInstruction}
+@return: Object
+@rtype: L{InstructionSequence}
 """
-# FIXME: check return value & type
     return InstructionSequence(self.name, self.instruction_sequence)
 
 
@@ -1475,10 +1449,10 @@ class InstructionSequence(object) :
 
   def simulate(self, transsys_program) :
     """
-@param transsys_program: transsys_program
-@param transsys_program: L{transsys.TranssysProgram}
+@param transsys_program: transsys program
+@type transsys_program: L{transsys.TranssysProgram}
 @return: ti_trace
-@rtype: C{list} of C{transsys.TranssysInstance}
+@rtype: C{list} of L{transsys.TranssysInstance}
 """
     tp = copy.deepcopy(transsys_program)
     ti_trace = [transsys.TranssysInstance(tp)]
@@ -1615,75 +1589,119 @@ class TransformedData(object) :
 
 
 class MeasurementMatrix(object) :
-
- # FIXME: gene mapping should become an instance variable here
-   def __init__(self, measurementprocess, measurementcolumn_list, genemapping) :
-     """
-@param measurementprocess: measurement process
+  """
+@ivar measurementprocess: measurement process
 @type measurementprocess: L{MeasurementProcess}
-@param measurementcolumn_list: measurement column list - mapping
-@type measurementcolumn_list: List of L{MeasurementColumn}
+@ivar measurementcolumn_list: measurement column list - mapping
+@type measurementcolumn_list: list of L{MeasurementColumn}
 @ivar genemapping: gene mapping
 @type genemapping: L{GeneMapping}
 """
-     self.measurementprocess = measurementprocess
-     self.measurementcolumn_list = measurementcolumn_list
-     self.genemapping =  genemapping
+
+  def __init__(self, measurementprocess, measurementcolumn_list, genemapping) :
+    """ Constructor """
+    self.measurementprocess = measurementprocess
+    self.measurementcolumn_list = measurementcolumn_list
+    self.genemapping =  genemapping
 
 
-   def __str__(self) :
-     s = 'measurementmatrix\n{\n'
-     s = s + str(self.measurementprocess)
-     s = s + '  measurementcolumns\n  {\n'
-     for measurementcolumn in self.measurementcolumn_list :
-       s = s + '    %s;\n' % str(measurementcolumn)
-     s = s + '  }\n'
-     s = s + str(self.genemapping)
-     s = s + '}\n'
-     return s
+  def __str__(self) :
+    s = 'measurementmatrix\n{\n'
+    s = s + str(self.measurementprocess)
+    s = s + '  measurementcolumns\n  {\n'
+    for measurementcolumn in self.measurementcolumn_list :
+      s = s + '    %s;\n' % str(measurementcolumn)
+    s = s + '  }\n'
+    s = s + str(self.genemapping)
+    s = s + '}\n'
+    return s
 
 
-   def transform(self, rawdata_matrix) :
-     """
+  def transform(self, rawdata_matrix) :
+    """
 @param rawdata_matrix: rawdata matrix 
 @type rawdata_matrix: List of L{SimGenexColumn}
 @return: column_list
 @rtype: C{List}
 """
      
-     offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
-     column_list = []
-     expression_data = ExpressionData(self.genemapping.get_gene_list())
-     for measurementcolumn in self.measurementcolumn_list :
-       context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
-       factor_column_dict = self.measurementprocess.evaluate(context)
-       # FIXME: eset_dict should be extracted from gene mapping instance variable
-       # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
-       eset_dict = self.genemapping.get_genemapping_dict()
-       eset_column_dict = {}
-       for eset_rowname in eset_dict :
-         row_names = eset_dict[eset_rowname]
-	 for row_name in row_names :
-           eset_column_dict[row_name] = factor_column_dict[eset_rowname]
-       expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
-     return ExpressionSet(expression_data)
+    offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
+    column_list = []
+    expression_data = ExpressionData(self.genemapping.get_gene_list())
+    for measurementcolumn in self.measurementcolumn_list :
+      context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
+      factor_column_dict = self.measurementprocess.evaluate(context)
+      # FIXME: eset_dict should be extracted from gene mapping instance variable
+      # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
+      eset_dict = self.genemapping.get_genemapping_dict()
+      eset_column_dict = {}
+      for eset_rowname in eset_dict :
+        row_names = eset_dict[eset_rowname]
+        for row_name in row_names :
+          eset_column_dict[row_name] = factor_column_dict[eset_rowname]
+      expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
+    return ExpressionSet(expression_data)
 
 
-   def get_measurementprocess(self) :
-     return(self.measurementprocess)
+  def get_measurementprocess(self) :
+    return(self.measurementprocess)
 
 
-   def get_measurementcolumn_list(self) :
-     return(self.measurementcolumn_list)
+  def get_measurementcolumn_list(self) :
+    return(self.measurementcolumn_list)
 
 
-   def get_genemapping(self) :
-     return(self.genemapping)
+  def get_genemapping(self) :
+    return(self.genemapping)
+
+
+class GeneMap(object) :
+  """Object GeneMap
+@ivar name: gene name
+@type name: C{String}
+@ivar gene_list: list of alias
+@type gene_list: list of C{String}
+"""
+
+  def __init__(self, name, gene_list):
+    """Constructor"""
+    self.name = name
+    self.gene_list = gene_list
+
+
+  def get_gene_name(self) :
+    """Accessor 
+@return: name
+@rtype: C{String}
+"""
+    return self.name
+
+
+  def get_gene_list(self) :
+    """Accessor
+@return: gene list
+@rtype: list of C{String}
+"""
+    return self.gene_list
+
+
+  def __str__(self) :
+    """Return string of GeneMap
+@return: s
+@rtype: C{String}
+""" 
+    s = '    factor ' + self.name + " = "
+    for name in self.gene_list :
+      w = ''
+      u = w + name
+      s = s + u
+    s = s + ";\n"
+    return s
 
 
 class GeneMapping(object) :
   """  Object GeneMapping
-@param factor_list: factor list
+@ivar factor_list: factor list
 @type factor_list: Dictionary{S}
 """
 
@@ -1697,22 +1715,31 @@ class GeneMapping(object) :
 @return: self.factor_list.keys()
 @rtype: list of C{String}
 """
-    return(self.factor_list.keys())
-
+    factor_list = []
+    for factor in self.factor_list :
+      factor_list.append(factor.get_name())
+    return factor_list
+    
 
   def get_genemapping_dict(self) :
     """
 @return: self.factor_list
 @rtype: dict of C{String}
 """
-    return self.factor_list
+    gene_mapping_dict = {}
+    for factor in self.factor_list :
+      mapping = []
+      for gene_name in factor.get_gene_list() :
+        mapping.append(gene_name)
+      gene_mapping_dict[factor.get_gene_name()] = mapping
+    return gene_mapping_dict
 
 
   def get_gene_list(self) :
     gene_list = []
-    for key, value in self.factor_list.iteritems() :
-      for i in value :
-        gene_list.append(i)
+    for factor in self.factor_list :
+      for gene_name in factor.get_gene_list() :
+        gene_list.append(gene_name)
     return gene_list
 
 
@@ -1722,11 +1749,8 @@ class GeneMapping(object) :
 @rtype: C{String}
 """    
     s = '  genemapping\n  {\n'
-    for name, value in self.factor_list.iteritems() :
-      w = ''
-      for u in value :
-	w = w + u# + " "
-      s = s + ('    factor ' + name + " = " + w + ";\n")
+    for factor in self.factor_list :
+      s = s + '%s' %factor
     s = s + '  }\n'
     return s
 
@@ -1848,10 +1872,11 @@ class DiscriminationSettings(object) :
 
 class WhiteList(object) :
   """ Object WhiteList 
-@param whitelist_dict: whitelist_dict
-@type whitelist_dict: Dictionary{S}
+@ivar factor_list: factor list
+@type factor_list: list of C{String}
+@ivar gene_list: gene list
+@type gene_list: gene of C{String}
 """
-# FIXME: @param really means @ivar above?
 
   def __init__(self, factor_list, gene_list):
     """ Constructor """
@@ -2066,10 +2091,9 @@ class TransformationExpr(object) :
 
   def evaluate(self, context) :
     """Evaluate the transformation expression within the given context.
-@param context the transformation context
-@type context L{TransformationContext}
-@return the transformed column
-@rtype dictionary of floats
+@param context: the transformation context
+@type context: L{TransformationContext}
+@raise StandardError: is abstract method is called
 """
     raise StandardError, 'abstract method called'
 
@@ -2274,7 +2298,7 @@ class TransformationExprMvar(TransformationExpr) :
 @param context: Transformation context
 @type context: L{TransformationContext}
 @return: column_matrix.transsys_instance
-@rtype: L{transsys.TranssysInstance}
+@rtype: L{transsys.TranssysProgram}
 """
     colname = None
     for i in context.mvar_map :
@@ -2372,8 +2396,8 @@ class ExpressionStatNegmin(ExpressionStat) :
 
 class SimGenexObjectiveFunctionParser(object) :
   """ Object specification 
-@param f: Spec file
-@type f: c{file}
+@ivar f: Spec file
+@type f: C{file}
 """
 
   magic = "SimGenex-2.0" 
@@ -2435,12 +2459,9 @@ is ok. Clients should not unnecessarily use this feature, however.
 
   def parse_discriminationsettings_body(self) :
     """Parse discrimination settings body
-@return: distance
-@rtype: dictionary{}
-@return: whitelist_dict
-@rtype: dictionary{}
+@return: discrimination settings object
+@rtype: L{DiscriminationSettings}
 """
-# FIXME: what are return value and return type above?
     self.expect_token('distance')
     self.expect_token(':')
     t = self.scanner.lookahead()
@@ -2644,10 +2665,10 @@ is ok. Clients should not unnecessarily use this feature, however.
 
   def parse_genemapping_body(self):
     """ Parse genemapping body
-@return: genemapping dictionary
-@rtype: dictionary{}
+@return: genemapping list
+@rtype: list of L{GeneMap}
 """
-    genemapping_dict = {}
+    genemapping_list = []
     while self.scanner.lookahead() != '}' :
       mapping = []
       self.expect_token('factor')
@@ -2656,9 +2677,10 @@ is ok. Clients should not unnecessarily use this feature, however.
       while self.scanner.lookahead() != ';' :
         d = self.expect_token('gene_manufacturer_identifier')
         mapping.append(d)
-      genemapping_dict[m] = mapping
+      o = GeneMap(m, mapping)
+      genemapping_list.append(o)
       self.expect_token(';')
-    return(genemapping_dict)
+    return(genemapping_list)
 
 
   def parse_genemapping_def(self) :
@@ -2724,14 +2746,10 @@ is ok. Clients should not unnecessarily use this feature, however.
 
 
   def parse_simexpression_body(self) :
-    """Comment
-@return: unresolved_intsruction_list
-@rtype: list[]
-@return: unresolved_foreach_list
+    """Parse body
+@return: unresolved_instruction_list
 @rtype: list[]
 """
-# FIXME: put something in place of "Comment"
-# FIXME: check return value and type above
     self.expect_token('{')
     unresolved_instruction_list = []
     while self.scanner.lookahead() != '}' :
