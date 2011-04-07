@@ -1639,9 +1639,8 @@ class MeasurementMatrix(object) :
       eset_dict = self.genemapping.get_genemapping_dict()
       eset_column_dict = {}
       for eset_rowname in eset_dict :
-        row_names = eset_dict[eset_rowname]
-        for row_name in row_names :
-          eset_column_dict[row_name] = factor_column_dict[eset_rowname]
+        row_name = eset_dict[eset_rowname]
+        eset_column_dict[row_name] = factor_column_dict[eset_rowname]
       expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
     return ExpressionSet(expression_data)
 
@@ -2636,7 +2635,7 @@ is ok. Clients should not unnecessarily use this feature, however.
   def parse_genemapping_body(self):
     """ Parse genemapping body
 @return: genemapping list
-@rtype: list of L{GeneMap}
+@rtype: L{GeneMapping}
 """
     genemapping = GeneMapping()
     while self.scanner.lookahead() != '}' :
