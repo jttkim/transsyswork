@@ -5,6 +5,7 @@ import random
 import unittest
 import sys
 import os
+import copy
 
 import transsys
 import trsysmodis
@@ -159,11 +160,11 @@ measurementmatrix
 
   genemapping
   {
-    factor housekeeper = "genehousekeeper";
-    factor c1 = "genec1";
-    factor c2 = "genec2";
-    factor c3 = "genec3";
-    factor c4 = "genec4";
+    factor housekeeper = "housekeeper";
+    factor c1 = "c1";
+    factor c2 = "c2";
+    factor c3 = "c3";
+    factor c4 = "c4";
   }
 }
 
@@ -175,6 +176,108 @@ discriminationsettings
   {
     factor: housekeeper c1 c2 c3 c4;
     gene: housekeepinggene c1gene c2gene c3gene c4gene;
+  }
+}
+"""
+    self.model_sgx = """transsys sgx
+{
+  factor hormone
+  {
+    decay: 0;
+    diffusibility: 0;
+  }
+
+  factor c1
+  {
+    decay: 0.1;
+    diffusibility: 0;
+  }
+
+  factor c2
+  {
+    decay: 0.1;
+    diffusibility: 0;
+  }
+
+  factor c3
+  {
+    decay: 0.1;
+    diffusibility: 0;
+  }
+
+  factor c4
+  {
+    decay: 0.1;
+    diffusibility: 0;
+  }
+
+  factor housekeeper
+  {
+    decay: 0.1;
+    diffusibility: 0;
+  }
+
+  gene c1gene
+  {
+    promoter
+    {
+      hormone: activate(0.01, 1.0);
+    }
+    product
+    {
+      default: c1;
+    }
+  }
+
+  gene c2gene
+  {
+    promoter
+    {
+      c1: activate(0.01, 1.0);
+    }
+    product
+    {
+      default: c2;
+    }
+  }
+
+  gene c3gene
+  {
+    promoter
+    {
+      constitutive: 0.1;
+      c2: activate(0.01, 1.0);
+    }
+    product
+    {
+      default: c3;
+    }
+  }
+
+  gene c4gene
+  {
+    promoter
+    {
+      constitutive: 0.1;
+      c1: activate(0.01, 1.0);
+      c2: repress(0.01, 1.0);
+    }
+    product
+    {
+      default: c4;
+    }
+  }
+
+  gene housekeepinggene
+  {
+    promoter
+    {
+      constitutive: 1.0;
+    }
+    product
+    {
+      default: housekeeper;
+    }
   }
 }
 """
@@ -233,6 +336,26 @@ discriminationsettings
 #     f.write(str(simgenex))
 #     f.close()
     self.assertEquals(self.simgenexspec, str(simgenex))
+
+
+  def test_simulated_sets(self) :
+    specfile = StringIO.StringIO(self.simgenexspec)
+    o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
+    simgenex = o.parse_objectivespec()
+    p = transsys.TranssysProgramParser(StringIO.StringIO(self.model_sgx))
+    tp_sgx = p.parse()
+    tp_sgx0 = copy.deepcopy(tp_sgx)
+    for gene in tp_sgx0.gene_list :
+      gene.promoter = []
+    simset_sgx0 = simgenex.get_simulated_set(tp_sgx0)
+    edata_sgx0 = simset_sgx0.expression_data
+    for factor_name in edata_sgx0.expression_data.keys() :
+      for x in edata_sgx0.expression_data[factor_name] :
+        self.assertEquals(0.0, x)
+    simset_sgx = simgenex.get_simulated_set(tp_sgx)
+    simset_sgx_copy = simgenex.get_simulated_set(tp_sgx)
+    self.assertEquals(0.0, simset_sgx.divergence(simset_sgx_copy, trsysmodis.distance_euclidean))
+    self.assertAlmostEquals(0.0, simset_sgx.divergence(simset_sgx_copy, trsysmodis.distance_correl))
 
 
   def test_objectivefunctionparser(self) :
