@@ -358,6 +358,17 @@ discriminationsettings
     self.assertAlmostEquals(0.0, simset_sgx.divergence(simset_sgx_copy, trsysmodis.distance_correl))
 
 
+  def test_SimGenexObjectiveFunction(self) :
+    specfile = StringIO.StringIO(self.simgenexspec)
+    o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
+    simgenex = o.parse_objectivespec()
+    p = transsys.TranssysProgramParser(StringIO.StringIO(self.model_sgx))
+    tp_sgx = p.parse()
+    simset_sgx = simgenex.get_simulated_set(tp_sgx)
+    objfunc = trsysmodis.SimGenexObjectiveFunction(simgenex, simset_sgx)
+    self.assertAlmostEquals(0.0, objfunc(tp_sgx).fitness)
+    
+
   def test_objectivefunctionparser(self) :
     return
     expression_set = trsysmodis.ExpressionSet()
