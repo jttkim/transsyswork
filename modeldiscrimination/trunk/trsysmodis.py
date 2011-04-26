@@ -941,7 +941,13 @@ Notice that running 0 timesteps will still add an instance to the trace.
 
 
 class OverexpressionInstruction(PrimaryInstruction) :
-  """ Class simulate factor overexpression line """
+  """ Class simulate factor overexpression line 
+inserts a new gene into the candidate
+program. The identifier is the name of an existing factor in the
+candidate program. The new gene encodes the same product as the
+specified existing gene, and has a promoter comprised of one
+constitutive element, expressing the gene at the specified rate.
+"""
 
 
   def __init__(self, factor_name, constitute_value) :
@@ -1320,7 +1326,7 @@ class SimGenexObjectiveFunction(transsys.optim.AbstractObjectiveFunction) :
 
   def __init__(self, simgenex, target_expression_set) :
     if not is_subset(target_expression_set.get_column_name_list(), simgenex.get_column_name_list()) or not is_subset(simgenex.get_column_name_list(), target_expression_set.get_column_name_list()) :
-      raise StandardError, 'column set mismatch'
+      raise StandardError, 'column set mismatch %s \n %s' %(target_expression_set.get_column_name_list(), simgenex.get_column_name_list())
     simgenex_row_name_list = simgenex.get_row_name_list()
     tset_reduced = copy.deepcopy(target_expression_set)
     for row_name in target_expression_set.get_row_name_list() :
