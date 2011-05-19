@@ -28,36 +28,28 @@ rndseed = 0
 evaluate_objective = False
 expression_set = None
 
-optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:e:n:c:g:T:u:v:L:x:Elh')
+optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:n:c:g:T:v:x:e:lh')
 
 for opt, par in optlist :
   if opt == '-h' :
-    print '-l: logratio mode'
     print '-o <str>: specify spec file'
     print '-s <int>: Random seed'
     print '-R  <int>: Random restarts'
-    print '-e  <int>: Equilibration length'
     print '-n  <str>: Prefix name of target network'
     print '-c  <str>: Prefix name of candidate network'
     print '-g  <str>: Optimiser spec file name'
     print '-T  <str>: specify transformer specification file to parse'
     print '-x  <str>: specify gene expression dataset file'
-    print '-u  <str>: sum_squares, correlation, euclidean'
     print '-v  <int>: verbose'
-    print '-L  <str>: Logfile'
-    print '-E: evaluate objective function, print that and exit'
+    print '-e: evaluate objective function, print that and exit'
     print '-h: print this help and exit'
     sys.exit()
-  elif opt == '-l' :
-    logratio_mode = True
   elif opt == '-o' :
     spec = par
   elif opt == '-s' :
     rndseed = int(par)
   elif opt == '-R' :
     num_restarts = int(par)
-  elif opt == '-e' :
-    equilibration_length = int(par)
   elif opt == '-n' :
     target_name = par
   elif opt == '-c' :
@@ -68,13 +60,9 @@ for opt, par in optlist :
     transformerfile = par
   elif opt == '-x' :
     expression_set = par
-  elif opt == '-u' :
-    f_distance = par
   elif opt == '-v' :
     verbose = int(par)
-  elif opt == '-L' :
-    result_file = par
-  elif opt == '-E' :
+  elif opt == '-e' :
     evaluate_objective = True
   else :
     raise StandardError, 'unhandled option "%s"' % opt
@@ -84,8 +72,9 @@ if len(args) > 0 :
   logfile = open(args[0], 'w')
 if len(args) > 1 :   
   finalparam = open(args[1], 'w')
-logo = file('%s_%s.txt'%(candidate_name, result_file),'w')
-logo.write('restart\tfitness\n')
+if len(args) > 2 :
+  logo = file('%s_%s.txt'%(args[1], candidate_name),'w')
+  logo.write('restart\tfitness\n')
 
 
 g = open(optimiserfile, 'r')
@@ -101,7 +90,6 @@ g.close()
 optimiser.verbose = verbose
 rng = random.Random(rndseed)
 optimiser.rng = rng
-
 index = 0
 
 x = open(expression_set, 'r')
