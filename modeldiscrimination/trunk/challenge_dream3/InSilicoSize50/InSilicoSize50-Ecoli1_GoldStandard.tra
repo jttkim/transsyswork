@@ -1,0 +1,1206 @@
+transsys ecoli1GS
+{
+  factor G1
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G2
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G3
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G4
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G5
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G6
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G7
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G8
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G9
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G10
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G11
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G12
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G13
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G14
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G15
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G16
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G17
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G18
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G19
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G20
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+
+  factor G21
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G22
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G23
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G24
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G25
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G26
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G27
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G28
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G29
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G30
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+
+  factor G31
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G32
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G33
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G34
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G35
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G36
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G37
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G38
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G39
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G40
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G41
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G42
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G43
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G44
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G45
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G46
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G47
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G48
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+ 
+  factor G49
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G50
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  gene G1_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G1;
+    }
+  }
+
+  gene G2_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G1: activate(0.0, 0.0);
+      G3: activate(0.0, 0.0);
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G2;
+    }
+  }
+
+  gene G3_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G3;
+    }
+  }
+
+  gene G4_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G4;
+    }
+  }
+
+  gene G5_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G5;
+    }
+  }
+
+  gene G6_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G6;
+    }
+  }
+
+  gene G7_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G7;
+    }
+  }
+
+  gene G8_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G8;
+    }
+  }
+
+  gene G9_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G9;
+    }
+  }
+
+  gene G10_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G10;
+    }
+  }
+
+  gene G11_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G11;
+    }
+  }
+
+  gene G12_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G12;
+    }
+  }
+
+  gene G13_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G13;
+    }
+  }
+
+  gene G14_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+      G17: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G14;
+    }
+  }
+
+  gene G15_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+      G17: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G15;
+    }
+  }
+
+  gene G16_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+      G19: activate(0.0, 0.0);
+      G21: activate(0.0, 0.0);
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G16;
+    }
+  }
+
+  gene G17_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G24: activate(0.0, 0.0);
+      G28: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G17;
+    }
+  }
+
+  gene G18_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G17: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G18;
+    }
+  }
+
+  gene G19_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G19;
+    }
+  }
+
+  gene G20_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G4: activate(0.0, 0.0);
+      G19: activate(0.0, 0.0);
+      G21: activate(0.0, 0.0);
+      G23: activate(0.0, 0.0);
+      G24: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G20;
+    }
+  }
+
+  gene G21_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G21;
+    }
+  }
+
+  gene G22_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G17: activate(0.0, 0.0);
+      G21: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G22;
+    }
+  }
+
+  gene G23_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G23;
+    }
+  }
+
+  gene G24_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G24;
+    }
+  }
+
+  gene G25_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G25;
+    }
+  }
+
+  gene G26_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G26;
+    }
+  }
+
+  gene G27_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G27;
+    }
+  }
+
+  gene G28_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G28;
+    }
+  }
+
+  gene G29_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G29;
+    }
+  }
+
+  gene G30_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G30;
+    }
+  }
+
+  gene G31_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G31;
+    }
+  }
+
+  gene G32_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G32;
+    }
+  }
+
+  gene G33_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G33;
+    }
+  }
+
+  gene G34_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G34;
+    }
+  }
+
+  gene G35_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G35;
+    }
+  }
+
+  gene G36_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G36;
+    }
+  }
+
+  gene G37_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G37;
+    }
+  }
+
+  gene G38_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G38;
+    }
+  }
+
+  gene G39_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G39;
+    }
+  }
+
+  gene G40_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G40;
+    }
+  }
+
+  gene G31_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G31;
+    }
+  }
+
+  gene G32_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G32;
+    }
+  }
+
+  gene G33_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G33;
+    }
+  }
+
+  gene G34_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G34;
+    }
+  }
+
+  gene G35_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G35;
+    }
+  }
+
+  gene G36_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G36;
+    }
+  }
+
+  gene G37_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G37;
+    }
+  }
+
+  gene G38_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G38;
+    }
+  }
+
+  gene G39_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G39;
+    }
+  }
+
+  gene G40_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G40;
+    }
+  }
+
+  gene G41_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G41;
+    }
+  }
+
+  gene G42_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G42;
+    }
+  }
+
+  gene G43_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G43;
+    }
+  }
+
+  gene G44_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G21: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G44;
+    }
+  }
+
+  gene G45_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G45;
+    }
+  }
+
+  gene G46_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G46;
+    }
+  }
+
+  gene G47_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G47;
+    }
+  }
+
+  gene G48_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G48;
+    }
+  }
+
+  gene G49_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G17: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G49;
+    }
+  }
+
+  gene G50_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G50;
+    }
+  }
+
+  gene G31_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G31;
+    }
+  }
+
+  gene G32_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G28: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G32;
+    }
+  }
+
+  gene G33_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G33;
+    }
+  }
+
+  gene G34_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G34;
+    }
+  }
+
+  gene G35_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+      G38: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G35;
+    }
+  }
+
+  gene G36_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G36;
+    }
+  }
+
+  gene G37_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G21: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G37;
+    }
+  }
+
+  gene G38_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G17: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G38;
+    }
+  }
+
+  gene G39_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G39;
+    }
+  }
+
+  gene G40_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G40;
+    }
+  }
+}
+
