@@ -1,0 +1,398 @@
+SimGenex-2.0
+
+procedure equilibration
+{
+  runtimesteps: 500;
+}
+
+procedure wt
+{
+}
+
+procedure ko_G1
+{
+  knockout: G1_gene;
+}
+
+procedure ko_G2
+{
+  knockout: G2_gene;
+}
+
+procedure ko_G3
+{
+  knockout: G3_gene;
+}
+
+procedure ko_G4
+{
+  knockout: G4_gene;
+}
+
+procedure ko_G5
+{
+  knockout: G5_gene;
+}
+
+procedure ko_G6
+{
+  knockout: G6_gene;
+}
+
+procedure ko_G7
+{
+  knockout: G7_gene;
+}
+
+procedure ko_G8
+{
+  knockout: G8_gene;
+}
+
+procedure ko_G9
+{
+  knockout: G9_gene;
+}
+
+procedure ko_G10
+{
+  knockout: G10_gene;
+}
+
+procedure ko_G11
+{
+  knockout: G11_gene;
+}
+
+procedure ko_G12
+{
+  knockout: G12_gene;
+}
+
+procedure ko_G13
+{
+  knockout: G13_gene;
+}
+
+procedure ko_G14
+{
+  knockout: G14_gene;
+}
+
+procedure ko_G15
+{
+  knockout: G15_gene;
+}
+
+procedure ko_G16
+{
+  knockout: G16_gene;
+}
+
+procedure ko_G17
+{
+  knockout: G17_gene;
+}
+
+procedure ko_G18
+{
+  knockout: G18_gene;
+}
+
+procedure ko_G19
+{
+  knockout: G19_gene;
+}
+
+procedure ko_G20
+{
+  knockout: G20_gene;
+}
+
+procedure ko_G21
+{
+  knockout: G21_gene;
+}
+
+procedure ko_G22
+{
+  knockout: G22_gene;
+}
+
+procedure ko_G23
+{
+  knockout: G23_gene;
+}
+
+procedure ko_G24
+{
+  knockout: G24_gene;
+}
+
+procedure ko_G25
+{
+  knockout: G25_gene;
+}
+
+procedure ko_G26
+{
+  knockout: G26_gene;
+}
+
+procedure ko_G27
+{
+  knockout: G27_gene;
+}
+
+procedure ko_G28
+{
+  knockout: G28_gene;
+}
+
+procedure ko_G29
+{
+  knockout: G29_gene;
+}
+
+procedure ko_G30
+{
+  knockout: G30_gene;
+}
+
+procedure ko_G31
+{
+  knockout: G31_gene;
+}
+
+procedure ko_G32
+{
+  knockout: G32_gene;
+}
+
+procedure ko_G33
+{
+  knockout: G33_gene;
+}
+
+procedure ko_G34
+{
+  knockout: G34_gene;
+}
+
+procedure ko_G35
+{
+  knockout: G35_gene;
+}
+
+procedure ko_G36
+{
+  knockout: G36_gene;
+}
+
+procedure ko_G37
+{
+  knockout: G37_gene;
+}
+
+procedure ko_G38
+{
+  knockout: G38_gene;
+}
+
+procedure ko_G39
+{
+  knockout: G39_gene;
+}
+
+procedure ko_G40
+{
+  knockout: G40_gene;
+}
+
+procedure ko_G41
+{
+  knockout: G41_gene;
+}
+
+procedure ko_G42
+{
+  knockout: G42_gene;
+}
+
+procedure ko_G43
+{
+  knockout: G43_gene;
+}
+
+procedure ko_G44
+{
+  knockout: G44_gene;
+}
+
+procedure ko_G45
+{
+  knockout: G45_gene;
+}
+
+procedure ko_G46
+{
+  knockout: G46_gene;
+}
+
+procedure ko_G47
+{
+  knockout: G47_gene;
+}
+
+procedure ko_G48
+{
+  knockout: G48_gene;
+}
+
+procedure ko_G49
+{
+  knockout: G49_gene;
+}
+
+procedure ko_G50
+{
+  knockout: G50_gene;
+}
+
+simexpression all
+{
+  foreach: wt ko_G1 ko_G2 ko_G3 ko_G4 ko_G5 ko_G6 ko_G7 ko_G8 ko_G9 ko_G10 ko_G11 ko_G12 ko_G13 ko_G14 ko_G15 ko_G16 ko_G17 ko_G18 ko_G19 ko_G20 ko_G21 ko_G22 ko_G23 ko_G24 ko_G25 ko_G26 ko_G27 ko_G28 ko_G29 ko_G30 ko_G31 ko_G32 ko_G33 ko_G34 ko_G35 ko_G36 ko_G37 ko_G38 ko_G39 ko_G40 ko_G41 ko_G42 ko_G43 ko_G44 ko_G45 ko_G46 ko_G47 ko_G48 ko_G49 ko_G50;
+  equilibration;
+}
+
+measurementmatrix
+{
+  measurementprocess
+  {
+    offset: 0.1;
+    transformation: log2(offset(x1));
+  }
+
+  measurementcolumns
+  {
+    wt: x1 = all_wt;  
+    G1KO: x1 = all_ko_G1;
+    G2KO: x1 = all_ko_G2;
+    G3KO: x1 = all_ko_G3;
+    G4KO: x1 = all_ko_G4;
+    G5KO: x1 = all_ko_G5;
+    G6KO: x1 = all_ko_G6;
+    G7KO: x1 = all_ko_G7;
+    G8KO: x1 = all_ko_G8;
+    G9KO: x1 = all_ko_G9;
+    G10KO: x1 = all_ko_G10;
+    G11KO: x1 = all_ko_G11;
+    G12KO: x1 = all_ko_G12;
+    G13KO: x1 = all_ko_G13;
+    G14KO: x1 = all_ko_G14;
+    G15KO: x1 = all_ko_G15;
+    G16KO: x1 = all_ko_G16;
+    G17KO: x1 = all_ko_G17;
+    G18KO: x1 = all_ko_G18;
+    G19KO: x1 = all_ko_G19;
+    G20KO: x1 = all_ko_G20;
+    G21KO: x1 = all_ko_G21;
+    G22KO: x1 = all_ko_G22;
+    G23KO: x1 = all_ko_G23;
+    G24KO: x1 = all_ko_G24;
+    G25KO: x1 = all_ko_G25;
+    G26KO: x1 = all_ko_G26;
+    G27KO: x1 = all_ko_G27;
+    G28KO: x1 = all_ko_G28;
+    G29KO: x1 = all_ko_G29;
+    G30KO: x1 = all_ko_G30;
+    G31KO: x1 = all_ko_G31;
+    G32KO: x1 = all_ko_G32;
+    G33KO: x1 = all_ko_G33;
+    G34KO: x1 = all_ko_G34;
+    G35KO: x1 = all_ko_G35;
+    G36KO: x1 = all_ko_G36;
+    G37KO: x1 = all_ko_G37;
+    G38KO: x1 = all_ko_G38;
+    G39KO: x1 = all_ko_G39;
+    G40KO: x1 = all_ko_G40;
+    G41KO: x1 = all_ko_G41;
+    G42KO: x1 = all_ko_G42;
+    G43KO: x1 = all_ko_G43;
+    G44KO: x1 = all_ko_G44;
+    G45KO: x1 = all_ko_G45;
+    G46KO: x1 = all_ko_G46;
+    G47KO: x1 = all_ko_G47;
+    G48KO: x1 = all_ko_G48;
+    G49KO: x1 = all_ko_G49;
+    G50KO: x1 = all_ko_G50;
+  }
+
+  genemapping
+  {
+    factor G1 = "G1";
+    factor G2 = "G2";
+    factor G3 = "G3";
+    factor G4 = "G4";
+    factor G5 = "G5";
+    factor G6 = "G6";
+    factor G7 = "G7";
+    factor G8 = "G8";
+    factor G9 = "G9";
+    factor G10 = "G10";
+    factor G11 = "G11";
+    factor G12 = "G12";
+    factor G13 = "G13";
+    factor G14 = "G14";
+    factor G15 = "G15";
+    factor G16 = "G16";
+    factor G17 = "G17";
+    factor G18 = "G18";
+    factor G19 = "G19";
+    factor G20 = "G20";
+    factor G21 = "G21";
+    factor G22 = "G22";
+    factor G23 = "G23";
+    factor G24 = "G24";
+    factor G25 = "G25";
+    factor G26 = "G26";
+    factor G27 = "G27";
+    factor G28 = "G28";
+    factor G29 = "G29";
+    factor G30 = "G30";
+    factor G31 = "G31";
+    factor G32 = "G32";
+    factor G33 = "G33";
+    factor G34 = "G34";
+    factor G35 = "G35";
+    factor G36 = "G36";
+    factor G37 = "G37";
+    factor G38 = "G38";
+    factor G39 = "G39";
+    factor G40 = "G40";
+    factor G41 = "G41";
+    factor G42 = "G42";
+    factor G43 = "G43";
+    factor G44 = "G44";
+    factor G45 = "G45";
+    factor G46 = "G46";
+    factor G47 = "G47";
+    factor G48 = "G48";
+    factor G49 = "G49";
+    factor G50 = "G50";
+  }
+}
+
+discriminationsettings
+{
+
+  distance: correlation;
+
+  whitelistdefs
+  {
+    factor: G1 G2 G3 G4 G5 G6 G7 G8 G9 G10 G11 G12 G13 G14 G15 G16 G17 G18 G19 G20 G21 G22 G23 G24 G25 G26 G27 G28 G29 G30 G31 G32 G33 G34 G35 G36 G37 G38 G39 G40 G41 G42 G43 G44 G45 G46 G47 G48 G49 G50;
+    gene: G1_gene G2_gene G3_gene G4_gene G5_gene G6_gene G7_gene G8_gene G9_gene G10_gene G11_gene G12_gene G13_gene G14_gene G15_gene G16_gene G17_gene G18_gene G19_gene G20_gene G21_gene G22_gene G23_gene G24_gene G25_gene G26_gene G27_gene G28_gene G29_gene G30_gene G31_gene G32_gene G33_gene G34_gene G35_gene G36_gene G37_gene G38_gene G39_gene G40_gene G41_gene G42_gene G43_gene G44_gene G45_gene G46_gene G47_gene G48_gene G49_gene G50_gene;
+  }
+}
+
+
