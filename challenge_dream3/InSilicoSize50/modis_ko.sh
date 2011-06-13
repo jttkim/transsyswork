@@ -2,6 +2,9 @@
 
 
 
+transsysrewire=$HOME/Stuff/transsyswork/modeldiscrimination/trunk/transsysrewire
+netoptrewGold=$HOME/Stuff/transsyswork/modeldiscrimination/trunk/netoptrewGold
+
 function do_run ()
 {
   echo $*
@@ -28,48 +31,6 @@ function checkpython()
 # target program:  target_<gentype>##_p##.tra
 
 
-function generate_target_programs ()
-{
-  # generate target topologies
-  # note: rndseed for topology generation is in transsysgen files
-  for gentype in ${gentype_list} ; do
-    do_run transsysrandomprogram -n target_${gentype} -m ${num_target_topologies} -p para${gentype}.dat
-  done
-  for gentype in ${gentype_list} ; do
-    target_topology_number=1
-    while test ${target_topology_number} -le ${num_target_topologies} ; do
-      topology_name=`printf 'target_%s%02d' ${gentype} ${target_topology_number}`
-      topology_file=${topology_name}.tra
-      tp_basename=${topology_name}_p
-      do_run transsysreparam -T ${transformerfile} -s ${rndseed} -p ${num_target_parameterisations} -n ${tp_basename} ${topology_file}
-      rndseed=`expr ${rndseed} + 1`
-      target_topology_number=`expr ${target_topology_number} + 1`
-    done
-  done
-}
-
-
-function generate_target_expressionsets ()
-{
-  for gentype in ${gentype_list} ; do
-    target_topology_number=1
-    while test ${target_topology_number} -le ${num_target_topologies} ; do
-      topology_name=`printf 'target_%s%02d' ${gentype} ${target_topology_number}`
-      topology_file=${topology_name}.tra
-      tp_basename=${topology_name}_p
-      target_parameterisation_number=1
-      while test ${target_parameterisation_number} -le ${num_target_parameterisations} ; do
-	tp_name=`printf '%s%02d' ${tp_basename} ${target_parameterisation_number}`
-	do_run transsyswritesimset -s ${rndseed} -e ${equilibration_timesteps} -N ${signal_to_noise} $tp_name.'tra' $tp_name
-        rndseed=`expr ${rndseed} + 1`
-        target_parameterisation_number=`expr ${target_parameterisation_number} + 1`
-      done
-      target_topology_number=`expr ${target_topology_number} + 1`
-    done
-  done
-}
-
-
 function generate_candidate_programs ()
 {
   for gentype in ${gentype_list} ; do
@@ -78,14 +39,10 @@ function generate_candidate_programs ()
       target_topology_name=`printf 'target_%s%02d' ${gentype} ${target_topology_number}`
       target_topology_file=${target_topology_name}.tra
       candidate_topology_basename=`printf 'candidate_%s%02d' ${gentype} ${target_topology_number}`
-      target_parameterisation_number=1
-      while test ${target_parameterisation_number} -le ${num_target_parameterisations} ; do
-	tp_name=`printf '%s_p%02d' ${candidate_topology_basename} ${target_parameterisation_number}`
-        for num_rewirings in ${num_rewirings_list} ; do
-	  do_run transsysrewire -w ${num_rewirings} -n ${tp_name} -r ${num_rewired_topologies} -s ${rndseed} ${target_topology_file}
-          rndseed=`expr ${rndseed} + 1`
-	done
-        target_parameterisation_number=`expr ${target_parameterisation_number} + 1`
+      tp_name=`printf '%s' ${candidate_topology_basename}`
+      for num_rewirings in ${num_rewirings_list} ; do
+        do_run transsysrewire -w ${num_rewirings} -n ${tp_name} -r ${num_rewired_topologies} -s ${rndseed} ${target_topology_file}
+        rndseed=`expr ${rndseed} + 1`
       done
       target_topology_number=`expr ${target_topology_number} + 1`
     done
@@ -159,7 +116,7 @@ function optimise_numrewired_cluster ()
     while test ${rewired_topology_number} -le ${num_rewired_topologies} ; do
       candidate_topology=`printf '%s_w%02d_r%02d' ${candidate_topology_basename} ${num_rewirings} ${rewired_topology_number}`
       c_t=`printf '%s_w%02d' ${c_t_b} ${num_rewirings}`
-      add_command $scriptname "./netoptrew -s ${rndseed} -l -o ${offset} -R ${num_optimisations} -e ${equilibration_timesteps} -n ${topology_name} -c ${candidate_topology} -u ${distance_measurement} -L $logfile -T $transformerfile -g ${gradientfile}"
+      add_command $scriptname "./netoptrewGold -s ${rndseed} -o ${simgenex} -x ${empiricaldata} -R ${num_optimisations} -c ${candidate_topology} -L $logfile -T $transformerfile -g ${gradientfile}"
       rndseed=`expr ${rndseed} + 1`
       rewired_topology_number=`expr ${rewired_topology_number} + 1`
     done
@@ -170,6 +127,20 @@ function optimise_numrewired_cluster ()
   done
 }
 
+
+function optimiseGold ()
+{
+  for gentype in ${gentype_list} ; do
+    target_topology_number=1
+    while test ${target_topology_number} -le ${num_target_topologies} ; do
+      topology_name=`printf 'target_%s%02d' ${gentype} ${target_topology_number}`
+      candidate_topology_basename=`printf 'candidate_%s%02d' ${gentype} ${target_topology_number}`
+      c_t_b=`printf 'candidate_%s%02d' ${gentype} ${target_topology_number}`
+      optimise_numrewired_cluster
+      target_topology_number=`expr ${target_topology_number} + 1`
+    done
+  done
+}
 
 function optimise ()
 {
@@ -189,6 +160,7 @@ function optimise ()
     done
   done
 }
+
 
 
 function maketable () # create transsys program
@@ -258,29 +230,28 @@ function count_rw () # create transsys program
 #control parameters
 num_target_topologies=1
 num_target_parameterisations=1
-num_rewirings_list='0 1 2 3 4 5 6 7 9 11 13 15 18 22 27 32 38 46 55 66 100 1000'
+#num_rewirings_list='0 1 2 3 4 5 6 7 9 11 13 15 18 22 27 32 38 46 55 66 100 1000'
+num_rewirings_list='0 1 2 3'
 gentype_list='er'
-num_rewired_topologies=10
+num_rewired_topologies=1
 num_optimisations=5
-equilibration_timesteps=100
 signal_to_noise=0
 transformerfile=transformerfile.dat
 logfile=logo
-distance_measurement=correlation
-offset=1e-18
 gradientfile=optspec.dat
 simgenex=testDream.sgx
+empiricaldata=procdata.tgs
 
 # initial rndseed, incremented each time a rndseed parameter is required
 rndseed=2
 
 # run the show
 checkpython
-generate_target_programs
+#generate_target_programs
 #count_rw
-generate_target_expressionsets
-#generate_candidate_programs
+#generate_target_expressionsets
+generate_candidate_programs
 #optimise_numrewired
-#optimise
-maketable
+optimiseGold
+#maketable
 
