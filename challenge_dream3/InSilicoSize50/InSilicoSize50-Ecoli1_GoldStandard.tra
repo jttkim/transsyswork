@@ -1,11 +1,11 @@
-transsys ecoli1GS
+transsys adj2tra
 {
   factor G1
   {
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G2
   {
     decay: 0.0;
@@ -17,7 +17,7 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G4
   {
     decay: 0.0;
@@ -35,7 +35,7 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G7
   {
     decay: 0.0;
@@ -47,7 +47,7 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G9
   {
     decay: 0.0;
@@ -65,7 +65,7 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G12
   {
     decay: 0.0;
@@ -77,8 +77,14 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G14
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G17
   {
     decay: 0.0;
     diffusibility: 0.0;
@@ -95,20 +101,32 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
-  factor G17
+
+  factor G19
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G21
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G23
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G28
   {
     decay: 0.0;
     diffusibility: 0.0;
   }
 
   factor G18
-  {
-    decay: 0.0;
-    diffusibility: 0.0;
-  }
- 
-  factor G19
   {
     decay: 0.0;
     diffusibility: 0.0;
@@ -120,26 +138,13 @@ transsys ecoli1GS
     diffusibility: 0.0;
   }
 
-
-  factor G21
-  {
-    decay: 0.0;
-    diffusibility: 0.0;
-  }
- 
-  factor G22
-  {
-    decay: 0.0;
-    diffusibility: 0.0;
-  }
-
-  factor G23
-  {
-    decay: 0.0;
-    diffusibility: 0.0;
-  }
- 
   factor G24
+  {
+    decay: 0.0;
+    diffusibility: 0.0;
+  }
+
+  factor G22
   {
     decay: 0.0;
     diffusibility: 0.0;
@@ -156,20 +161,20 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G27
   {
     decay: 0.0;
     diffusibility: 0.0;
   }
 
-  factor G28
+  factor G29
   {
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
-  factor G29
+
+  factor G38
   {
     decay: 0.0;
     diffusibility: 0.0;
@@ -181,13 +186,12 @@ transsys ecoli1GS
     diffusibility: 0.0;
   }
 
-
   factor G31
   {
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G32
   {
     decay: 0.0;
@@ -199,7 +203,7 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G34
   {
     decay: 0.0;
@@ -217,19 +221,19 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G37
   {
     decay: 0.0;
     diffusibility: 0.0;
   }
 
-  factor G38
+  factor G44
   {
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G39
   {
     decay: 0.0;
@@ -247,7 +251,7 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G42
   {
     decay: 0.0;
@@ -259,14 +263,14 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
-  factor G44
+
+  factor G45
   {
     decay: 0.0;
     diffusibility: 0.0;
   }
 
-  factor G45
+  factor G50
   {
     decay: 0.0;
     diffusibility: 0.0;
@@ -277,7 +281,7 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
+
   factor G47
   {
     decay: 0.0;
@@ -289,14 +293,8 @@ transsys ecoli1GS
     decay: 0.0;
     diffusibility: 0.0;
   }
- 
-  factor G49
-  {
-    decay: 0.0;
-    diffusibility: 0.0;
-  }
 
-  factor G50
+  factor G49
   {
     decay: 0.0;
     diffusibility: 0.0;
@@ -484,6 +482,19 @@ transsys ecoli1GS
     }
   }
 
+  gene G17_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G28: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G17;
+    }
+  }
+
   gene G15_gene
   {
     promoter
@@ -514,17 +525,52 @@ transsys ecoli1GS
     }
   }
 
-  gene G17_gene
+  gene G19_gene
   {
     promoter
     {
       constitutive: 0.0;
-      G24: activate(0.0, 0.0);
-      G28: activate(0.0, 0.0);
     }
     product
     {
-      default: G17;
+      default: G19;
+    }
+  }
+
+  gene G21_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G23: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G21;
+    }
+  }
+
+  gene G23_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G23;
+    }
+  }
+
+  gene G28_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G28;
     }
   }
 
@@ -538,18 +584,6 @@ transsys ecoli1GS
     product
     {
       default: G18;
-    }
-  }
-
-  gene G19_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G19;
     }
   }
 
@@ -570,16 +604,15 @@ transsys ecoli1GS
     }
   }
 
-  gene G21_gene
+  gene G24_gene
   {
     promoter
     {
       constitutive: 0.0;
-      G23: activate(0.0, 0.0);
     }
     product
     {
-      default: G21;
+      default: G24;
     }
   }
 
@@ -594,30 +627,6 @@ transsys ecoli1GS
     product
     {
       default: G22;
-    }
-  }
-
-  gene G23_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G23;
-    }
-  }
-
-  gene G24_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G24;
     }
   }
 
@@ -660,18 +669,6 @@ transsys ecoli1GS
     }
   }
 
-  gene G28_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G28;
-    }
-  }
-
   gene G29_gene
   {
     promoter
@@ -683,6 +680,20 @@ transsys ecoli1GS
     product
     {
       default: G29;
+    }
+  }
+
+  gene G38_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+      G17: activate(0.0, 0.0);
+      G22: activate(0.0, 0.0);
+    }
+    product
+    {
+      default: G38;
     }
   }
 
@@ -704,132 +715,11 @@ transsys ecoli1GS
     promoter
     {
       constitutive: 0.0;
-    }
-    product
-    {
-      default: G31;
-    }
-  }
-
-  gene G32_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G32;
-    }
-  }
-
-  gene G33_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G33;
-    }
-  }
-
-  gene G34_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
       G22: activate(0.0, 0.0);
       G38: activate(0.0, 0.0);
     }
     product
     {
-      default: G34;
-    }
-  }
-
-  gene G35_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G35;
-    }
-  }
-
-  gene G36_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G36;
-    }
-  }
-
-  gene G37_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G37;
-    }
-  }
-
-  gene G38_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G38;
-    }
-  }
-
-  gene G39_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G39;
-    }
-  }
-
-  gene G40_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-      G38: activate(0.0, 0.0);
-    }
-    product
-    {
-      default: G40;
-    }
-  }
-
-  gene G31_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
       default: G31;
     }
   }
@@ -839,6 +729,7 @@ transsys ecoli1GS
     promoter
     {
       constitutive: 0.0;
+      G28: activate(0.0, 0.0);
     }
     product
     {
@@ -865,6 +756,8 @@ transsys ecoli1GS
     promoter
     {
       constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+      G38: activate(0.0, 0.0);
     }
     product
     {
@@ -877,6 +770,8 @@ transsys ecoli1GS
     promoter
     {
       constitutive: 0.0;
+      G22: activate(0.0, 0.0);
+      G38: activate(0.0, 0.0);
     }
     product
     {
@@ -889,6 +784,7 @@ transsys ecoli1GS
     promoter
     {
       constitutive: 0.0;
+      G23: activate(0.0, 0.0);
     }
     product
     {
@@ -901,6 +797,8 @@ transsys ecoli1GS
     promoter
     {
       constitutive: 0.0;
+      G21: activate(0.0, 0.0);
+      G44: activate(0.0, 0.0);
     }
     product
     {
@@ -908,16 +806,16 @@ transsys ecoli1GS
     }
   }
 
-  gene G38_gene
+  gene G44_gene
   {
     promoter
     {
       constitutive: 0.0;
-      G22: activate(0.0, 0.0);
+      G21: activate(0.0, 0.0);
     }
     product
     {
-      default: G38;
+      default: G44;
     }
   }
 
@@ -939,6 +837,7 @@ transsys ecoli1GS
     promoter
     {
       constitutive: 0.0;
+      G38: activate(0.0, 0.0);
     }
     product
     {
@@ -985,29 +884,29 @@ transsys ecoli1GS
     }
   }
 
-  gene G44_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-      G21: activate(0.0, 0.0);
-    }
-    product
-    {
-      default: G44;
-    }
-  }
-
   gene G45_gene
   {
     promoter
     {
       constitutive: 0.0;
       G23: activate(0.0, 0.0);
+      G50: activate(0.0, 0.0);
     }
     product
     {
       default: G45;
+    }
+  }
+
+  gene G50_gene
+  {
+    promoter
+    {
+      constitutive: 0.0;
+    }
+    product
+    {
+      default: G50;
     }
   }
 
@@ -1060,146 +959,6 @@ transsys ecoli1GS
     product
     {
       default: G49;
-    }
-  }
-
-  gene G50_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G50;
-    }
-  }
-
-  gene G31_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-      G22: activate(0.0, 0.0);
-      G38: activate(0.0, 0.0);
-    }
-    product
-    {
-      default: G31;
-    }
-  }
-
-  gene G32_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-      G28: activate(0.0, 0.0);
-    }
-    product
-    {
-      default: G32;
-    }
-  }
-
-  gene G33_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G33;
-    }
-  }
-
-  gene G34_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G34;
-    }
-  }
-
-  gene G35_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-      G22: activate(0.0, 0.0);
-      G38: activate(0.0, 0.0);
-    }
-    product
-    {
-      default: G35;
-    }
-  }
-
-  gene G36_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-      G23: activate(0.0, 0.0);
-    }
-    product
-    {
-      default: G36;
-    }
-  }
-
-  gene G37_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-      G21: activate(0.0, 0.0);
-    }
-    product
-    {
-      default: G37;
-    }
-  }
-
-  gene G38_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-      G17: activate(0.0, 0.0);
-    }
-    product
-    {
-      default: G38;
-    }
-  }
-
-  gene G39_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G39;
-    }
-  }
-
-  gene G40_gene
-  {
-    promoter
-    {
-      constitutive: 0.0;
-    }
-    product
-    {
-      default: G40;
     }
   }
 }
