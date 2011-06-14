@@ -2,7 +2,7 @@ SimGenex-2.0
 
 procedure equilibration
 {
-  runtimesteps: 500;
+  runtimesteps: 100;
 }
 
 procedure wt
