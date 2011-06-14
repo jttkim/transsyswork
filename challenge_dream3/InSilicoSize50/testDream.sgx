@@ -269,63 +269,63 @@ measurementmatrix
 {
   measurementprocess
   {
-    offset: 0.1;
-    transformation: log2(offset(x1));
+    offset: 0.01;
+    transformation: log2(offset(x1)) - log2(offset(x2));
   }
 
   measurementcolumns
   {
-    wt: x1 = all_wt;  
-    G1KO: x1 = all_ko_G1;
-    G2KO: x1 = all_ko_G2;
-    G3KO: x1 = all_ko_G3;
-    G4KO: x1 = all_ko_G4;
-    G5KO: x1 = all_ko_G5;
-    G6KO: x1 = all_ko_G6;
-    G7KO: x1 = all_ko_G7;
-    G8KO: x1 = all_ko_G8;
-    G9KO: x1 = all_ko_G9;
-    G10KO: x1 = all_ko_G10;
-    G11KO: x1 = all_ko_G11;
-    G12KO: x1 = all_ko_G12;
-    G13KO: x1 = all_ko_G13;
-    G14KO: x1 = all_ko_G14;
-    G15KO: x1 = all_ko_G15;
-    G16KO: x1 = all_ko_G16;
-    G17KO: x1 = all_ko_G17;
-    G18KO: x1 = all_ko_G18;
-    G19KO: x1 = all_ko_G19;
-    G20KO: x1 = all_ko_G20;
-    G21KO: x1 = all_ko_G21;
-    G22KO: x1 = all_ko_G22;
-    G23KO: x1 = all_ko_G23;
-    G24KO: x1 = all_ko_G24;
-    G25KO: x1 = all_ko_G25;
-    G26KO: x1 = all_ko_G26;
-    G27KO: x1 = all_ko_G27;
-    G28KO: x1 = all_ko_G28;
-    G29KO: x1 = all_ko_G29;
-    G30KO: x1 = all_ko_G30;
-    G31KO: x1 = all_ko_G31;
-    G32KO: x1 = all_ko_G32;
-    G33KO: x1 = all_ko_G33;
-    G34KO: x1 = all_ko_G34;
-    G35KO: x1 = all_ko_G35;
-    G36KO: x1 = all_ko_G36;
-    G37KO: x1 = all_ko_G37;
-    G38KO: x1 = all_ko_G38;
-    G39KO: x1 = all_ko_G39;
-    G40KO: x1 = all_ko_G40;
-    G41KO: x1 = all_ko_G41;
-    G42KO: x1 = all_ko_G42;
-    G43KO: x1 = all_ko_G43;
-    G44KO: x1 = all_ko_G44;
-    G45KO: x1 = all_ko_G45;
-    G46KO: x1 = all_ko_G46;
-    G47KO: x1 = all_ko_G47;
-    G48KO: x1 = all_ko_G48;
-    G49KO: x1 = all_ko_G49;
-    G50KO: x1 = all_ko_G50;
+    wt: x1 = all_wt, x2 = all_wt;  
+    G1KO: x1 = all_ko_G1, x2 = all_wt;
+    G2KO: x1 = all_ko_G2, x2 = all_wt;
+    G3KO: x1 = all_ko_G3, x2 = all_wt;
+    G4KO: x1 = all_ko_G4, x2 = all_wt;
+    G5KO: x1 = all_ko_G5, x2 = all_wt;
+    G6KO: x1 = all_ko_G6, x2 = all_wt;
+    G7KO: x1 = all_ko_G7, x2 = all_wt;
+    G8KO: x1 = all_ko_G8, x2 = all_wt;
+    G9KO: x1 = all_ko_G9, x2 = all_wt;
+    G10KO: x1 = all_ko_G10, x2 = all_wt;
+    G11KO: x1 = all_ko_G11, x2 = all_wt;
+    G12KO: x1 = all_ko_G12, x2 = all_wt;
+    G13KO: x1 = all_ko_G13, x2 = all_wt;
+    G14KO: x1 = all_ko_G14, x2 = all_wt;
+    G15KO: x1 = all_ko_G15, x2 = all_wt;
+    G16KO: x1 = all_ko_G16, x2 = all_wt;
+    G17KO: x1 = all_ko_G17, x2 = all_wt;
+    G18KO: x1 = all_ko_G18, x2 = all_wt;
+    G19KO: x1 = all_ko_G19, x2 = all_wt;
+    G20KO: x1 = all_ko_G20, x2 = all_wt;
+    G21KO: x1 = all_ko_G21, x2 = all_wt;
+    G22KO: x1 = all_ko_G22, x2 = all_wt;
+    G23KO: x1 = all_ko_G23, x2 = all_wt;
+    G24KO: x1 = all_ko_G24, x2 = all_wt;
+    G25KO: x1 = all_ko_G25, x2 = all_wt;
+    G26KO: x1 = all_ko_G26, x2 = all_wt;
+    G27KO: x1 = all_ko_G27, x2 = all_wt;
+    G28KO: x1 = all_ko_G28, x2 = all_wt;
+    G29KO: x1 = all_ko_G29, x2 = all_wt;
+    G30KO: x1 = all_ko_G30, x2 = all_wt;
+    G31KO: x1 = all_ko_G31, x2 = all_wt;
+    G32KO: x1 = all_ko_G32, x2 = all_wt;
+    G33KO: x1 = all_ko_G33, x2 = all_wt;
+    G34KO: x1 = all_ko_G34, x2 = all_wt;
+    G35KO: x1 = all_ko_G35, x2 = all_wt;
+    G36KO: x1 = all_ko_G36, x2 = all_wt;
+    G37KO: x1 = all_ko_G37, x2 = all_wt;
+    G38KO: x1 = all_ko_G38, x2 = all_wt;
+    G39KO: x1 = all_ko_G39, x2 = all_wt;
+    G40KO: x1 = all_ko_G40, x2 = all_wt;
+    G41KO: x1 = all_ko_G41, x2 = all_wt;
+    G42KO: x1 = all_ko_G42, x2 = all_wt;
+    G43KO: x1 = all_ko_G43, x2 = all_wt;
+    G44KO: x1 = all_ko_G44, x2 = all_wt;
+    G45KO: x1 = all_ko_G45, x2 = all_wt;
+    G46KO: x1 = all_ko_G46, x2 = all_wt;
+    G47KO: x1 = all_ko_G47, x2 = all_wt;
+    G48KO: x1 = all_ko_G48, x2 = all_wt;
+    G49KO: x1 = all_ko_G49, x2 = all_wt;
+    G50KO: x1 = all_ko_G50, x2 = all_wt;
   }
 
   genemapping
