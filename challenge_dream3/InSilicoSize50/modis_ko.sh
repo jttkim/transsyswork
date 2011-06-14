@@ -231,7 +231,7 @@ num_target_parameterisations=1
 num_rewirings_list='0 1 2 3 4 5 6 7 9 11 13 15 18 22 27 32 38 46 55 66 100 1000'
 gentype_list='er'
 num_rewired_topologies=10
-num_optimisations=5
+num_optimisations=2
 signal_to_noise=0
 transformerfile=transformerfile.dat
 logfile=logo
@@ -245,7 +245,7 @@ rndseed=2
 # run the show
 checkpython
 #count_rw
-generate_candidate_programs
+#generate_candidate_programs
 #optimise_numrewired
 optimiseGold
 #maketable
