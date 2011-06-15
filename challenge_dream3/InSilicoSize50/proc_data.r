@@ -8,5 +8,5 @@ processdata <- function(data)
   }
 
   data <- t(data);
-  write.table(data, file="procdata.tgs", quote=FALSE);
+  write.table(data, file="procdata.tsv", sep="\t", quote=FALSE);
 }

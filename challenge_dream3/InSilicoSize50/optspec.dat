@@ -3,7 +3,7 @@ initial_stepsize: 1.0
 delta: 1.0e-1
 stepsize_shrink: 0.5
 termination_stepsize: None
-termination_objective: 0
+termination_objective: None
 termination_iteration: None
 termination_numEvaluations: None
 termination_improvement: None
