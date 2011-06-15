@@ -14,7 +14,7 @@ maxValue: 0.3
 aspecTransformation
 ArctanFunction
 minValue: 0.01
-maxValue: 8.0
+maxValue: 4.0
 amaxTransformation
 ArctanFunction
 minValue: -0.24

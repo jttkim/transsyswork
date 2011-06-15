@@ -17,20 +17,16 @@ def write_result(f, optResult) :
 
 
 num_restarts = None
-equilibration_length = None
 optimiserfile = None
-f_distance = None
 verbose = 0
 transformerfile = None
 logfile = None
 finalparam = None
-logratio_offset = None
-logratio_mode = False
 rndseed = 0
 evaluate_objective = False
 
 
-optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:n:c:g:T:v:L:x:Elh')
+optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:n:c:g:T:v:L:x:e:lh')
 
 for opt, par in optlist :
   if opt == '-h' :
@@ -42,7 +38,7 @@ for opt, par in optlist :
     print '-T  <str>: specify transformer specification file to parse'
     print '-v  <int>: verbose'
     print '-L  <str>: Logfile'
-    print '-E: evaluate objective function, print that and exit'
+    print '-e: evaluate objective function, print that and exit'
     print '-h: print this help and exit'
     sys.exit()
   elif opt == '-o' :
@@ -63,7 +59,7 @@ for opt, par in optlist :
     result_file = par
   elif opt == '-x' :
     expression_set = par
-  elif opt == '-E' :
+  elif opt == '-e' :
     evaluate_objective = True
   else :
     raise StandardError, 'unhandled option "%s"' % opt
@@ -92,27 +88,27 @@ optimiser.rng = rng
 
 logo.write('restart\tfitness\n')
 index = 0
-
-x = open(expression_set, 'r')
-expression_set = trsysmodis.ExpressionSet()
-expression_set.read(x, p = None, f = None)
 specfile = open(sgx, 'r')
-parser = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
-simgenex = parser.parse_objectivespec()
-objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
-optimiser.randomInitRange = 1.0
+o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
+simgenex = o.parse_objectivespec()
 model = open('%s.tra'%(candidate_name),'r')
+tp_sgx = transsys.TranssysProgramParser(model).parse()
 
-transsys_program = transsys.TranssysProgramParser(model).parse()
 if evaluate_objective :
-  obj = objective_function(transsys_program)
-  print obj
+  simset_sgx = simgenex.get_simulated_set(tp_sgx)
+  objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, simset_sgx)
+  print objective_function(tp_sgx).fitness
   sys.exit(0)
 
+x = open(expression_set, 'r')
+empset = trsysmodis.ExpressionSet()
+empset.read(x, p = None, f = None)
+objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, empset)
+optimiser.randomInitRange = 1.0
 
 for restart_index in xrange(num_restarts) :
   print 'Using %s.tra'%(candidate_name)
-  opt_result = optimiser.optimise(transsys_program, objective_function)
+  opt_result = optimiser.optimise(tp_sgx, objective_function)
   logo.write('rst%d\t%f\n' % (restart_index, opt_result.objectiveOptimum.fitness))
   sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
   if finalparam is not None :

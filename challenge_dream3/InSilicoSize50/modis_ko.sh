@@ -4,7 +4,6 @@
 modeldiscrimination=$HOME/transsyswork/modeldiscrimination/trunk
 transsysrewire=$modeldiscrimination/transsysrewire
 netoptrewGold=$modeldiscrimination/netoptrewGold
-echo $transsysrewire
 
 function do_run ()
 {
@@ -237,7 +236,7 @@ transformerfile=transformerfile.dat
 logfile=logo
 gradientfile=optspec.dat
 simgenex=testDream.sgx
-empiricaldata=procdata.tgs
+empiricaldata=procdata.tsv
 
 # initial rndseed, incremented each time a rndseed parameter is required
 rndseed=2
