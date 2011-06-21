@@ -1,0 +1,83 @@
+#!/usr/bin/python
+
+import copy
+import getopt
+import sys
+import os
+import transsys
+import transsys.optim 
+import random
+import pdb
+
+
+class Interaction(object) :
+  """Represent a regulatory interaction.
+
+Intended for purposes of "rewiring interactions".
+
+@ivar promoterElement the regulator of the interaction
+@type promoterElement C{transsys.PromoterElementLink}
+@ivar target the target of the interaction
+@type target C{String}
+"""
+
+  def __init__(self, promoterElement, target) :
+    if len(promoterElement.factor_list) != 1 :
+      raise StandardError, 'multiple regulators not supported'
+    self.promoterElement = promoterElement
+    self.target = target
+
+
+  def __str__(self) :
+    return '%s\t%s' % (self.promoterElement.factor_list[0].name, self.target)
+
+
+def get_interaction_list(tp) :
+  """Extract regulatory interactions into a list of (target, regulator) pairs.
+"""
+  interaction_list = []
+  for gene in tp.gene_list :
+    for pe in gene.promoter :
+      if isinstance(pe, transsys.PromoterElementLink) :
+        if len(pe.factor_list) != 1 :
+          raise StandardError, 'gene %s: promoter element with multiple regulators, not supported' % gene.name
+        interaction_list.append(Interaction(pe, gene.name))
+  return interaction_list
+
+
+transsys_name = None
+
+optlist, args = getopt.getopt(sys.argv[1:], 'n:h')
+
+for opt, par in optlist :
+  if opt == '-h' :
+    print '-n: <Transsys program name>: Transsys program name'
+    print '-h: print this help and exit'
+    sys.exit()
+  elif opt == '-n' :
+    transsys_name = par
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdout
+if len(args) > 1 :
+  outfile = open(args[1], 'w')
+else :
+  outfile = sys.stdout
+
+transsys_program = transsys.TranssysProgramParser(infile).parse()
+factor_list = transsys_program.factor_list
+gene_list = transsys_program.gene_list
+
+"""
+Changing interactions
+"""
+
+tp1 = copy.deepcopy(transsys_program)
+interaction_list = get_interaction_list(tp1)
+for o in interaction_list :
+  outfile.write('%s\n'%o)
+

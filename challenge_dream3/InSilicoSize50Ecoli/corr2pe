@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+
+import sys
+import getopt
+import copy
+
+import transsys
+import transsys.utils
+import trsysmodis
+
+
+class ExpressionDataCorr(trsysmodis.ExpressionData) :
+  """Expression data with facility to get correlation between profiles.
+
+Consider merging with base class...
+"""
+
+  def __init__(self) :
+    super(ExpressionDataCorr, self).__init__()
+
+
+  def correlation(self, factor1_name, factor2_name) :
+    if factor1_name not in self.expression_data.keys() :
+      raise StandardError, 'no factor "%s" in expression data' % factor1_name
+    if factor2_name not in self.expression_data.keys() :
+      raise StandardError, 'no factor "%s" in expression data' % factor2_name
+    profile1 = self.expression_data[factor1_name]
+    profile2 = self.expression_data[factor2_name]
+    return transsys.utils.correlation_coefficient(profile1, profile2)    
+
+
+def corr2pe(tp, e) :
+  tpc = copy.deepcopy(tp)
+  for gene in tpc.gene_list :
+    target_name = gene.product_name()
+    for i in xrange(len(gene.promoter)) :
+      pe = gene.promoter[i]
+      if isinstance(pe, transsys.PromoterElementLink) :
+        if len(pe.factor_list) != 1 :
+          raise StandardError, 'cannot process promoter elements with multiple regulators'
+        regulator_name = pe.factor_list[0].name
+        if e.correlation(regulator_name, target_name) >= 0.0 :
+          gene.promoter[i] = transsys.PromoterElementActivate(pe.expression1, pe.expression2, pe.factor_list)
+        else :
+          gene.promoter[i] = transsys.PromoterElementRepress(pe.expression1, pe.expression2, pe.factor_list)
+  return tpc
+  
+
+def usage() :
+  print 'usage:'
+  print 'options:'
+  print '-h: print this help and exit'
+  print '-e <expression data>: specify expression data (matrix format)'
+
+
+expression_data_filename = None
+options, args = getopt.getopt(sys.argv[1:], 'e:h')
+for opt, par in options :
+  if opt == '-h' :
+    usage()
+    sys.exit()
+  elif opt == '-e' :
+    expression_data_filename = par
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+if expression_data_filename is None :
+  raise StandardError, 'no expression data file specified'
+f = open(expression_data_filename, 'r')
+e = ExpressionDataCorr()
+e.read(f)
+f.close()
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdin
+if len(args) > 1 :
+  outfile = open(args[1], 'w')
+else :
+  outfile = sys.stdout
+p = transsys.TranssysProgramParser(infile)
+tp = p.parse()
+tpc = corr2pe(tp, e)
+outfile.write('%s\n' % str(tpc))
