@@ -17,6 +17,9 @@ function do_run ()
   fi
 }
 
+
+
+
 function checkpython()
 {
   if [ -z "$PYTHONPATH" ]
@@ -30,6 +33,29 @@ function checkpython()
 # target topology: target_<gentype>##.tra
 # target program:  target_<gentype>##_p##.tra
 
+function transform_data ()
+{
+  rawdatakey="rawdata"
+  sed 's/'$rawdatakey'/'$rawdata'/g' proc_data.r  > clean.txt
+  cp clean.txt proc_data.r
+  do_run R CMD BATCH proc_data.r
+  
+}
+
+
+function generate_graphGold ()
+{
+  for gentype in ${gentype_list} ; do
+    target_topology_number=1
+    while test ${target_topology_number} -le ${num_target_topologies} ; do
+      target_topology_name=`printf 'target_%s%02d' ${gentype} ${target_topology_number}`
+      target_topology_file=${target_topology_name}.tra
+      do_run adj2tra $goldgraphdream $target_topology_file'.unsigned'
+      do_run corr2pe -e $empiricaldata $target_topology_file'.unsigned' $target_topology_file
+      target_topology_number=`expr ${target_topology_number} + 1`
+    done
+  done
+}
 
 function generate_candidate_programs ()
 {
@@ -227,25 +253,28 @@ function count_rw () # create transsys program
 #control parameters
 num_target_topologies=1
 num_target_parameterisations=1
-num_rewirings_list='0 1 2 3 4 5 6 7 9 11 13 15 18 22 27 32 38 46 55 66 100 1000'
+num_rewirings_list='0 15 66 100'
 gentype_list='er'
-num_rewired_topologies=10
-num_optimisations=10
+num_rewired_topologies=5
+num_optimisations=50
 signal_to_noise=0
 transformerfile=transformerfile.dat
 logfile=logo
 gradientfile=optspec.dat
 simgenex=testDream.sgx
 empiricaldata=procdata.tsv
+rawdata=InSilicoSize50-Ecoli1-null-mutants.tsv
+goldgraphdream=DREAM3GoldStandard_InSilicoSize50_Ecoli1.txt
 
 # initial rndseed, incremented each time a rndseed parameter is required
 rndseed=2
 
 # run the show
 checkpython
+transform_data
+generate_graphGold
 #count_rw
-#generate_candidate_programs
-#optimise_numrewired
-#optimiseGold
-maketable
+generate_candidate_programs
+optimiseGold
+#maketable
 

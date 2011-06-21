@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+
+import sys
+import getopt
+
+import transsys
+
+
+class AddableTranssysProgram(transsys.TranssysProgram) :
+
+  def __init__(self, name) :
+    super(AddableTranssysProgram, self).__init__(name)
+
+
+  def makeGenename(self, factorname) :
+    return '%s_gene' % factorname
+
+
+  def addGene(self, factorname) :
+    genename = self.makeGenename(factorname)
+    if self.find_factor_index(factorname) == -1 :
+      decay = transsys.ExpressionNodeValue(0.0)
+      diffusibility = transsys.ExpressionNodeValue(0.0)
+      self.factor_list.append(transsys.Factor(factorname, decay, diffusibility))
+    factor = self.find_factor(factorname)
+    if self.find_gene_index(genename) == -1 :
+      constitutive = transsys.PromoterElementConstitutive(transsys.ExpressionNodeValue(0.0))
+      self.gene_list.append(transsys.Gene(genename, factor, [constitutive]))
+
+
+  def addInteraction(self, regulatorname, targetname) :
+    # print '%s -> %s' % (regulatorname, targetname)
+    regulator = self.find_factor(regulatorname)
+    targetgene = self.find_gene(self.makeGenename(targetname))
+    vmax = transsys.ExpressionNodeValue(0.0)
+    km = transsys.ExpressionNodeValue(0.0)
+    targetgene.promoter.append(transsys.PromoterElementActivate(vmax, km, [regulator]))
+
+
+def adj2tra(infile) :
+  tp = AddableTranssysProgram('adj2tra')
+  line = infile.readline()
+  while line :
+    line = line.strip()
+    w = line.split('\t')
+    if len(w) != 3 :
+      raise StandardError, 'malformed line: %s' % line
+    tp.addGene(w[0])
+    tp.addGene(w[1])
+    if w[2] == '1' :
+      tp.addInteraction(w[0], w[1])
+    line = infile.readline()
+  return tp
+  
+
+def usage() :
+  print 'usage:'
+  print 'options:'
+  print '-h: print this help and exit'
+
+
+options, args = getopt.getopt(sys.argv[1:], 'h')
+for opt, par in options :
+  if opt == '-h' :
+    usage()
+    sys.exit()
+  else :
+    raise StandardError, 'unhandled option "%s"' % opt
+if len(args) > 0 :
+  infile = open(args[0], 'r')
+else :
+  infile = sys.stdin
+if len(args) > 1 :
+  outfile = open(args[1], 'w')
+else :
+  outfile = sys.stdout
+tp = adj2tra(infile)
+outfile.write('%s\n' % str(tp))
