@@ -1750,7 +1750,7 @@ class MeasurementProcess(object) :
 @ivar offset: offset
 @type offset: C{Float}
 @ivar transformation: transformation
-@type transformation: L{TransformationContext}
+@type transformation: L{TransformationExpr}
 """
   
   def __init__(self, offset, transformation) :
