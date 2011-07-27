@@ -1659,10 +1659,13 @@ class MeasurementMatrix(object) :
       # FIXME: eset_dict should be extracted from gene mapping instance variable
       # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
       eset_dict = self.genemapping.get_genemapping_dict()
+      print eset_dict, measurementcolumn
       eset_column_dict = {}
       for eset_rowname in eset_dict :
         row_name = eset_dict[eset_rowname]
         eset_column_dict[row_name] = factor_column_dict[eset_rowname]
+	print eset_column_dict, factor_column_dict
+        sys.exit()
       expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
     return ExpressionSet(expression_data)
 
@@ -2670,7 +2673,32 @@ is ok. Clients should not unnecessarily use this feature, however.
     return(genemapping)
 
 
+  def parse_totalrna_statement(self) :
+    """ Parser total RNA statements
+@return: Object
+@rtype: L{Measurements}
+""" 
+    te = self.parse_transformation_expr()
+    self.expect_token(':')
+    column_name = self.expect_token('gene_manufacturer_identifier')
+    return GeneMapping(column_name, te)
+
+
   def parse_genemapping_def(self) :
+    """ Parse objective function genemapping 
+@return: Object
+@rtype: L{GeneMapping}
+"""
+    self.expect_token('genemapping')
+    genemapping_list = []
+    self.expect_token('{')
+    while self.scanner.lookahead() != '}' :
+      genemapping_list.append(self.parse_totalrna_statement())
+    self.expect_token('}')
+    return genemapping_list
+
+
+  def parse_genemapping_defi(self) :
     """ Parse objective function genemapping 
 @return: Object
 @rtype: L{GeneMapping}
