@@ -373,19 +373,28 @@ mvar_assignment ::= identifier "=" identifier
 \end{ebnfrule}
 
 \begin{ebnfrule}
-genemapping_def ::= genemapping_header genemapping_body genemapping_footer 
-genemapping_header ::= "genemapping" 
-genemapping_body ::= (factor_def )+   
-genemapping_footer ::= "endgenemapping"  
-factor_def ::= "factor" identifier "=" gene_manufacturer_identifier
+genemapping_def ::= "\{" totalrna_statement* "\}" 
+totalrna_statement ::= totalrna_expr ":" gene_manufacturer_identifier ";"
+totalrna_expr ::= totalrna_term "+" totalrna_expr
+        | totalrna_term "-" totalrna_expr
+        | totalrna_term
+totalrna_term ::= totalrna_unary "*" totalrna_term
+        | totalrna_unary "*" totalrna_term
+        | totalrna_unary
+totalrna_unary ::= "(" totalrna_expression ")"
+        | "rnapercentage(" totalrna_expr ")"
+        | identifier
+rnapercentage_def ::= realnumber
+
 \end{ebnfrule}
 
 \item \computercode{genemapping}: specifies names of genes in the computational 
-model that can be mapped to names in the target matrix, which may e.g.\ be IDs 
-designated by the microarray provider. 
+model that can be mapped only to names in the target matrix, which may e.g.\ be IDs 
+designated by the microarray provider. It also specifies what gene's
+combination makes up for its total RNA to simulate a row in the gene expression matrix. 
 
 The identifiers of the left hand side must be names of factors in the
-candidate program. No factor may be mapped more than once.
+candidate program. No factor can be mapped more than once.
 \end{itemize}
 
 

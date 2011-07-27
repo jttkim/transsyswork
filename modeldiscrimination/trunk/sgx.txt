@@ -2,7 +2,7 @@ SimGenex-2.0
 
 procedure notreat
 {
-  treatment: hormone = 0.0;
+  #treatment: hormone = 0.0;
 }
 
 procedure hormtreat
