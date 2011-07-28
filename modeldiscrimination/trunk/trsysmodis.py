@@ -1682,7 +1682,19 @@ class MeasurementMatrix(object) :
     return(self.genemapping)
 
 
-class GeneMapping(object) :
+class GeneMapping(object): 
+
+
+  def __init__(self, genename, expression) :
+    self.genename = genename
+    self.expression = expression
+
+
+  def get_gene_name(self) :
+    return self.genename
+
+
+class GeneMapping1(object) :
   """  Object GeneMapping
 @ivar factor_list: factor list
 @type factor_list: list of strings
@@ -2624,6 +2636,7 @@ is ok. Clients should not unnecessarily use this feature, however.
     operand1 = self.parse_transformation_term()
     if self.scanner.lookahead() == '+' or self.scanner.lookahead() == '-' :
       operator, v = self.scanner.token()
+      print operator
       operand2 = self.parse_transformation_expr()
       if operator == '+' :
         e = TransformationExprPlus(operand1, operand2)
@@ -2681,6 +2694,7 @@ is ok. Clients should not unnecessarily use this feature, however.
     te = self.parse_transformation_expr()
     self.expect_token(':')
     column_name = self.expect_token('gene_manufacturer_identifier')
+    self.expect_token(';')
     return GeneMapping(column_name, te)
 
 
