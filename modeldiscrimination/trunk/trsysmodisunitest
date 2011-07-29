@@ -160,11 +160,11 @@ measurementmatrix
 
   genemapping
   {
-    factor housekeeper = "housekeeper";
-    factor c1 = "c1";
-    factor c2 = "c2";
-    factor c3 = "c3";
-    factor c4 = "c4";
+    housekeeper: "housekeeper";
+    c1: "c1";
+    c2: "c2";
+    c3: "c3";
+    c4: "c4";
   }
 }
 
@@ -335,6 +335,7 @@ discriminationsettings
 #     f = open('sgxparsed.txt', 'w')
 #     f.write(str(simgenex))
 #     f.close()
+    print self.simgenexspec, str(simgenex)
     self.assertEquals(self.simgenexspec, str(simgenex))
 
 

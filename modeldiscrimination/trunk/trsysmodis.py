@@ -1093,7 +1093,10 @@ expression set from a suitable transsys program.
 @return: row name list
 @rtype: list of C{String}
 """
-    return self.measurementmatrix_def.genemapping.get_gene_list()
+    gene_list = []
+    for genename in self.measurementmatrix_def.genemapping :
+      gene_list.append(genename.get_gene_name())
+    return gene_list
 
 
 # FIXME: Would this method go into the MeasurementColumn class?
@@ -1637,12 +1640,41 @@ class MeasurementMatrix(object) :
       s = s + '    %s;\n' % str(measurementcolumn)
     s = s + '  }\n'
     s = s + '\n'
-    s = s + str(self.genemapping)
-    s = s + '}\n'
+    s = s + '  genemapping\n  {\n'
+    for genemap in self.genemapping :
+      s = s + str(genemap)
+    s = s + '  }\n}\n'
     return s
 
 
   def transform(self, rawdata_matrix) :
+    """
+@param rawdata_matrix: rawdata matrix 
+@type rawdata_matrix: List of L{SimGenexColumn}
+@return: column_list
+@rtype: C{List}
+"""
+     
+    offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
+    column_list = []
+    gene_list = []
+    for gene_name in self.genemapping :
+      gene_list.append(gene_name.get_gene_name())
+    expression_data = ExpressionData(gene_list)
+    for measurementcolumn in self.measurementcolumn_list :
+      context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
+      factor_column_dict = self.measurementprocess.evaluate(context)
+      # FIXME: eset_dict should be extracted from gene mapping instance variable
+      # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
+      eset_column_dict = {}
+      for genemap in self.genemapping :
+        row_name = genemap.get_gene_name()
+        eset_column_dict[row_name] = genemap.evaluate(factor_column_dict)
+      expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
+    return ExpressionSet(expression_data)
+  
+
+  def transform1(self, rawdata_matrix) :
     """
 @param rawdata_matrix: rawdata matrix 
 @type rawdata_matrix: List of L{SimGenexColumn}
@@ -1659,13 +1691,10 @@ class MeasurementMatrix(object) :
       # FIXME: eset_dict should be extracted from gene mapping instance variable
       # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
       eset_dict = self.genemapping.get_genemapping_dict()
-      print eset_dict, measurementcolumn
       eset_column_dict = {}
       for eset_rowname in eset_dict :
         row_name = eset_dict[eset_rowname]
         eset_column_dict[row_name] = factor_column_dict[eset_rowname]
-	print eset_column_dict, factor_column_dict
-        sys.exit()
       expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
     return ExpressionSet(expression_data)
 
@@ -1683,7 +1712,12 @@ class MeasurementMatrix(object) :
 
 
 class GeneMapping(object): 
-
+  """  Object GeneMapping
+@ivar genename: gene name in expression matrix
+@type genename: C{String}
+@ivar expression: mapping of factor names to gene identifiers
+@type expression: L{TransformationExpr}
+"""
 
   def __init__(self, genename, expression) :
     self.genename = genename
@@ -1692,6 +1726,19 @@ class GeneMapping(object):
 
   def get_gene_name(self) :
     return self.genename
+
+
+  def evaluate(self, rawdata) :
+    gene_totalproduct = self.expression.evaluate_row(rawdata)
+    return gene_totalproduct
+
+
+  def __str__(self) :
+    """Return string of GeneMapping
+@return: s
+@rtype: C{String}
+"""
+    return '    %s: "%s";\n' % (self.expression, self.genename)
 
 
 class GeneMapping1(object) :
@@ -1707,6 +1754,7 @@ class GeneMapping1(object) :
     self.factor_list = []
     self.factor_dict = {}
    
+
 
   def __str__(self) :
     """Return string of GeneMapping
@@ -2136,6 +2184,21 @@ class TransformationExprPlus(TransformationExpr) :
     return column_matrix_plus
 
 
+  def evaluate_row(self, rawdata) :
+    """
+@param rawdata: raw data after transformation
+@return: value map to key in rawdata
+@rtype: C{Float}
+"""
+    row_matrix_plus = []
+    if self.operand1 is None and self.operand2 is None :
+      raise StandardError, 'two operands were not found'
+    operand1_val = self.operand1.evaluate_row(rawdata)
+    operand2_val = self.operand2.evaluate_row(rawdata)
+    row_matrix_plus = operand1_val + operand2_val
+    return row_matrix_plus
+
+
 class TransformationExprMinus(TransformationExpr) :
   """
 @ivar operand1: operand 1
@@ -2320,6 +2383,15 @@ class TransformationExprMvar(TransformationExpr) :
           column_matrix_mvar[factor.name] = ti.get_factor_concentration(factor.name)
         return column_matrix_mvar
     raise StandardError, 'found no rawdata column named %s' % colname
+
+
+  def evaluate_row(self, rawdata) :
+    """
+@param rawdata: raw data after transformation
+@return: value map to key in rawdata
+@rtype: C{Float}
+"""
+    return rawdata[self.name]
 
 
 class Offset(object) :
@@ -2636,7 +2708,6 @@ is ok. Clients should not unnecessarily use this feature, however.
     operand1 = self.parse_transformation_term()
     if self.scanner.lookahead() == '+' or self.scanner.lookahead() == '-' :
       operator, v = self.scanner.token()
-      print operator
       operand2 = self.parse_transformation_expr()
       if operator == '+' :
         e = TransformationExprPlus(operand1, operand2)
@@ -2685,8 +2756,8 @@ is ok. Clients should not unnecessarily use this feature, however.
       self.expect_token(';')
     return(genemapping)
 
-
-  def parse_totalrna_statement(self) :
+  
+  def parse_totalproduct_statement(self) :
     """ Parser total RNA statements
 @return: Object
 @rtype: L{Measurements}
@@ -2707,7 +2778,7 @@ is ok. Clients should not unnecessarily use this feature, however.
     genemapping_list = []
     self.expect_token('{')
     while self.scanner.lookahead() != '}' :
-      genemapping_list.append(self.parse_totalrna_statement())
+      genemapping_list.append(self.parse_totalproduct_statement())
     self.expect_token('}')
     return genemapping_list
 
