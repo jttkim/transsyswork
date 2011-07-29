@@ -377,8 +377,7 @@ genemapping_def ::= "\{" totalproduct_statement* "\}"
 totalproduct_statement ::= totalproduct_expr ":" gene_manufacturer_identifier ";"
 totalproduct_expr ::= totalproduct_term "+" totalproduct_expr
         | totalproduct_term
-totalproduct_term ::= totalproduct_unary "*" totalproduct_term
-        | totalproduct_unary
+totalproduct_term ::= totalproduct_unary
 totalproduct_unary ::= "(" totalproduct_expression ")"
         | identifier
 
