@@ -1660,18 +1660,23 @@ class MeasurementMatrix(object) :
     gene_list = []
     for gene_name in self.genemapping :
       gene_list.append(gene_name.get_gene_name())
-    expression_data = ExpressionData(gene_list)
+    expression_data_row = ExpressionData(gene_list)
+
+    eset_row_dict = {}
+    for sgxcolumn in rawdata_matrix :
+      for genemap in self.genemapping :
+        row_name = genemap.get_gene_name()
+        eset_row_dict[row_name] = genemap.evaluate(sgxcolumn.transsys_instance)
+      expression_data_row.add_column(sgxcolumn.name, eset_row_dict)
+
+    expression_data_col = ExpressionData(gene_list)
     for measurementcolumn in self.measurementcolumn_list :
-      context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
+      context = TransformationContext(expression_data_row, offset, measurementcolumn.get_mvar_mapping())
       factor_column_dict = self.measurementprocess.evaluate(context)
       # FIXME: eset_dict should be extracted from gene mapping instance variable
       # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
-      eset_column_dict = {}
-      for genemap in self.genemapping :
-        row_name = genemap.get_gene_name()
-        eset_column_dict[row_name] = genemap.evaluate(factor_column_dict)
-      expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
-    return ExpressionSet(expression_data)
+      expression_data_col.add_column(measurementcolumn.get_name(), factor_column_dict)
+    return ExpressionSet(expression_data_col)
   
 
   def transform1(self, rawdata_matrix) :
@@ -2362,7 +2367,7 @@ class TransformationExprMvar(TransformationExpr) :
     return self.name
 
 
-  def evaluate(self, context) :
+  def evaluate1(self, context) :
     """
 @param context: Transformation context
 @type context: L{TransformationContext}
@@ -2385,13 +2390,33 @@ class TransformationExprMvar(TransformationExpr) :
     raise StandardError, 'found no rawdata column named %s' % colname
 
 
+  def evaluate(self, context) :
+    """
+@param context: Transformation context
+@type context: L{TransformationContext}
+@return: column_matrix.transsys_instance
+@rtype: L{transsys.TranssysProgram}
+"""
+    colname = None
+    for i in context.mvar_map :
+      if i.lhs == self.name :
+        colname = i.rhs
+    if colname is None :
+      raise StandardError, 'no mvar with lhs = %s' % self.name
+    column_matrix_mvar = {}
+    for factor in context.rawdata_matrix.get_gene_name_list() :
+      column_matrix_mvar[factor] = context.rawdata_matrix.get_value(colname, factor)
+    return column_matrix_mvar
+    raise StandardError, 'found no rawdata column named %s' % colname
+
+
   def evaluate_row(self, rawdata) :
     """
 @param rawdata: raw data after transformation
 @return: value map to key in rawdata
 @rtype: C{Float}
 """
-    return rawdata[self.name]
+    return rawdata.get_factor_concentration(self.name)
 
 
 class Offset(object) :
