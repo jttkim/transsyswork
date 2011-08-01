@@ -1679,31 +1679,6 @@ class MeasurementMatrix(object) :
     return ExpressionSet(expression_data_col)
   
 
-  def transform1(self, rawdata_matrix) :
-    """
-@param rawdata_matrix: rawdata matrix 
-@type rawdata_matrix: List of L{SimGenexColumn}
-@return: column_list
-@rtype: C{List}
-"""
-     
-    offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
-    column_list = []
-    expression_data = ExpressionData(self.genemapping.get_gene_list())
-    for measurementcolumn in self.measurementcolumn_list :
-      context = TransformationContext(rawdata_matrix, offset, measurementcolumn.get_mvar_mapping())
-      factor_column_dict = self.measurementprocess.evaluate(context)
-      # FIXME: eset_dict should be extracted from gene mapping instance variable
-      # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
-      eset_dict = self.genemapping.get_genemapping_dict()
-      eset_column_dict = {}
-      for eset_rowname in eset_dict :
-        row_name = eset_dict[eset_rowname]
-        eset_column_dict[row_name] = factor_column_dict[eset_rowname]
-      expression_data.add_column(measurementcolumn.get_name(), eset_column_dict)
-    return ExpressionSet(expression_data)
-
-
   def get_measurementprocess(self) :
     return(self.measurementprocess)
 
@@ -1745,73 +1720,6 @@ class GeneMapping(object):
 """
     return '    %s: "%s";\n' % (self.expression, self.genename)
 
-
-class GeneMapping1(object) :
-  """  Object GeneMapping
-@ivar factor_list: factor list
-@type factor_list: list of strings
-@ivar factor_dict: mapping of factor names to gene identifiers
-@type factor_dict: dictionary string: string
-"""
-
-  def __init__(self):
-    """ Constructor """
-    self.factor_list = []
-    self.factor_dict = {}
-   
-
-
-  def __str__(self) :
-    """Return string of GeneMapping
-@return: s
-@rtype: C{String}
-"""
-    s = '  genemapping\n'
-    s = s + '  {\n'
-    for factor_name in self.factor_list :
-      s = s + '    factor %s = "%s";\n' % (factor_name, self.factor_dict[factor_name])
-    return s + '  }\n'
-
-
-  def get_factor_list(self) :
-    """
-@return: self.factor_list.keys()
-@rtype: list of C{String}
-"""
-    return self.factor_list
-    
-
-  def get_genemapping_dict(self) :
-    """
-@return: self.factor_list
-@rtype: dict of C{String}
-"""
-    return self.factor_dict
-
-
-  def get_gene_list(self) :
-    return self.factor_dict.values()
-
-
-  def add_mapping(self, factor_name, gene_identifier) :
-    if factor_name in self.factor_dict.keys() :
-      raise StandardError, 'factor %s is already mapped' % factor_name
-    self.factor_list.append(factor_name)
-    self.factor_dict[factor_name] = gene_identifier
-
-
-  def find_identifier(self, factor_name) :
-    """Find the gene manufacturer identifier that is represented by the given factor in the transsys model.
-
-This method will raise an exception if the factor is not mapped.
-
-@param factor_name: the name of the factor
-@type factor_name: string
-@return: the manufacturer's gene ID
-@rtype: string
-"""
-    return this.factor_dict[factor_name]
-    
 
 class MeasurementProcess(object) :
   """
@@ -2365,29 +2273,6 @@ class TransformationExprMvar(TransformationExpr) :
 
   def __str__(self) :
     return self.name
-
-
-  def evaluate1(self, context) :
-    """
-@param context: Transformation context
-@type context: L{TransformationContext}
-@return: column_matrix.transsys_instance
-@rtype: L{transsys.TranssysProgram}
-"""
-    colname = None
-    for i in context.mvar_map :
-      if i.lhs == self.name :
-        colname = i.rhs
-    if colname is None :
-      raise StandardError, 'no mvar with lhs = %s' % self.name
-    for column_matrix in context.rawdata_matrix  :
-      if column_matrix.name == colname :
-        ti = column_matrix.transsys_instance
-        column_matrix_mvar = {}
-        for factor in ti.transsys_program.factor_list :
-          column_matrix_mvar[factor.name] = ti.get_factor_concentration(factor.name)
-        return column_matrix_mvar
-    raise StandardError, 'found no rawdata column named %s' % colname
 
 
   def evaluate(self, context) :
