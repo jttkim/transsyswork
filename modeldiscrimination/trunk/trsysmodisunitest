@@ -75,11 +75,22 @@ stepsize_max: 0.01
 eliminateFlatComponents: False
 ParameterTransformer
 """
-    self.simgenexspec = """SimGenex-2.0
+    
+    # 1: hormone level in treatment primary (expected: float literal)
+    # 2: number of time steps in runtimesteps primary (expected: int literal)
+    # 3: totalproduct spec (combination of rows in biological matrix)
+    self.treatment_good = ['0.000000']
+    self.treatment_bad = ['blah']
+    self.runtimesteps_good = ['100'] # FIXME: should / does the parser accept floating point literals here, or strictly integers onlye?
+    self.runtimesteps_bad = ['blah']
+    self.totalproduct_good = ['c1 + c2', 'c3 + c2 + 4']
+    self.totalproduct_bad = ['c1 * c2', '(c1 + c2)']
+    
+    self.simgenexspec_template = """SimGenex-2.0
 
 procedure notreat
 {
-  treatment: hormone = 0.000000;
+  treatment: hormone = %s;
 }
 
 procedure hormtreat
@@ -89,7 +100,7 @@ procedure hormtreat
 
 procedure equilibration
 {
-  runtimesteps: 100;
+  runtimesteps: %s;
 }
 
 procedure treatmenttime
@@ -165,6 +176,7 @@ measurementmatrix
     c2: "c2";
     c3: "c3";
     c4: "c4";
+    %s: "combi";
   }
 }
 
@@ -323,24 +335,41 @@ discriminationsettings
     esr6 = trsysmodis.ExpressionSet(makeLinearIncreasingEdata(6, 3))
     self.assertRaises(StandardError, es1.divergence, esr4, trsysmodis.distance_euclidean)
     # self.assertRaises(StandardError, es1.divergence, esr6, trsysmodis.distance_euclidean)
-    
+
+
+  def make_good_simgenexspec(self) :
+    return self.simgenexspec_template % (self.treatment_good[0], self.runtimesteps_good[0], self.totalproduct_good[0])
+
 
   def test_SimGenexObjectiveFunctionParser(self) :
-    specfile = StringIO.StringIO(self.simgenexspec)
+    simgenexspec = self.make_good_simgenexspec()
+    specfile = StringIO.StringIO(simgenexspec)
     o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
     simgenex = o.parse_objectivespec()
 #     f = open('sgxorig.txt', 'w')
-#     f.write(self.simgenexspec)
+#     f.write(simgenexspec)
 #     f.close()
 #     f = open('sgxparsed.txt', 'w')
 #     f.write(str(simgenex))
 #     f.close()
-    print self.simgenexspec, str(simgenex)
-    self.assertEquals(self.simgenexspec, str(simgenex))
+    # print simgenexspec, str(simgenex)
+    self.assertEquals(simgenexspec, str(simgenex))
+    for treatment in self.treatment_bad :
+      simgenexspec = self.simgenexspec_template % (treatment, self.runtimesteps_good[0], self.totalproduct_good[0])
+      specfile = StringIO.StringIO(simgenexspec)
+      o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
+      self.assertRaises(StandardError, o.parse_objectivespec)
+    for totalproduct in self.totalproduct_bad :
+      simgenexspec = self.simgenexspec_template % (self.treatment_good[0], self.runtimesteps_good[0], totalproduct)
+      specfile = StringIO.StringIO(simgenexspec)
+      o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
+      self.assertRaises(StandardError, o.parse_objectivespec)
+      
 
 
   def test_simulated_sets(self) :
-    specfile = StringIO.StringIO(self.simgenexspec)
+    simgenexspec = self.make_good_simgenexspec()
+    specfile = StringIO.StringIO(self.make_good_simgenexspec())
     o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
     simgenex = o.parse_objectivespec()
     p = transsys.TranssysProgramParser(StringIO.StringIO(self.model_sgx))
@@ -360,7 +389,7 @@ discriminationsettings
 
 
   def test_SimGenexObjectiveFunction(self) :
-    specfile = StringIO.StringIO(self.simgenexspec)
+    specfile = StringIO.StringIO(self.make_good_simgenexspec())
     o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
     simgenex = o.parse_objectivespec()
     p = transsys.TranssysProgramParser(StringIO.StringIO(self.model_sgx))
@@ -374,7 +403,7 @@ discriminationsettings
     return
     expression_set = trsysmodis.ExpressionSet()
     expression_set.read(self.simulated_data)
-    specfile = StringIO.StringIO(self.simgenexspec)
+    specfile = StringIO.StringIO(self.make_good_simgenexspec())
     o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
     simgenex = o.parse_objectivespec()
     objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
