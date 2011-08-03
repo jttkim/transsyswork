@@ -1664,15 +1664,16 @@ class MeasurementMatrix(object) :
 
     eset_row_dict = {}
     for sgxcolumn in rawdata_matrix :
+      contextrow = TotalProductContext(sgxcolumn.transsys_instance)
       for genemap in self.genemapping :
         row_name = genemap.get_gene_name()
-        eset_row_dict[row_name] = genemap.evaluate(sgxcolumn.transsys_instance)
+        eset_row_dict[row_name] = genemap.evaluate(contextrow)
       expression_data_row.add_column(sgxcolumn.name, eset_row_dict)
 
     expression_data_col = ExpressionData(gene_list)
     for measurementcolumn in self.measurementcolumn_list :
-      context = TransformationContext(expression_data_row, offset, measurementcolumn.get_mvar_mapping())
-      factor_column_dict = self.measurementprocess.evaluate(context)
+      contextcol = TransformationContext(expression_data_row, offset, measurementcolumn.get_mvar_mapping())
+      factor_column_dict = self.measurementprocess.evaluate(contextcol)
       # FIXME: eset_dict should be extracted from gene mapping instance variable
       # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
       expression_data_col.add_column(measurementcolumn.get_name(), factor_column_dict)
@@ -1689,6 +1690,84 @@ class MeasurementMatrix(object) :
 
   def get_genemapping(self) :
     return(self.genemapping)
+
+
+class TotalProductContext(object) :
+  """Context for evaluating a transformation
+@ivar rawdata_matrix L{TranssysInstance}
+"""
+
+  def __init__(self, rawdata_matrix) :
+    self.rawdata_matrix = rawdata_matrix
+
+
+class TotalProductExpr(object) :
+  """Abstract base class for total product expressions."""
+
+  def __init__(self) :
+    pass
+
+
+  def evaluate(self, context) :
+    """Evaluate total expression from a given dataset.
+@param context: the totalproduct context
+@type context: L{TotalProductContext}
+@raise StandardError: is abstract method is called
+"""
+    raise StandardError, 'abstract method called'
+
+
+
+class TotalProductExprPlus(TotalProductExpr) :
+  """
+@ivar operand1: operand 1
+@ivar operand2: operand 2
+"""
+
+  def __init__(self, operand1, operand2) :
+    self.operand1 = operand1
+    self.operand2 = operand2
+
+
+  def __str__(self) :
+    return '%s + %s' % (str(self.operand1), str(self.operand2))
+
+
+  def evaluate(self, context) :
+    """
+@param rawdata: raw data after transformation
+@return: value map to key in rawdata
+@rtype: C{Float}
+"""
+    row_matrix_plus = []
+    if self.operand1 is None and self.operand2 is None :
+      raise StandardError, 'two operands were not found'
+    operand1_val = self.operand1.evaluate(context)
+    operand2_val = self.operand2.evaluate(context)
+    row_matrix_plus = operand1_val + operand2_val
+    return row_matrix_plus
+
+
+class TotalProductExprMvar(TotalProductExpr) :
+  """
+@ivar operand1: operand 1
+"""
+
+  def __init__(self, name) :
+    self.name = name
+
+
+  def __str__(self) :
+    return self.name
+
+
+  def evaluate(self, context) :
+    """
+@param rawdata: raw data after transformation
+@return: value map to key in rawdata
+@rtype: C{Float}
+"""
+    return context.rawdata_matrix.get_factor_concentration(self.name)
 
 
 class GeneMapping(object): 
@@ -1709,7 +1788,7 @@ class GeneMapping(object):
 
 
   def evaluate(self, rawdata) :
-    gene_totalproduct = self.expression.evaluate_row(rawdata)
+    gene_totalproduct = self.expression.evaluate(rawdata)
     return gene_totalproduct
 
 
@@ -2651,28 +2730,45 @@ is ok. Clients should not unnecessarily use this feature, however.
     return MeasurementProcess(offset, transformation) 
 
 
-  def parse_genemapping_body(self):
-    """ Parse genemapping body
-@return: genemapping list
-@rtype: L{GeneMapping}
-"""
-    genemapping = GeneMapping()
-    while self.scanner.lookahead() != '}' :
-      self.expect_token('factor')
-      m = self.expect_token('identifier')
-      self.expect_token('=')
-      d = self.expect_token('gene_manufacturer_identifier')
-      genemapping.add_mapping(m, d)
-      self.expect_token(';')
-    return(genemapping)
+  def parse_totalproduct_expr_mvar(self) :
+    name = self.expect_token('identifier')
+    return TotalProductExprMvar(name)
+  
+
+  def parse_totalproduct_unary(self) :
+    if self.scanner.lookahead() == 'identifier' :
+      e = self.parse_totalproduct_expr_mvar()
+    else :
+      raise StandardError, 'unexpected token: %s in unary' % self.scanner.lookahead()
+    return e
+
+
+  def parse_totalproduct_term(self) :
+    operand1 = self.parse_totalproduct_unary()
+    e = operand1
+    return e
+
+
+  def parse_totalproduct_expr(self) :
+    operand1 = self.parse_totalproduct_term()
+    if self.scanner.lookahead() == '+' :
+      operator, v = self.scanner.token()
+      operand2 = self.parse_totalproduct_expr()
+      if operator == '+' :
+        e = TotalProductExprPlus(operand1, operand2)
+      else :
+        raise StandardError, 'internal error -- scanner malfunction??'
+    else :
+      e = operand1
+    return e
 
   
   def parse_totalproduct_statement(self) :
-    """ Parser total RNA statements
+    """ Parser total product statements
 @return: Object
 @rtype: L{Measurements}
 """ 
-    te = self.parse_transformation_expr()
+    te = self.parse_totalproduct_expr()
     self.expect_token(':')
     column_name = self.expect_token('gene_manufacturer_identifier')
     self.expect_token(';')
@@ -2691,18 +2787,6 @@ is ok. Clients should not unnecessarily use this feature, however.
       genemapping_list.append(self.parse_totalproduct_statement())
     self.expect_token('}')
     return genemapping_list
-
-
-  def parse_genemapping_defi(self) :
-    """ Parse objective function genemapping 
-@return: Object
-@rtype: L{GeneMapping}
-"""
-    self.expect_token('genemapping') 
-    self.expect_token('{') 
-    genemapping = self.parse_genemapping_body()
-    self.expect_token('}')
-    return genemapping
 
 
   def parse_measurementmatrix_def(self) :
