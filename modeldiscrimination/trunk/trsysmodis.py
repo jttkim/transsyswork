@@ -1133,7 +1133,8 @@ expression set from a suitable transsys program.
     """Generate an expression set by applying the simulation operations specified by this SimGenex instance.
 """
     rawdata_matrix = self.get_raw_simulated_set(transsys_program)
-    return self.measurementmatrix_def.transform(rawdata_matrix)
+    measurement_matrix = self.measurementmatrix_def.transform(rawdata_matrix)
+    return measurement_matrix
 
 
   def get_raw_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
@@ -1651,8 +1652,8 @@ class MeasurementMatrix(object) :
     """
 @param rawdata_matrix: rawdata matrix 
 @type rawdata_matrix: List of L{SimGenexColumn}
-@return: column_list
-@rtype: C{List}
+@return: expression set
+@rtype: L{ExpressionSet}
 """
      
     offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
