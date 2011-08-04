@@ -14,9 +14,9 @@ rndseed = 1
 noise = 0.0
 tracefile = None
 tp_tracefile = None
-all_factors = False
+biological_matrix_filename = None
 
-optlist, args = getopt.getopt(sys.argv[1:], 's:o:fN:lvh')
+optlist, args = getopt.getopt(sys.argv[1:], 's:o:N:b:lvh')
 
 for opt, par in optlist :
   if opt == '-h' :
@@ -24,8 +24,8 @@ for opt, par in optlist :
     print '-s <int>: Random seed'
     print '-N <int>: Noise'
     print '-o <str>: specify spec file'
-    print '-f: get expression values for each factor'
     print '-h: print this help and exit'
+    print '-b <filename>: specify name for biological "raw" matrix'
     sys.exit()
   elif opt == '-o' :
     spec = par
@@ -35,8 +35,8 @@ for opt, par in optlist :
     equilibration_length = int(par)
   elif opt == '-N' :
     noise = float(par)
-  elif opt == '-f' :
-    all_factors = True
+  elif opt == '-b' :
+    biological_matrix_filename = par
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 
@@ -62,16 +62,16 @@ o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
 
 transsys_program = transsys.TranssysProgramParser(infile).parse()
-if all_factors :
-  rawdata_matrix = objective_function.get_simulated_set(transsys_program)
-  transformed_matrix = objective_function.measurementmatrix_def.transform(rawdata_matrix)
-  e = objective_function.map_genes(transformed_matrix)
-else :
-  e = objective_function.get_simulated_set(transsys_program)
+e = objective_function.get_simulated_set(transsys_program)
 
+# FIXME: is this still in the API? doesn't look like it should be...
 if noise > 0.0 :
   if rndseed is not None :
     #e.write_noisy_simulated_set(outfile, rng, noise)
     e.write_expression_data(outfile, rng, noise)
 else :
   e.write_expression_data(outfile)
+  if biological_matrix_filename is not None :
+    f = open(biological_matrix_filename, 'w')
+    e.raw_biological_matrix.write_expression_data(f)
+    f.close()
