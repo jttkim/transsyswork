@@ -40,6 +40,7 @@ class ExpressionData(object) :
 @type expression_data: dictionary of list of float
 """
 
+
   def __init__(self, rowname_list = None) :
     """Constructor. Constructs an instance with no data, but with
 row names as specified by the C{rowname_list} parameter.
@@ -86,7 +87,7 @@ This method does not rigorously check input for validity.
       self.expression_data[factor_name] = data_list
       l = f.readline()
 
-
+  
   def remove_row(self, row_name) :
     """Remove the named row from this C{ExpressionData} instance.
 @param row_name: the name of the row to be removed
@@ -96,7 +97,11 @@ This method does not rigorously check input for validity.
       raise StandardError, 'cannot remove non-existent row "%s"' % row_name
     del self.expression_data[row_name]
 
-  
+
+  def get_column_name_list(self) :
+    return  self.column_name_list
+
+
   def get_value(self, column_name, factor_name) :
     """Accessor.
 @param column_name: column name
@@ -191,6 +196,20 @@ expression levels across the data set.
     return profile
 
 
+  def get_column(self, column_name) :
+    """ Retrieve gene_name expression vector
+@param gene_name: gene name
+@type gene_name: C{String}
+@return: dictionary with column names as keys and expression levels as values
+@rtype: C{dictionary}
+"""
+    column = {}
+    column_index = self.column_name_list.index(column_name)
+    for gene_name in self.get_gene_name_list() :
+      column[gene_name] = self.expression_data[gene_name][column_index]
+    return column
+
+
   def get_gene_name_list(self) :
     """Retrieve a list of gene names from gene expression data.
 
@@ -205,6 +224,23 @@ Used to be called C{get_gene_name}.
     return gene_name
 
 
+  def write_expression_data(self, f) :
+    """Write expression data.
+
+@param f: the output file
+@type f: file
+"""
+    #FIXME: where does the basename instance variable come from?
+    for group in self.column_name_list :
+      f.write('\t%s'%group )
+    f.write('\n')
+    for factor in self.get_gene_name_list() :
+      f.write('%s'%factor)
+      for iname in self.column_name_list :
+        index =  self.column_name_list.index(iname)
+        f.write('\t%e'%self.expression_data[factor][index])
+      f.write('\n')
+ 
 
 #FIXME: features should be attached to expression data with references.
 class FeatureData(object) :
@@ -375,6 +411,7 @@ class ExpressionSet(object) :
     self.pheno_data = pheno_data
     self.feature_data = feature_data
     self.verify_integrity()
+    self.raw_biological_matrix = None
 
 
   def remove_row(self, row_name) :
@@ -386,6 +423,10 @@ class ExpressionSet(object) :
     if self.feature_data is not None :
       self.feature_data.remove_feature(row_name)
       
+
+  def addrawdata(self, raw_biological_matrix) :
+    self.raw_biological_matrix = raw_biological_matrix
+
 
   def read(self, x, p = None, f = None) :
     """Read the content of this expression set from files.
@@ -512,6 +553,7 @@ gene in that array.
 @param f: the output file
 @type f: file
 """
+    return self.expression_data.write_expression_data(f)
     #FIXME: where does the basename instance variable come from?
     for group in self.expression_data.column_name_list :
       f.write('\t%s'%group )
@@ -1132,8 +1174,16 @@ expression set from a suitable transsys program.
   def get_simulated_set(self, transsys_program) :
     """Generate an expression set by applying the simulation operations specified by this SimGenex instance.
 """
-    rawdata_matrix = self.get_raw_simulated_set(transsys_program)
-    measurement_matrix = self.measurementmatrix_def.transform(rawdata_matrix)
+    rawdata_matrix_tp = self.get_raw_simulated_set(transsys_program)
+    expression_data_raw = ExpressionData(transsys_program.factor_names())
+    eset_raw_dict = {}
+    for sgxcolumn in rawdata_matrix_tp :
+      for genemap in expression_data_raw.get_gene_name_list() :
+        row_name = genemap
+        eset_raw_dict[row_name] = sgxcolumn.transsys_instance.get_factor_concentration(genemap)
+      expression_data_raw.add_column(sgxcolumn.name, eset_raw_dict)
+    measurement_matrix = self.measurementmatrix_def.transform(expression_data_raw)
+    measurement_matrix.addrawdata(expression_data_raw)
     return measurement_matrix
 
 
@@ -1648,7 +1698,7 @@ class MeasurementMatrix(object) :
     return s
 
 
-  def transform(self, rawdata_matrix) :
+  def transform(self, expression_data_raw) :
     """
 @param rawdata_matrix: rawdata matrix 
 @type rawdata_matrix: List of L{SimGenexColumn}
@@ -1656,7 +1706,7 @@ class MeasurementMatrix(object) :
 @rtype: L{ExpressionSet}
 """
      
-    offset = self.measurementprocess.offset.get_offset_value(rawdata_matrix)
+    offset = self.measurementprocess.offset.get_offset_value(expression_data_raw)
     column_list = []
     gene_list = []
     for gene_name in self.genemapping :
@@ -1664,12 +1714,13 @@ class MeasurementMatrix(object) :
     expression_data_row = ExpressionData(gene_list)
 
     eset_row_dict = {}
-    for sgxcolumn in rawdata_matrix :
-      contextrow = TotalProductContext(sgxcolumn.transsys_instance)
+    for sgxcolumn in expression_data_raw.get_column_name_list()  :
+      column_values = expression_data_raw.get_column(sgxcolumn)
+      contextrow = TotalProductContext(column_values)
       for genemap in self.genemapping :
         row_name = genemap.get_gene_name()
         eset_row_dict[row_name] = genemap.evaluate(contextrow)
-      expression_data_row.add_column(sgxcolumn.name, eset_row_dict)
+      expression_data_row.add_column(sgxcolumn, eset_row_dict)
 
     expression_data_col = ExpressionData(gene_list)
     for measurementcolumn in self.measurementcolumn_list :
@@ -1768,7 +1819,7 @@ class TotalProductExprMvar(TotalProductExpr) :
 @return: value map to key in rawdata
 @rtype: C{Float}
 """
-    return context.rawdata_matrix.get_factor_concentration(self.name)
+    return context.rawdata_matrix[self.name]
 
 
 class GeneMapping(object): 
@@ -2177,21 +2228,6 @@ class TransformationExprPlus(TransformationExpr) :
     return column_matrix_plus
 
 
-  def evaluate_row(self, rawdata) :
-    """
-@param rawdata: raw data after transformation
-@return: value map to key in rawdata
-@rtype: C{Float}
-"""
-    row_matrix_plus = []
-    if self.operand1 is None and self.operand2 is None :
-      raise StandardError, 'two operands were not found'
-    operand1_val = self.operand1.evaluate_row(rawdata)
-    operand2_val = self.operand2.evaluate_row(rawdata)
-    row_matrix_plus = operand1_val + operand2_val
-    return row_matrix_plus
-
-
 class TransformationExprMinus(TransformationExpr) :
   """
 @ivar operand1: operand 1
@@ -2375,15 +2411,6 @@ class TransformationExprMvar(TransformationExpr) :
     raise StandardError, 'found no rawdata column named %s' % colname
 
 
-  def evaluate_row(self, rawdata) :
-    """
-@param rawdata: raw data after transformation
-@return: value map to key in rawdata
-@rtype: C{Float}
-"""
-    return rawdata.get_factor_concentration(self.name)
-
-
 class Offset(object) :
   """
 @ivar offsetvalue: offset value
@@ -2412,9 +2439,11 @@ class Offset(object) :
 @rtype: C{Float}
 """
     expression_values = []
-    for array in context :
-      for factor in array.transsys_instance.transsys_program.factor_list :
-        expression_values.append(array.transsys_instance.get_factor_concentration(factor.name))
+    for array in context.expression_data.values() :
+      for value in array : 
+        expression_values.append(value)
+    #  for factor in array.transsys_instance.transsys_program.factor_list :
+    #    expression_values.append(array.transsys_instance.get_factor_concentration(factor.name))
     if self.expressionstat is None :
       ov = self.offsetvalue
     else :
