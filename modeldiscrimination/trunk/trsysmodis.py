@@ -197,10 +197,13 @@ expression levels across the data set.
 
 
   def get_column(self, column_name) :
-    """ Retrieve gene_name expression vector
-@param gene_name: gene name
-@type gene_name: C{String}
-@return: dictionary with column names as keys and expression levels as values
+    """ Retrieve a dictionary of expression values from a data column.
+
+Data columns usually correspond to experiments, arrays, conditions etc.
+
+@param column_name: column name
+@type column_name: C{String}
+@return: dictionary with gene names as keys and expression levels as values
 @rtype: C{dictionary}
 """
     column = {}
@@ -400,6 +403,8 @@ class ExpressionSet(object) :
 @type pheno_data: L{PhenoData}
 @ivar feature_data: feature data
 @type feature_data: L{FeatureData}
+@ivar annotation: dictionary of further, optional annotation (e.g. detailing how the expression set was computed)
+@type annotation: dictionary
 """
 
   # association of pheno data and feature data to expression data is
@@ -411,7 +416,7 @@ class ExpressionSet(object) :
     self.pheno_data = pheno_data
     self.feature_data = feature_data
     self.verify_integrity()
-    self.raw_biological_matrix = None
+    self.annotation = {}
 
 
   def remove_row(self, row_name) :
@@ -424,8 +429,8 @@ class ExpressionSet(object) :
       self.feature_data.remove_feature(row_name)
       
 
-  def addrawdata(self, raw_biological_matrix) :
-    self.raw_biological_matrix = raw_biological_matrix
+  def add_annotation(self, name, value) :
+    self.annotation[name] = value
 
 
   def read(self, x, p = None, f = None) :
@@ -553,17 +558,7 @@ gene in that array.
 @param f: the output file
 @type f: file
 """
-    return self.expression_data.write_expression_data(f)
-    #FIXME: where does the basename instance variable come from?
-    for group in self.expression_data.column_name_list :
-      f.write('\t%s'%group )
-    f.write('\n')
-    for factor in self.expression_data.get_gene_name_list() :
-      f.write('%s'%factor)
-      for iname in self.expression_data.column_name_list :
-        index =  self.expression_data.column_name_list.index(iname)
-        f.write('\t%e'%self.expression_data.expression_data[factor][index])
-      f.write('\n')
+    self.expression_data.write_expression_data(f)
  
 
   def write_pheno_data (self, f) :
@@ -1174,25 +1169,18 @@ expression set from a suitable transsys program.
   def get_simulated_set(self, transsys_program) :
     """Generate an expression set by applying the simulation operations specified by this SimGenex instance.
 """
-    rawdata_matrix_tp = self.get_raw_simulated_set(transsys_program)
-    expression_data_raw = ExpressionData(transsys_program.factor_names())
-    eset_raw_dict = {}
-    for sgxcolumn in rawdata_matrix_tp :
-      for genemap in expression_data_raw.get_gene_name_list() :
-        row_name = genemap
-        eset_raw_dict[row_name] = sgxcolumn.transsys_instance.get_factor_concentration(genemap)
-      expression_data_raw.add_column(sgxcolumn.name, eset_raw_dict)
-    measurement_matrix = self.measurementmatrix_def.transform(expression_data_raw)
-    measurement_matrix.addrawdata(expression_data_raw)
-    return measurement_matrix
+    biological_expression_set = self.get_biological_simulated_set(transsys_program)
+    measurement_set = self.measurementmatrix_def.transform(biological_expression_set)
+    measurement_set.add_annotation('biological_expression_set', biological_expression_set)
+    return measurement_set
 
 
-  def get_raw_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
+  def get_biological_simulated_set(self, transsys_program, tracefile = None, tp_tracefile = None, all_factors = None) :
     """Produce simulated data.
 @param transsys_program: transsys program
 @type transsys_program: L{transsys.TranssysProgram}
-@return: rawdata_matrix
-@rtype: C{List}
+@return: expression set with 
+@rtype: L{ExpressionSet}
 """
     #FIXME: ad-hoc writing of tracefiles...
     rawdata_matrix = []
@@ -1204,7 +1192,15 @@ expression set from a suitable transsys program.
         self.write_tp_tracefile(tp_tracefile, ti.transsys_program, instructionsequence.get_name())
         rawdata_matrix.append(SimGenexColumn(instructionsequence.get_name(), ti))
         self.write_trace_simexpression(tracefile, instructionsequence.get_name(), ti_trace)
-    return rawdata_matrix
+    biological_expression_data = ExpressionData(transsys_program.factor_names())
+    for sgxcolumn in rawdata_matrix :
+      eset_raw_dict = {}
+      for gene_name in biological_expression_data.get_gene_name_list() :
+        eset_raw_dict[gene_name] = sgxcolumn.transsys_instance.get_factor_concentration(gene_name)
+      biological_expression_data.add_column(sgxcolumn.name, eset_raw_dict)
+    biological_expression_set =  ExpressionSet(biological_expression_data)
+    biological_expression_set.add_annotation("transsys_instance_trace", ti_trace)
+    return biological_expression_set
 
 
   def write_trace_header(self, tracefile, transsys_program) :
@@ -1698,24 +1694,24 @@ class MeasurementMatrix(object) :
     return s
 
 
-  def transform(self, expression_data_raw) :
+  def transform(self, expression_set) :
     """
 @param rawdata_matrix: rawdata matrix 
 @type rawdata_matrix: List of L{SimGenexColumn}
 @return: expression set
 @rtype: L{ExpressionSet}
 """
-     
-    offset = self.measurementprocess.offset.get_offset_value(expression_data_raw)
+    expression_data = expression_set.expression_data
+    offset = self.measurementprocess.offset.get_offset_value(expression_data)
     column_list = []
     gene_list = []
     for gene_name in self.genemapping :
       gene_list.append(gene_name.get_gene_name())
     expression_data_row = ExpressionData(gene_list)
 
-    eset_row_dict = {}
-    for sgxcolumn in expression_data_raw.get_column_name_list()  :
-      column_values = expression_data_raw.get_column(sgxcolumn)
+    for sgxcolumn in expression_data.get_column_name_list()  :
+      eset_row_dict = {}
+      column_values = expression_data.get_column(sgxcolumn)
       contextrow = TotalProductContext(column_values)
       for genemap in self.genemapping :
         row_name = genemap.get_gene_name()
@@ -1726,9 +1722,9 @@ class MeasurementMatrix(object) :
     for measurementcolumn in self.measurementcolumn_list :
       contextcol = TransformationContext(expression_data_row, offset, measurementcolumn.get_mvar_mapping())
       factor_column_dict = self.measurementprocess.evaluate(contextcol)
-      # FIXME: eset_dict should be extracted from gene mapping instance variable
-      # FIXME: eset_dict maps rownames of the "transformed" matrix to factor names in the results of evaluating transformation expressions
       expression_data_col.add_column(measurementcolumn.get_name(), factor_column_dict)
+    transformed_set = ExpressionSet(expression_data_col)
+    # transformed_set.add_annotation("input_set", expression_set)
     return ExpressionSet(expression_data_col)
   
 

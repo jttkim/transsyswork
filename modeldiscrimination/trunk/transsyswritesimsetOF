@@ -73,5 +73,5 @@ else :
   e.write_expression_data(outfile)
   if biological_matrix_filename is not None :
     f = open(biological_matrix_filename, 'w')
-    e.raw_biological_matrix.write_expression_data(f)
+    e.annotation['biological_expression_set'].write_expression_data(f)
     f.close()
