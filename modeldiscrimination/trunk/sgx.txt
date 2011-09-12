@@ -84,11 +84,11 @@ measurementmatrix
 
   genemapping
   {
-    factor housekeeper = "genehousekeeper";
-    factor c1 = "genec1";
-    factor c2 = "genec2";
-    factor c3 = "genec3";
-    factor c4 = "genec4";
+    housekeeper: "housekeeper";
+    c1: "c1";
+    c2: "c2";
+    c3: "c3";
+    c4: "c4";
   }
 }
 
