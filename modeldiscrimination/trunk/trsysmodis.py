@@ -229,13 +229,11 @@ Used to be called C{get_gene_name}.
 
   def write_expression_data(self, f) :
     """Write expression data.
-
 @param f: the output file
 @type f: file
 """
-    #FIXME: where does the basename instance variable come from?
     for group in self.column_name_list :
-      f.write('\t%s'%group )
+      f.write('%s\t'%group )
     f.write('\n')
     for factor in self.get_gene_name_list() :
       f.write('%s'%factor)

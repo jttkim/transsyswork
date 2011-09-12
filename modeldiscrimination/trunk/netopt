@@ -9,7 +9,6 @@ from math import sqrt
 import trsysmodis
 import random
 
-#python netopt -x test_ktobj.txt -o modeldisdummy.txt -R 5 -g optspec.dat -T transformerfile.dat -s 1 -c test_targettopology.tra t1.tzxt t2.txt
 
 def write_result(f, optResult) :
  f.write('// objective: %g\n' % optResult.objectiveOptimum.fitness)
@@ -67,7 +66,6 @@ for opt, par in optlist :
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 
-print candidate_name
 if len(args) > 0 :   
   logfile = open(args[0], 'w')
 if len(args) > 1 :   
@@ -77,10 +75,25 @@ if len(args) > 2 :
   logo.write('restart\tfitness\n')
 
 
-g = open(optimiserfile, 'r')
-optimiser = transsys.optim.parse_optimiser(g)
-g.close
+x = open(expression_set, 'r')
+expression_set = trsysmodis.ExpressionSet()
+expression_set.read(x, p = None, f = None)
+specfile = open(spec, 'r')
+o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
+simgenex = o.parse_objectivespec()
+model = open('%s.tra'%(candidate_name),'r')
+transsys_program = transsys.TranssysProgramParser(model).parse()
 
+if evaluate_objective :
+  objfunc = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
+  print objfunc(transsys_program).fitness
+  sys.exit(0)
+
+
+if optimiserfile is not None :
+  g = open(optimiserfile, 'r')
+  optimiser = transsys.optim.parse_optimiser(g)
+g.close
 
 if transformerfile is not None :
   g = open(transformerfile, 'r')
@@ -92,34 +105,8 @@ rng = random.Random(rndseed)
 optimiser.rng = rng
 index = 0
 
-
-if evaluate_objective :
-  specfile = open(spec, 'r')
-  o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
-  simgenex = o.parse_objectivespec()
-  model = open('%s.tra'%(candidate_name),'r')
-  tp_sgx = transsys.TranssysProgramParser(model).parse()
-  simset_sgx = simgenex.get_simulated_set(tp_sgx)
-  objfunc = trsysmodis.SimGenexObjectiveFunction(simgenex, simset_sgx)
-  print objfunc(tp_sgx).fitness
-  sys.exit(0)
-
-
-x = open(expression_set, 'r')
-expression_set = trsysmodis.ExpressionSet()
-expression_set.read(x, p = None, f = None)
-specfile = open(spec, 'r')
-parser = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
-simgenex = parser.parse_objectivespec()
 objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
 optimiser.randomInitRange = 1.0
-model = open('%s.tra'%(candidate_name),'r')
-
-transsys_program = transsys.TranssysProgramParser(model).parse()
-if evaluate_objective :
-  obj = objective_function(transsys_program)
-  print obj
-  sys.exit(0)
 
 for restart_index in xrange(num_restarts) :
   print 'Using %s'%(candidate_name)

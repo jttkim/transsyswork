@@ -10,9 +10,9 @@ dataIntegration  <- function() {
 
 dataint <- function() {
 
-  array_names <- c("E-GEOD-10646","E-GEOD-11216","E-GEOD-2169","E-GEOD-6151","E-GEOD-9702","E-GEOD-9955","E-MEXP-1787","E-MEXP-883")
+  array_names <- c("E-GEOD-10646","E-GEOD-11216","E-GEOD-2169","E-GEOD-6151","E-GEOD-9702","E-GEOD-9955","E-MEXP-1787","E-MEXP-883");
   #array_names <- c("E-GEOD-10646","E-GEOD-11216")
-  system("clear")
+  #system("clear")
   cv_array <- c() 
 
   for(i in 1:length(array_names)) { 
