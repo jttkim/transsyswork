@@ -232,9 +232,7 @@ Used to be called C{get_gene_name}.
 @param f: the output file
 @type f: file
 """
-    for group in self.column_name_list :
-      f.write('%s\t'%group )
-    f.write('\n')
+    f.write('%s\n' % '\t'.join(self.column_name_list))
     for factor in self.get_gene_name_list() :
       f.write('%s'%factor)
       for iname in self.column_name_list :
