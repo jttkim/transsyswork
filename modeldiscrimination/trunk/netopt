@@ -74,7 +74,6 @@ if len(args) > 2 :
   logo = file('%s_%s.txt'%(args[2], candidate_name),'w')
   logo.write('restart\tfitness\n')
 
-
 x = open(expression_set, 'r')
 expression_set = trsysmodis.ExpressionSet()
 expression_set.read(x, p = None, f = None)
@@ -103,7 +102,6 @@ g.close()
 optimiser.verbose = verbose
 rng = random.Random(rndseed)
 optimiser.rng = rng
-index = 0
 
 objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
 optimiser.randomInitRange = 1.0
