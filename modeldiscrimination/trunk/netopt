@@ -27,7 +27,7 @@ rndseed = 0
 evaluate_objective = False
 expression_set = None
 
-optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:n:c:g:T:v:x:e:lh')
+optlist, args = getopt.getopt(sys.argv[1:], 'o:s:R:n:c:g:T:v:x:elh')
 
 for opt, par in optlist :
   if opt == '-h' :
@@ -92,12 +92,12 @@ if evaluate_objective :
 if optimiserfile is not None :
   g = open(optimiserfile, 'r')
   optimiser = transsys.optim.parse_optimiser(g)
-g.close
+  g.close
 
 if transformerfile is not None :
   g = open(transformerfile, 'r')
   optimiser.transformer = transsys.optim.parse_parameter_transformer(g)
-g.close()
+  g.close()
 
 optimiser.verbose = verbose
 rng = random.Random(rndseed)
