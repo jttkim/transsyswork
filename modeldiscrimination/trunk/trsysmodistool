@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+
+import sys
+import getopt
+
+import transsys
+import trsysmodis
+
+
+def printobj(argv) :
+  simgenex_filename = None
+  targetexpression_filename = None
+  options, args = getopt.getopt(argv, 'g:x:h')
+  for opt, par in options :
+    if opt == '-h' :
+      print '-g <SimGenex file>'
+      print '-x <target expression data file>'
+      sys.exit()
+    elif opt == '-g' :
+      simgenex_filename = par
+    elif opt == '-x' :
+      targetexpression_filename = par
+    else :
+      raise StandardError, 'unhandled option "%s"' % opt
+  if len(args) > 0 :
+    infile = open(args[0], 'r')
+  else :
+    infile = sys.stdin
+  if len(args) > 1 :
+    outfile = open(args[1], 'w')
+  else :
+    outfile = sys.stdout
+  if simgenex_filename is None :
+    raise StandardError, 'no SimGenex file specified'
+  if targetexpression_filename is None :
+    raise StandardError, 'no target expression data file specified'
+  f = open(targetexpression_filename, 'r')
+  expression_set = trsysmodis.ExpressionSet()
+  expression_set.read(f, p = None, f = None)
+  f.close()
+  o = trsysmodis.SimGenexObjectiveFunctionParser(open(simgenex_filename, 'r'))
+  simgenex = o.parse_objectivespec()
+  p = transsys.TranssysProgramParser(infile)
+  transsys_program = p.parse()
+  objfunc = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
+  outfile.write('%1.17e\n' % objfunc(transsys_program).fitness)
+
+
+def usage() :
+  print 'usage: %s <command> <args>' % sys.argv[0]
+  print 'commands are: printobj'
+  print 'use %s <command> -h to see help for args' % sys.argv[0]
+
+
+if len(sys.argv) < 2 :
+  usage()
+  sys.exit()
+cmd = sys.argv[1]
+if cmd == 'printobj' :
+  printobj(sys.argv[2:])
+else :
+  raise StandardError, 'command %s unknown' % cmd
+
+

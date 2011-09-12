@@ -5,5 +5,5 @@ setup(name='trsysmodis',
       author='Anyela Camargo, J. T Kim',
       author_email='a.camargo-rodriguez@uea.ac.uk',
       py_modules=['trsysmodis'],
-      scripts=['netopt', 'transsyswritesimsetOF', 'transsyscreatedata', 'transsyswritesimset', 'transsysrandomprogram', 'transsysreparam', 'transsysrewire'],
+      scripts=['trsysmodistool', 'netopt', 'transsyswritesimsetOF', 'transsyscreatedata', 'transsyswritesimset', 'transsysrandomprogram', 'transsysreparam', 'transsysrewire'],
       )
