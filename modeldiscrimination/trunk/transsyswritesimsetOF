@@ -15,17 +15,18 @@ noise = 0.0
 tracefile = None
 tp_tracefile = None
 biological_matrix_filename = None
+selectedTpIndex = 1
 
-optlist, args = getopt.getopt(sys.argv[1:], 's:o:N:b:lvh')
-
+optlist, args = getopt.getopt(sys.argv[1:], 's:o:N:b:t:lvh')
 for opt, par in optlist :
   if opt == '-h' :
     print 'Usage: transsyswritesimsetOF [options] transsys_program expr_data_prefix track_file '
     print '-s <int>: Random seed'
     print '-N <int>: Noise'
     print '-o <str>: specify spec file'
-    print '-h: print this help and exit'
+    print '-t <num>: specify number of transsys program to process (default is first program in file)'
     print '-b <filename>: specify name for biological "raw" matrix'
+    print '-h: print this help and exit'
     sys.exit()
   elif opt == '-o' :
     spec = par
@@ -37,6 +38,8 @@ for opt, par in optlist :
     noise = float(par)
   elif opt == '-b' :
     biological_matrix_filename = par
+  elif opt == '-t' :
+    selectedTpIndex = int(par)
   else :
     raise StandardError, 'unhandled option "%s"' % opt
 
@@ -61,7 +64,13 @@ specfile = open(spec, 'r')
 o = trsysmodis.SimGenexObjectiveFunctionParser(specfile)
 objective_function = o.parse_objectivespec()
 
-transsys_program = transsys.TranssysProgramParser(infile).parse()
+tpParser = transsys.TranssysProgramParser(infile)
+i = 0
+while i < selectedTpIndex :
+  transsys_program = tpParser.parse()
+  i = i + 1
+if transsys_program is None :
+  raise StandardError, 'input does not contain %s programs' % selectedTpIndex
 e = objective_function.get_simulated_set(transsys_program)
 
 # FIXME: is this still in the API? doesn't look like it should be...
