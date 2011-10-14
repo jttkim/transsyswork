@@ -17,6 +17,43 @@ import types
 import StringIO
 
 
+def asymmetric_set_difference(set1, set2) :
+  """Compute the asymmetric set difference, i.e. the set comprised of
+elements in set1 that are not contained in set2 as well.
+@param set1: the first set
+@type set1: list (or other iterable)
+@param set2: the second set
+@type set2: list (or other iterable)
+@return the set difference
+@rtype iterable
+"""
+  setdiff = []
+  for e in set1 :
+    if e not in set2 :
+      setdiff.append(e)
+  return setdiff
+
+
+def symmetric_set_difference(set1, set2) :
+  """Compute the symmetric set difference, i.e. the set comprised of
+elements not in the intersection of set1 and set2.
+@param set1: the first set
+@type set1: list (or other iterable)
+@param set2: the second set
+@type set2: list (or other iterable)
+@return the set difference
+@rtype iterable
+"""
+  setdiff = []
+  for e in set1 :
+    if e not in set2 :
+      setdiff.append(e)
+  for e in set2 :
+    if e not in set1 :
+      setdiff.append(e)
+  return setdiff
+
+
 def is_subset(candidate_subset, candidate_superset) :
   """Test whether candidate_subset is indeed a subset of candidate_superset.
 @param candidate_subset: candidate subset
@@ -1379,7 +1416,7 @@ class SimGenexObjectiveFunction(transsys.optim.AbstractObjectiveFunction) :
       if row_name not in simgenex_row_name_list :
         tset_reduced.remove_row(row_name)
     if not is_subset(tset_reduced.get_row_name_list(), simgenex_row_name_list) or not is_subset(simgenex_row_name_list, tset_reduced.get_row_name_list()) :
-      raise StandardError, 'row set mismatch'
+      raise StandardError, 'row set mismatch %s \n%s\nsetdiff = %s' % (tset_reduced.get_row_name_list(), simgenex_row_name_list, symmetric_set_difference(tset_reduced.get_row_name_list(), simgenex_row_name_list))
     self.simgenex = simgenex
     self.target_expression_set = tset_reduced
 
