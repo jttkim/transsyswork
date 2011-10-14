@@ -106,9 +106,11 @@ optimiser.rng = rng
 objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
 optimiser.randomInitRange = 1.0
 
+factor_list = simgenex.discriminationsettings_def.get_whitelist().get_factor_list()
+gene_list = simgenex.discriminationsettings_def.get_whitelist().get_gene_list()
 for restart_index in xrange(num_restarts) :
   print 'Using %s'%(candidate_name)
-  opt_result = optimiser.optimise(transsys_program, objective_function)
+  opt_result = optimiser.optimise(transsys_program, objective_function, factor_list, gene_list )
   logo.write('rst%d\t%f\n' % (restart_index, opt_result.objectiveOptimum.fitness))
   sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
   if finalparam is not None :
