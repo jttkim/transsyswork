@@ -92,7 +92,7 @@ if evaluate_objective :
 if optimiserfile is not None :
   g = open(optimiserfile, 'r')
   optimiser = transsys.optim.parse_optimiser(g)
-  g.close
+  g.close()
 
 if transformerfile is not None :
   g = open(transformerfile, 'r')
