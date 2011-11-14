@@ -2,8 +2,10 @@
 
 import sys
 import getopt
+import random
 
 import transsys
+import transsys.optim
 import trsysmodis
 
 
@@ -22,14 +24,6 @@ def printobj(argv) :
       targetexpression_filename = par
     else :
       raise StandardError, 'unhandled option "%s"' % opt
-  if len(args) > 0 :
-    infile = open(args[0], 'r')
-  else :
-    infile = sys.stdin
-  if len(args) > 1 :
-    outfile = open(args[1], 'w')
-  else :
-    outfile = sys.stdout
   if simgenex_filename is None :
     raise StandardError, 'no SimGenex file specified'
   if targetexpression_filename is None :
@@ -40,11 +34,126 @@ def printobj(argv) :
   f.close()
   o = trsysmodis.SimGenexObjectiveFunctionParser(open(simgenex_filename, 'r'))
   simgenex = o.parse_objectivespec()
+  if len(args) > 0 :
+    infile = open(args[0], 'r')
+  else :
+    infile = sys.stdin
+  if len(args) > 1 :
+    outfile = open(args[1], 'w')
+  else :
+    outfile = sys.stdout
   p = transsys.TranssysProgramParser(infile)
   transsys_program = p.parse()
   objfunc = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
   outfile.write('%1.17e\n' % objfunc(transsys_program).fitness)
 
+
+def optimise(argv) :
+  simgenex_filename = None
+  targetexpression_filename = None
+  optimiser_filename = None
+  transformer_filename = None
+  log_filename = None
+  opttp_filename = None
+  verbose = 0
+  rndseed = None
+  num_restarts = None
+  options, args = getopt.getopt(argv, 'g:o:t:x:l:p:v:s:n:h')
+  for opt, par in options :
+    if opt == '-h' :
+      print 'usage: optimise [options] [transsysprg] [outfile]'
+      print '-g <SimGenex file>'
+      print '-o <optimiserspec file>'
+      print '-t <parameter transformer file>'
+      print '-x <target expression data file>'
+      print '-l <log file>'
+      print '-p <file of parameter optimised transsys programs>'
+      print '-v <verbosity level>'
+      print '-s <random seed>'
+      print '-n <number of restarts>'
+      sys.exit()
+    elif opt == '-g' :
+      simgenex_filename = par
+    elif opt == '-o' :
+      optimiser_filename = par
+    elif opt == '-t' :
+      transformer_filename = par
+    elif opt == '-x' :
+      targetexpression_filename = par
+    elif opt == '-l' :
+      log_filename = par
+    elif opt == '-p' :
+      opttp_filename = par
+    elif opt == '-v' :
+      verbose = int(par)
+    elif opt == '-s' :
+      rndseed = int(par)
+    elif opt == '-n' :
+      num_restarts = int(par)
+    else :
+      raise StandardError, 'unhandled option "%s"' % opt
+  if simgenex_filename is None :
+    raise StandardError, 'no SimGenex file specified'
+  if targetexpression_filename is None :
+    raise StandardError, 'no target expression data file specified'
+  if optimiser_filename is None :
+    raise StandardError, 'no optimiser specification file specified'
+  if transformer_filename is None :
+    raise StandardError, 'no parameter transformer file specified'
+  if rndseed is None :
+    raise StandardError, 'no random seed specified'
+  if num_restarts is None :
+    raise StandardError, 'no number of restarts specified'
+  f = open(targetexpression_filename, 'r')
+  expression_set = trsysmodis.ExpressionSet()
+  expression_set.read(f, p = None, f = None)
+  f.close()
+  f = open(optimiser_filename, 'r')
+  optimiser = transsys.optim.parse_optimiser(f)
+  f.close()
+  f = open(transformer_filename, 'r')
+  optimiser.transformer = transsys.optim.parse_parameter_transformer(f)
+  f.close()
+  o = trsysmodis.SimGenexObjectiveFunctionParser(open(simgenex_filename, 'r'))
+  simgenex = o.parse_objectivespec()
+  if len(args) > 0 :
+    infile = open(args[0], 'r')
+  else :
+    infile = sys.stdin
+  p = transsys.TranssysProgramParser(infile)
+  transsys_program = p.parse()
+  objective_function = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
+  optimiser.randomInitRange = 1.0
+  optimiser.verbose = verbose
+  optimiser.rng = random.Random(rndseed)
+  # FIXME: taking care of factor and gene lists is really a responsibility of SimGenexObjectiveFunction
+  factor_list = simgenex.discriminationsettings_def.get_whitelist().get_factor_list()
+  gene_list = simgenex.discriminationsettings_def.get_whitelist().get_gene_list()
+  if len(args) > 1 :
+    outfile = open(args[1], 'w')
+  else :
+    outfile = sys.stdout
+  if opttp_filename is not None :
+    opttp_file = open(opttp_filename, 'w')
+  else :
+    opttp_file = None
+  if log_filename is not None :
+    log_file = open(log_filename, 'w')
+  else :
+    log_file = None
+  outfile.write('restart\tfitness\n')
+  for restart_index in xrange(num_restarts) :
+    opt_result = optimiser.optimise(transsys_program, objective_function, factor_list, gene_list )
+    outfile.write('%d\t%1.17e\n' % (restart_index, opt_result.objectiveOptimum.fitness))
+    if verbose > 0 :
+      sys.stderr.write('%s\n' % str(objective_function(opt_result.optimised_transsys_program)))
+    if opttp_file is not None :
+      opttp_file.write('// objective: %g\n' % opt_result.objectiveOptimum.fitness)
+      opttp_file.write('%s\n' %  str(opt_result.optimised_transsys_program))
+      opttp_file.flush()
+    if log_file is not None :
+      opt_result.write_log(log_file, 'tp_index')
+  
 
 def usage() :
   print 'usage: %s <command> <args>' % sys.argv[0]
@@ -56,8 +165,11 @@ if len(sys.argv) < 2 :
   usage()
   sys.exit()
 cmd = sys.argv[1]
+argv = sys.argv[2:]
 if cmd == 'printobj' :
-  printobj(sys.argv[2:])
+  printobj(argv)
+elif cmd == 'optimise' :
+  optimise(argv)
 else :
   raise StandardError, 'command %s unknown' % cmd
 
