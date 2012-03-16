@@ -48,6 +48,35 @@ def printobj(argv) :
   outfile.write('%1.17e\n' % objfunc(transsys_program).fitness)
 
 
+def printmatrix(argv) :
+  simgenex_filename = None
+  options, args = getopt.getopt(argv, 'g:h')
+  for opt, par in options :
+    if opt == '-h' :
+      print '-g <SimGenex file>'
+      sys.exit()
+    elif opt == '-g' :
+      simgenex_filename = par
+    else :
+      raise StandardError, 'unhandled option "%s"' % opt
+  if simgenex_filename is None :
+    raise StandardError, 'no SimGenex file specified'
+  o = trsysmodis.SimGenexObjectiveFunctionParser(open(simgenex_filename, 'r'))
+  simgenex = o.parse_objectivespec()
+  if len(args) > 0 :
+    infile = open(args[0], 'r')
+  else :
+    infile = sys.stdin
+  if len(args) > 1 :
+    outfile = open(args[1], 'w')
+  else :
+    outfile = sys.stdout
+  p = transsys.TranssysProgramParser(infile)
+  transsys_program = p.parse()
+  exprset = simgenex.get_simulated_set(transsys_program)
+  exprset.write_expression_data(outfile)
+
+
 def optimise(argv) :
   simgenex_filename = None
   targetexpression_filename = None
@@ -157,7 +186,7 @@ def optimise(argv) :
 
 def usage() :
   print 'usage: %s <command> <args>' % sys.argv[0]
-  print 'commands are: printobj'
+  print 'commands are: printobj optimise printmatrix'
   print 'use %s <command> -h to see help for args' % sys.argv[0]
 
 
@@ -170,6 +199,8 @@ if cmd == 'printobj' :
   printobj(argv)
 elif cmd == 'optimise' :
   optimise(argv)
+elif cmd == 'printmatrix' :
+  printmatrix(argv)
 else :
   raise StandardError, 'command %s unknown' % cmd
 
