@@ -44,8 +44,10 @@ def printobj(argv) :
     outfile = sys.stdout
   p = transsys.TranssysProgramParser(infile)
   transsys_program = p.parse()
-  objfunc = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
-  outfile.write('%1.17e\n' % objfunc(transsys_program).fitness)
+  while transsys_program is not None :
+    objfunc = trsysmodis.SimGenexObjectiveFunction(simgenex, expression_set)
+    outfile.write('%1.17e\n' % objfunc(transsys_program).fitness)
+    transsys_program = p.parse()
 
 
 def printmatrix(argv) :
