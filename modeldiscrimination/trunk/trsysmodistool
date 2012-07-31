@@ -9,6 +9,48 @@ import transsys.optim
 import trsysmodis
 
 
+def expressionsets(argv) :
+  simgenex_filename = None
+  targetexpression_filename = None
+  options, args = getopt.getopt(argv, 'g:x:h')
+  for opt, par in options :
+    if opt == '-h' :
+      print 'expressionsets -- print out expression sets as a flattened table (rather than a matrix)'
+      print '    flattened table format enables outputting expression sets for multiple transsys'
+      print '    programs in one file'
+      print '-g <SimGenex file>'
+    elif opt == '-g' :
+      simgenex_filename = par
+    else :
+      raise StandardError, 'unhandled option "%s"' % opt
+  if simgenex_filename is None :
+    raise StandardError, 'no SimGenex file specified'
+  o = trsysmodis.SimGenexObjectiveFunctionParser(open(simgenex_filename, 'r'))
+  simgenex = o.parse_objectivespec()
+  if len(args) > 0 :
+    infile = open(args[0], 'r')
+  else :
+    infile = sys.stdin
+  if len(args) > 1 :
+    outfile = open(args[1], 'w')
+  else :
+    outfile = sys.stdout
+  p = transsys.TranssysProgramParser(infile)
+  transsys_program = p.parse()
+  n = 0
+  while transsys_program is not None :
+    exprset = simgenex.get_simulated_set(transsys_program)
+    e = exprset.expression_data
+    if n == 0 :
+      outfile.write('tpIndex\ttpName\tgene\tcondition\txlevel\n')
+    for g in e.get_gene_name_list() :
+      for c in e.column_name_list :
+        v = e.get_value(c, g)
+        outfile.write('%d %s %s %s %1.17e\n' % (n, transsys_program.name, g, c, v))
+    transsys_program = p.parse()
+    n = n + 1
+
+
 def printobj(argv) :
   simgenex_filename = None
   targetexpression_filename = None
@@ -186,23 +228,20 @@ def optimise(argv) :
       opt_result.write_log(log_file, 'tp_index')
   
 
-def usage() :
+def usage(cmdDict) :
   print 'usage: %s <command> <args>' % sys.argv[0]
-  print 'commands are: printobj optimise printmatrix'
+  print 'commands are: %s' % ' '.join(cmdDict.keys())
   print 'use %s <command> -h to see help for args' % sys.argv[0]
 
 
+cmdDict = {'printobj': printobj, 'optimise': optimise, 'printmatrix': printmatrix, 'expressionsets': expressionsets}
 if len(sys.argv) < 2 :
-  usage()
+  usage(cmdDict)
   sys.exit()
 cmd = sys.argv[1]
 argv = sys.argv[2:]
-if cmd == 'printobj' :
-  printobj(argv)
-elif cmd == 'optimise' :
-  optimise(argv)
-elif cmd == 'printmatrix' :
-  printmatrix(argv)
+if cmd in cmdDict.keys() :
+  cmdDict[cmd](argv)
 else :
   raise StandardError, 'command %s unknown' % cmd
 
